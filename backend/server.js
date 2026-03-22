@@ -20,12 +20,14 @@ const userRoutes = require('./routes/userRoutes');
 const messRoutes = require('./routes/messRoutes');
 const orderRoutes = require('./routes/orderRoutes');
 const walletRoutes = require('./routes/walletRoutes');
+const configRoutes = require('./routes/configRoutes');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/messes', messRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/wallet', walletRoutes);
+app.use('/api', configRoutes);
 
 // Health check
 app.get('/', (req, res) => res.json({ status: 'Digi Mess API is running 🍱' }));

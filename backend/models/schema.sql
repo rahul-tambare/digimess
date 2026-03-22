@@ -60,6 +60,7 @@ CREATE TABLE IF NOT EXISTS Orders (
     customerId VARCHAR(36) NOT NULL,
     messId VARCHAR(36) NOT NULL,
     totalAmount DECIMAL(10, 2) NOT NULL,
+    items JSON, -- Details of meals/thalis ordered
     status ENUM('pending', 'confirmed', 'preparing', 'out_for_delivery', 'delivered', 'cancelled') DEFAULT 'pending',
     orderType ENUM('on_demand', 'subscription') DEFAULT 'on_demand',
     createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -77,4 +78,31 @@ CREATE TABLE IF NOT EXISTS WalletTransactions (
     description VARCHAR(255),
     createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (userId) REFERENCES Users(id) ON DELETE CASCADE
+);
+
+-- NEW TABLES FOR DYNAMIC CONTENT
+CREATE TABLE IF NOT EXISTS PlanCategories (
+    id VARCHAR(36) PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS SubscriptionPlans (
+    id VARCHAR(36) PRIMARY KEY,
+    categoryId VARCHAR(36),
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    price DECIMAL(10, 2) NOT NULL,
+    mealsCount INT DEFAULT 0,
+    benefits JSON, -- Array of strings
+    isActive BOOLEAN DEFAULT TRUE,
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (categoryId) REFERENCES PlanCategories(id) ON DELETE SET NULL
+);
+
+CREATE TABLE IF NOT EXISTS AppConfig (
+    configKey VARCHAR(255) PRIMARY KEY,
+    configValue TEXT,
+    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );

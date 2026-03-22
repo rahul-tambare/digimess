@@ -5,8 +5,8 @@ exports.getAllMesses = async (req, res) => {
   try {
     const search = req.query.search ? `%${req.query.search}%` : '%';
     const [rows] = await db.query(
-      'SELECT * FROM Messes WHERE isOpen = 1 AND name LIKE ? ORDER BY rating DESC',
-      [search]
+      'SELECT * FROM Messes WHERE isOpen = 1 AND (name LIKE ? OR address LIKE ? OR description LIKE ?) ORDER BY rating DESC',
+      [search, search, search]
     );
     res.json(rows);
   } catch (e) {

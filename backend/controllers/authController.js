@@ -3,7 +3,7 @@ const db = require('../config/db');
 const jwt = require('jsonwebtoken');
 
 // Helper to generate a 6 digit OTP
-const generateOTP = () => Math.floor(100000 + Math.random() * 900000).toString();
+const generateOTP = () => '111111'; // Hardcoded for testing
 
 exports.sendOTP = async (req, res) => {
     try {

@@ -1,18 +1,49 @@
 const db = require('../config/db');
 
-// POST /api/orders — place an order
+// POST /api/orders — place an order (deducts from wallet)
 exports.placeOrder = async (req, res) => {
+  const connection = await db.getConnection();
   try {
-    const { messId, totalAmount, orderType } = req.body;
-    const id = require('crypto').randomUUID();
-    await db.query(
-      'INSERT INTO Orders (id, customerId, messId, totalAmount, orderType) VALUES (?, ?, ?, ?, ?)',
-      [id, req.user.id, messId, totalAmount, orderType || 'on_demand']
+    const { messId, totalAmount, orderType, items } = req.body;
+    
+    await connection.beginTransaction();
+
+    // 1. Check Wallet Balance
+    const [userRows] = await connection.query('SELECT walletBalance FROM Users WHERE id = ? FOR UPDATE', [req.user.id]);
+    const balance = parseFloat(userRows[0].walletBalance);
+    const amount = parseFloat(totalAmount);
+
+    if (balance < amount) {
+      await connection.rollback();
+      return res.status(400).json({ error: 'Insufficient wallet balance', shortfall: amount - balance });
+    }
+
+    // 2. Deduct Wallet
+    await connection.query('UPDATE Users SET walletBalance = walletBalance - ? WHERE id = ?', [amount, req.user.id]);
+
+    // 3. Log Wallet Transaction
+    const txId = require('crypto').randomUUID();
+    const description = `Order placed${messId ? ' at mess' : ''}`;
+    await connection.query(
+      'INSERT INTO WalletTransactions (id, userId, amount, type, description) VALUES (?, ?, ?, ?, ?)',
+      [txId, req.user.id, amount, 'debit', description]
     );
-    res.status(201).json({ message: 'Order placed successfully', orderId: id });
+
+    // 4. Create Order
+    const orderId = require('crypto').randomUUID();
+    await connection.query(
+      'INSERT INTO Orders (id, customerId, messId, totalAmount, orderType, items) VALUES (?, ?, ?, ?, ?, ?)',
+      [orderId, req.user.id, messId || 'default-mess-id', amount, orderType || 'on_demand', JSON.stringify(items || [])]
+    );
+
+    await connection.commit();
+    res.status(201).json({ message: 'Order placed successfully', orderId });
   } catch (e) {
+    await connection.rollback();
     console.error(e);
     res.status(500).json({ error: 'Internal server error' });
+  } finally {
+    connection.release();
   }
 };
 

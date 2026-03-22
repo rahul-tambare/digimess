@@ -65,8 +65,8 @@ export default function OTPVerificationScreen({ route, navigation }) {
       await AsyncStorage.setItem('token', res.data.token);
       await AsyncStorage.setItem('user', JSON.stringify(res.data.user));
       Alert.alert('Success', 'Login successful!');
-      // TODO: navigate to Home after all screens are ready
-      // navigation.replace('Home');
+      // Save token successfully, now navigate to home tabs
+      navigation.replace('MainTabs');
     } catch (error) {
       Alert.alert('Error', error.response?.data?.error || 'Invalid OTP. Please try again.');
     } finally {
