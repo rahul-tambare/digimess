@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Be+Vietnam+Pro:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "on-error-container": "#93000a",
+              "surface-tint": "#a14000",
+              "secondary": "#1b6d24",
+              "on-primary-container": "#521d00",
+              "inverse-primary": "#ffb694",
+              "tertiary-fixed-dim": "#ffba38",
+              "surface-container-low": "#f4f3f2",
+              "on-secondary-fixed": "#002204",
+              "error": "#ba1a1a",
+              "primary-fixed-dim": "#ffb694",
+              "on-tertiary-container": "#3f2a00",
+              "on-tertiary": "#ffffff",
+              "on-secondary-container": "#217128",
+              "inverse-on-surface": "#f1f0f0",
+              "secondary-fixed": "#a3f69c",
+              "primary-fixed": "#ffdbcc",
+              "tertiary": "#7e5700",
+              "secondary-container": "#a0f399",
+              "error-container": "#ffdad6",
+              "surface-dim": "#dadad9",
+              "surface-container-high": "#e9e8e7",
+              "surface-container": "#eeeeed",
+              "secondary-fixed-dim": "#88d982",
+              "tertiary-fixed": "#ffdeac",
+              "outline-variant": "#e0c0b2",
+              "on-primary": "#ffffff",
+              "on-background": "#1a1c1c",
+              "background": "#faf9f8",
+              "surface": "#faf9f8",
+              "on-surface": "#1a1c1c",
+              "surface-variant": "#e3e2e1",
+              "on-primary-fixed": "#351000",
+              "surface-container-highest": "#e3e2e1",
+              "on-tertiary-fixed-variant": "#604100",
+              "on-secondary": "#ffffff",
+              "inverse-surface": "#2f3130",
+              "outline": "#8c7166",
+              "surface-container-lowest": "#ffffff",
+              "tertiary-container": "#c58a00",
+              "on-error": "#ffffff",
+              "surface-bright": "#faf9f8",
+              "primary-container": "#f26d21",
+              "on-surface-variant": "#584238",
+              "on-tertiary-fixed": "#281900",
+              "on-primary-fixed-variant": "#7b2f00",
+              "on-secondary-fixed-variant": "#005312",
+              "primary": "#a14000"
+            },
+            fontFamily: {
+              "headline": ["Plus Jakarta Sans"],
+              "body": ["Be Vietnam Pro"],
+              "label": ["Be Vietnam Pro"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .editorial-shadow {
+            box-shadow: 0 40px 80px -20px rgba(161, 64, 0, 0.08);
+        }
+        body {
+            min-height: max(884px, 100dvh);
+        }
+    </style>
+</head>
+<body class="bg-background font-body text-on-surface antialiased">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-[#faf9f8]/70 dark:bg-stone-900/70 backdrop-blur-xl border-b border-stone-200/20 dark:border-stone-800/20">
+<div class="flex justify-between items-center px-6 h-16 w-full max-w-screen-xl mx-auto">
+<div class="flex items-center gap-3 active:scale-95 transition-transform duration-200 cursor-pointer">
+<span class="material-symbols-outlined text-orange-600 dark:text-orange-400" data-icon="menu">menu</span>
+<h1 class="font-['Plus_Jakarta_Sans'] font-extrabold text-2xl tracking-tight text-orange-600 dark:text-orange-500 italic">Digi Mess</h1>
+</div>
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full overflow-hidden border-2 border-orange-600/20 active:scale-95 transition-transform duration-200 cursor-pointer">
+<img class="w-full h-full object-cover" data-alt="User profile photo avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAodW-5lC_hhLa-7XAerFQxwDzI7A68AqsDJUvtMuP5lT9yNLV6i-BAQnIv0ve6I_q1ybncMt369idWOG3gh-9w9tIPG8H3-YuOZkraEzqocICZuWqzHo81iL9tI5KUM1mEl_wRnA0lsowou-qVc6obm6O9BSEgMSaOE-VUf-5g3PvvchtQqILe7fWOvESjisQ6A11OdLn0gTMR3HSFPeA9LTdPT0jDXVZ-002rRL7jC9hDXUlizfcOwmeQPt5dcIbNR-XKZgH-fXI"/>
+</div>
+</div>
+</div>
+</header>
+<main class="max-w-7xl mx-auto px-6 pb-32 pt-16">
+<!-- Hero: Monthly Subscription Offer -->
+<section class="mt-8 relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-primary-container to-primary editorial-shadow group">
+<div class="absolute inset-0 opacity-20 mix-blend-overlay">
+<img class="w-full h-full object-cover" data-alt="Abstract fresh vegetables and grains texture" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDSeWFeaftlmOOt--GU6Cj84DqeWPt-QuHkZ5d0fg7THRKsX4X-D2180kHYveWBUPQLg2KQisrhvuPqGRo12_l8w-QjqEFXL4DnJrS5mNQkyla-PyzvEPeZQJLpuH0IqJq9Ijo0Su0-QeV3ZrgIkk3pJr13cyvggTZufOHnov3g2JS_Qlx0XYFVVZFsDLElB-wxRJiqP9e87e8cQveqJx9S3iV6NXcmR2klokOqK0AGA361uWSEhbpYf9gF9svB6_fYWS6BR-Ol6Hg"/>
+</div>
+<div class="relative z-10 p-8 md:p-12 flex flex-col md:flex-row items-center justify-between gap-8">
+<div class="max-w-md">
+<span class="inline-block px-4 py-1.5 rounded-full bg-white/20 text-white font-label text-xs font-bold tracking-widest uppercase mb-4">Limited Offer</span>
+<h2 class="font-headline text-4xl md:text-5xl font-extrabold text-white leading-tight mb-4">Monthly Subscription</h2>
+<p class="text-white/90 text-lg mb-8 font-body">Get unlimited access to premium home-cooked meals starting at just $199/month. Save 40% on daily dining.</p>
+<button class="bg-white text-primary font-bold px-8 py-4 rounded-full shadow-xl hover:scale-95 transition-transform duration-200">Subscribe Now</button>
+</div>
+<div class="relative w-full max-w-xs aspect-square">
+<div class="absolute inset-0 bg-white/10 rounded-full blur-3xl"></div>
+<img class="relative z-10 w-full h-full object-cover rounded-3xl rotate-6 shadow-2xl" data-alt="Gourmet healthy bowl with vibrant ingredients" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBqAqgZ1KKpVBjNKgGyrpc36_z2qrJ1CTimpnFwSG_mI0aS70qYteToXy6NLZXdCVVOXsjwv-VdRL8WV-z8aO4VJN3tGVjug9lOU8CYMse1pB4h_grrPDydpJFplDDTBxSZJMMPAf8TLSZdBkGEZzasdQM8_V9AcnzLIagFJw4uatBd_G5BF-q_dpBFfCmW-ueXeLhEHaTlYHHz1k_-bCNajtWtWEwo2cZn358gdp7QZFsV512yKnBdWpPyizH1UwaCo2WKeXKRyn0"/>
+</div>
+</div>
+</section>
+<!-- Categories Section -->
+<section class="mt-16">
+<div class="flex justify-between items-end mb-8">
+<div>
+<h3 class="font-headline text-2xl font-bold tracking-tight">Curated Categories</h3>
+<p class="text-on-surface-variant font-body">Explore your appetite</p>
+</div>
+</div>
+<div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+<!-- Category: Veg Thali -->
+<div class="group cursor-pointer">
+<div class="aspect-[4/5] rounded-[2rem] overflow-hidden mb-4 relative bg-surface-container-low">
+<img class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" data-alt="Traditional Indian Veg Thali setup" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBeCUJDDv_GNoH1_VfkXRj1N0G6vdAYf84zF0eBPJ26XJZAA0M2EQPWHSNGPGuu-WDtaEqkyizFVj1VXo3BjaYi19jq8qhDLqWH-9WoZUyQPq0D6RIU1DrrZrBPjqHJYwY_8rXLa2njbEgeWk_byeJM1EztiW9O7AcVzyx4Gi3FOOXNtfShUskugQS86uco0VnX0IBQkY1ajn5t30oMok3lL5gCllxsZ5m6TzwGIHmH-rCyCEGLgqrrBbEZ9sVF6GCjUECTX6tIdaA"/>
+<div class="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors"></div>
+<div class="absolute bottom-6 left-6 right-6">
+<span class="text-white font-headline font-bold text-xl">Veg Thali</span>
+</div>
+</div>
+</div>
+<!-- Category: Non-Veg -->
+<div class="group cursor-pointer">
+<div class="aspect-[4/5] rounded-[2rem] overflow-hidden mb-4 relative bg-surface-container-low">
+<img class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" data-alt="Succulent roasted chicken non-veg platter" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB3zNwb0IIeDQODYWyFLpNC1lTYuFaFv-WfD1hyfec_pFSXk_r7YkDYd2sULGNgXGJzhM91pPQ9w_rEHG1D40XZpXNN5I70R2QNPztGcMITz9GRP7f6HnxND71uwaMNDxe6CKOjFUSq0bx_Z5dHdzFJSn60OjRU6rcugLAT3AAsugMspa0iu6ydOANi21EuIoa3rrcAsroIz22meJR9b8ITKebH1GHvBN8qgyl9vA0Q43RiLcRXqeMdYizVty_P3V7etxTxe0enGKM"/>
+<div class="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors"></div>
+<div class="absolute bottom-6 left-6 right-6">
+<span class="text-white font-headline font-bold text-xl">Non-Veg</span>
+</div>
+</div>
+</div>
+<!-- Category: Keto -->
+<div class="group cursor-pointer">
+<div class="aspect-[4/5] rounded-[2rem] overflow-hidden mb-4 relative bg-surface-container-low">
+<img class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" data-alt="Fresh keto friendly avocado and egg salad" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDE8Muy4yaHicvu0K3FbX0yxrs7Rvask4Y29aTike-boB4LgPeyfi9y9dkhX8RT8JTxC5UjEkW0fuNQnY8PD0QdJPTvg-9bcSK7kwYKBejmkwJsou2LEByYMFbT73IkAM9RslMvBfFHYVxzLSfr98FW2DEO0jcTmVnU0iIulOcEFqYT3Sz2OPt9KhIybQuqpsdJfWqWbhx7e6olew6E-UtI7mgKmcd4IVC3H2PHrysvpqwLzosvBYfrlrPaZQ9xuOalufWT0ddLYHU"/>
+<div class="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors"></div>
+<div class="absolute bottom-6 left-6 right-6">
+<span class="text-white font-headline font-bold text-xl">Keto</span>
+</div>
+</div>
+</div>
+<!-- Category: Desserts -->
+<div class="group cursor-pointer">
+<div class="aspect-[4/5] rounded-[2rem] overflow-hidden mb-4 relative bg-surface-container-low">
+<img class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" data-alt="Decadent chocolate dessert with berries" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBBGtsNLwTObQMuF2N2l_01yl3ejTfmFzPuV0QRRb1huBy4bqF41Sg8kCH7Gy366uZ8S68cazEOFlPw-KMZ41MYvZ4192B4RCtJAsE6_a-5qsJsH5Fx5VcWRNrfeeChCzNiBs5TrpMDNs-OASfmLN8_dofem9YWIzaH_9Qy6V-AfCgj1qqJ_Rql54-XAj5gkKjmyra-HZj0hWc2fQyfSqQt5yvqMD-7zGjy8U6KhxQ7wwILwf6WsFU8sg1VOmXX7kQGrt7248YnvHg"/>
+<div class="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors"></div>
+<div class="absolute bottom-6 left-6 right-6">
+<span class="text-white font-headline font-bold text-xl">Desserts</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Today's Specials (Bento Style) -->
+<section class="mt-20 mb-12">
+<div class="mb-10">
+<h3 class="font-headline text-3xl font-extrabold tracking-tight">Today's Specials</h3>
+<p class="text-on-surface-variant font-body mt-1">Chef-crafted seasonal menus</p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-12 gap-8">
+<!-- Large Feature Card -->
+<div class="md:col-span-7 bg-surface-container-lowest rounded-[2.5rem] p-6 flex flex-col justify-between editorial-shadow">
+<div class="mb-8">
+<div class="flex justify-between items-start mb-6">
+<div>
+<span class="bg-secondary-container text-on-secondary-container px-3 py-1 rounded-full font-label text-[10px] font-bold uppercase tracking-widest mb-3 inline-block">Best Seller</span>
+<h4 class="font-headline text-2xl font-bold">Mediterranean Harvest Bowl</h4>
+</div>
+<div class="flex items-center gap-2 text-secondary font-bold">
+<span class="material-symbols-outlined text-sm" data-icon="energy_savings_leaf">energy_savings_leaf</span>
+<span class="text-sm font-label">420 kcal</span>
+</div>
+</div>
+<div class="relative h-[300px] rounded-2xl overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="Colorful Mediterranean bowl with hummus and greens" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDwQBhjlZWfk9ILMEShWAm2Qz6qIfO-wIaZOnP12IGRHLf8FDVZ9sx-FNyVPvOt-RUcYO3OuMgG8dOlZjkeHkBvlRSM7Gz1NgPZo4gYwFDjHNKRd7YjXiF3v3TQ5rAedAcvj9XHHYB7pnju3q_6Lt5O5MfTMTSB8y3QeVpeOAx-rJAIJLgYB9_tqW3oICxc_sb55zHdUX0BrVDygM1iSIAHmn0iqRkWGXeJpE2lKbGY52oLgz7Cfl6Hok8R4ap44_ObZnmJFo9K_Uw"/>
+</div>
+</div>
+<div class="flex items-center justify-between">
+<div class="flex -space-x-3">
+<img class="w-8 h-8 rounded-full border-2 border-surface" data-alt="Reviewer profile image" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAOuLrAZl7RoheGgebcPFfnzE0cPGcb9a1CktW9hifoHTDn_wo8JcHfuHVTjSPsEi8tCsOeevHkRnuc47w0Lh-2bX6R9YZAMUGDBAjC-NIkXVOPllxTPbFg0NcB57bd65B799EfQE2uEMuwRxu8s4bVUO_SDTn9J3SraAs-Hz0XPa_Shz42KUrJzeMgdUP1elA0M_8RwKIiWL4NcEbxdYwHDLLR14XUfJs7xkF1WWq5ThTO_6ggayNq2rTJ1Bq49rkW5jP6qBHO020"/>
+<img class="w-8 h-8 rounded-full border-2 border-surface" data-alt="Reviewer profile image" src="https://lh3.googleusercontent.com/aida-public/AB6AXuABwufoFttp3GpU9rdGv0VxK3IgOqYDtZEdyC_HyVdjTm1a0bj_43Xmh7dAuEG1ygAzE9M3mAgbgPeksHmfJenEc1rZTTKDSIGL7urwEQJ4WZo-hxEHYMF9fhZCbSo3JXIO8azUzeEOet8rqIYiZzz5UyZPV4rC-yI-TYfnrdbTNUpVv6OcqSWA8AtHRbLwnEcag8gsmxDGgFwdq1Y3Kbf2vcNDKBcdyvELzyj7zjSer_9_fcKGQKjtqlUbscpzFqLkXS9JvoI2K_8"/>
+<div class="w-8 h-8 rounded-full border-2 border-surface bg-primary-fixed flex items-center justify-center text-[10px] font-bold">+12</div>
+</div>
+<button class="bg-primary-container text-white px-6 py-3 rounded-full font-bold flex items-center gap-2 hover:scale-95 transition-transform">
+<span>Add to Tray</span>
+<span class="material-symbols-outlined text-sm" data-icon="add">add</span>
+</button>
+</div>
+</div>
+<!-- Vertical Card Group -->
+<div class="md:col-span-5 flex flex-col gap-8">
+<!-- Small Special 1 -->
+<div class="bg-surface-container-low rounded-[2rem] p-6 flex gap-6 items-center">
+<div class="w-24 h-24 rounded-2xl overflow-hidden flex-shrink-0">
+<img class="w-full h-full object-cover" data-alt="Herb roasted chicken thali close up" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAQGO75v-vg8TGC9eg06S9MUui-8WasR_05HdP2W_kl9MY3_j4zPUvZdUuwrKDE3723-KGRt5bVx9nsFbDqIOg_N4JN59XrVABTfUKYEfCae88-pYZEejf9JgAZY3YTEmbnzWbY3o6-gAA14yIhMA-Xt3_ytr2cUMHhdiMzTvxjUsXgZFJAoPuypSVxvBNLyXL1NKxByZ0-o5h6KvoDyJ8XgdUZS43-LHdTo5vACqqGMy9dWCoJAMiZqwv9PnFp2DrEkvxJDA1hgn4"/>
+</div>
+<div class="flex-grow">
+<h5 class="font-headline font-bold text-lg leading-tight">Herb Roasted Chicken Thali</h5>
+<p class="text-on-surface-variant text-sm mt-1">High Protein • Grilled</p>
+<div class="flex justify-between items-center mt-3">
+<span class="text-primary font-bold">$12.50</span>
+<button class="w-8 h-8 rounded-full bg-white flex items-center justify-center text-primary shadow-sm">
+<span class="material-symbols-outlined text-base" data-icon="add">add</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Small Special 2 -->
+<div class="bg-surface-container-low rounded-[2rem] p-6 flex gap-6 items-center">
+<div class="w-24 h-24 rounded-2xl overflow-hidden flex-shrink-0">
+<img class="w-full h-full object-cover" data-alt="Fresh seasonal fruit and yogurt parfait" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBgV86GXL67g_qtqqbpX5EzUTotm-YPTS4w4oIdjWTfh5dNeQDtRo_aA8hql5E9HR4Vqlf3j0xLXTfAFRGorF66whQkTEGZ0NEdlR-qtiNjNSyx8wNE0CyEA05IipB1dw6z_O6eO4w8f2jmUZzd5LaIjJCPxX2rtTg1HHfRSBN_wZWGLYHGucI0kAI1t4DhUCU2QzMyzEY6RHWjkwEVHtwhmfAsmW_cScFYh_YAX2zxUsO8tX87Fr94zjKgIO2XoryL9HhpHhpWih0"/>
+</div>
+<div class="flex-grow">
+<h5 class="font-headline font-bold text-lg leading-tight">Seasonal Fruit Parfait</h5>
+<p class="text-on-surface-variant text-sm mt-1">Sugar Free • Dessert</p>
+<div class="flex justify-between items-center mt-3">
+<span class="text-primary font-bold">$8.00</span>
+<button class="w-8 h-8 rounded-full bg-white flex items-center justify-center text-primary shadow-sm">
+<span class="material-symbols-outlined text-base" data-icon="add">add</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Small Special 3 -->
+<div class="bg-secondary-container/20 rounded-[2rem] p-6 flex flex-col justify-center items-center text-center border-2 border-dashed border-secondary/20">
+<span class="material-symbols-outlined text-secondary text-3xl mb-2" data-icon="auto_awesome">auto_awesome</span>
+<h5 class="font-headline font-bold text-lg">Curated For You</h5>
+<p class="text-secondary font-body text-sm mt-1">Personalized meal plan based on your diet</p>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-8 pb-6 pt-3 bg-[#faf9f8]/80 dark:bg-stone-900/80 backdrop-blur-2xl rounded-t-[2rem] shadow-[0_-4px_40px_rgba(242,109,33,0.06)]">
+<!-- Home (Active) -->
+<a class="flex flex-col items-center justify-center text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-950/30 rounded-full px-4 py-1 active:scale-98 transition-all duration-300 ease-out" href="#">
+<span class="material-symbols-outlined" data-icon="home_storage" style="font-variation-settings: 'FILL' 1;">home_storage</span>
+<span class="font-['Be_Vietnam_Pro'] text-[10px] font-medium uppercase tracking-widest mt-0.5">Home</span>
+</a>
+<!-- Mess -->
+<a class="flex flex-col items-center justify-center text-stone-400 dark:text-stone-500 hover:text-orange-500 dark:hover:text-orange-300 active:scale-98 transition-all duration-300 ease-out" href="#">
+<span class="material-symbols-outlined" data-icon="restaurant">restaurant</span>
+<span class="font-['Be_Vietnam_Pro'] text-[10px] font-medium uppercase tracking-widest mt-0.5">Mess</span>
+</a>
+<!-- Wallet -->
+<a class="flex flex-col items-center justify-center text-stone-400 dark:text-stone-500 hover:text-orange-500 dark:hover:text-orange-300 active:scale-98 transition-all duration-300 ease-out" href="#">
+<span class="material-symbols-outlined" data-icon="account_balance_wallet">account_balance_wallet</span>
+<span class="font-['Be_Vietnam_Pro'] text-[10px] font-medium uppercase tracking-widest mt-0.5">Wallet</span>
+</a>
+<!-- Profile -->
+<a class="flex flex-col items-center justify-center text-stone-400 dark:text-stone-500 hover:text-orange-500 dark:hover:text-orange-300 active:scale-98 transition-all duration-300 ease-out" href="#">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span class="font-['Be_Vietnam_Pro'] text-[10px] font-medium uppercase tracking-widest mt-0.5">Profile</span>
+</a>
+</nav>
+<!-- Floating Action Button -->
+<button class="fixed bottom-24 right-6 w-14 h-14 bg-primary text-white rounded-full flex items-center justify-center shadow-2xl hover:scale-105 transition-transform z-40">
+<span class="material-symbols-outlined text-2xl" data-icon="shopping_basket">shopping_basket</span>
+<div class="absolute -top-1 -right-1 w-5 h-5 bg-secondary text-white text-[10px] font-bold rounded-full flex items-center justify-center">2</div>
+</button>
+</body></html>

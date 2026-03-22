@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Confirm Subscription - Digi Mess</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Be+Vietnam+Pro:wght@300;400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "on-secondary-fixed-variant": "#005312",
+                        "on-surface": "#1a1c1c",
+                        "secondary": "#1b6d24",
+                        "surface-bright": "#faf9f8",
+                        "secondary-fixed": "#a3f69c",
+                        "on-primary-fixed": "#351000",
+                        "primary-fixed": "#ffdbcc",
+                        "primary-fixed-dim": "#ffb694",
+                        "on-primary": "#ffffff",
+                        "inverse-surface": "#2f3130",
+                        "on-secondary": "#ffffff",
+                        "on-secondary-container": "#217128",
+                        "on-error": "#ffffff",
+                        "on-background": "#1a1c1c",
+                        "tertiary-fixed-dim": "#ffba38",
+                        "surface-dim": "#dadad9",
+                        "on-primary-container": "#521d00",
+                        "tertiary": "#7e5700",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container-low": "#f4f3f2",
+                        "on-error-container": "#93000a",
+                        "error-container": "#ffdad6",
+                        "outline-variant": "#e0c0b2",
+                        "inverse-primary": "#ffb694",
+                        "tertiary-container": "#c58a00",
+                        "surface-container": "#eeeeed",
+                        "surface-container-highest": "#e3e2e1",
+                        "on-tertiary": "#ffffff",
+                        "on-surface-variant": "#584238",
+                        "primary": "#a14000",
+                        "on-primary-fixed-variant": "#7b2f00",
+                        "inverse-on-surface": "#f1f0f0",
+                        "surface-variant": "#e3e2e1",
+                        "on-tertiary-container": "#3f2a00",
+                        "background": "#faf9f8",
+                        "error": "#ba1a1a",
+                        "on-secondary-fixed": "#002204",
+                        "surface-container-high": "#e9e8e7",
+                        "surface-tint": "#a14000",
+                        "outline": "#8c7166",
+                        "secondary-container": "#a0f399",
+                        "surface": "#faf9f8",
+                        "on-tertiary-fixed-variant": "#604100",
+                        "on-tertiary-fixed": "#281900",
+                        "tertiary-fixed": "#ffdeac",
+                        "primary-container": "#f26d21",
+                        "secondary-fixed-dim": "#88d982"
+                    },
+                    fontFamily: {
+                        "headline": ["Plus Jakarta Sans"],
+                        "body": ["Be Vietnam Pro"],
+                        "label": ["Be Vietnam Pro"]
+                    },
+                    borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "2xl": "1.5rem", "3xl": "2rem", "full": "9999px" },
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .editorial-shadow {
+            box-shadow: 0 40px 80px -20px rgba(161, 64, 0, 0.08);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface font-body text-on-surface overflow-hidden">
+<!-- Mock Background: Mess Profile Screen -->
+<div class="fixed inset-0 z-0 overflow-y-auto">
+<!-- TopAppBar Placeholder -->
+<header class="bg-[#faf9f8] flex justify-between items-center px-6 py-4 w-full max-w-7xl mx-auto">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-[#F26D21]">restaurant_menu</span>
+<h1 class="text-2xl font-bold text-[#F26D21] tracking-tight font-headline">Digi Mess</h1>
+</div>
+<div class="w-10 h-10 rounded-full bg-surface-container-highest flex items-center justify-center border-2 border-white overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="User profile circular avatar photo" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAla2KfPzU951Thh8WEQDV4AeWHXYyX1_RzP6NHkTQLk1vyh3bb5dUKMRX7iOiOAmJrtFTnAzGsRZiQJGXrmPvM8waPUTouIfMG1X2dJ7hcZfEMnlGz4AzZCvYyPyKBGS8sVepdI3bsBj9mQo7rLm2uJxQSpfNTqBcox6HQWR82WDlKR__x_RA2Fjrp8HaPTaui5KYokblGqnIu_9_JchLynRvmE9h4RyM2_yJqw5X1dT4alkY2cx4NxNKxiQZ0S5TVgPx63z40F8w"/>
+</div>
+</header>
+<main class="max-w-7xl mx-auto px-6 pt-8 pb-32">
+<div class="mb-10">
+<h2 class="font-headline text-4xl font-extrabold tracking-tight mb-2">My Subscription</h2>
+<p class="text-on-surface-variant font-medium">Manage your daily culinary experience.</p>
+</div>
+<!-- Bento Grid Background Layout -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+<div class="md:col-span-2 bg-surface-container-low rounded-3xl p-8 h-64 flex flex-col justify-end">
+<div class="text-sm uppercase tracking-widest text-primary font-bold mb-2">Current Status</div>
+<div class="text-3xl font-headline font-bold">No Active Plan</div>
+</div>
+<div class="bg-primary-container text-white rounded-3xl p-8 h-64">
+<span class="material-symbols-outlined text-4xl mb-4">account_balance_wallet</span>
+<div class="text-lg opacity-90">Wallet Balance</div>
+<div class="text-4xl font-headline font-bold">₹4,250</div>
+</div>
+</div>
+</main>
+</div>
+<!-- Scrim / Dimmed Background -->
+<div class="fixed inset-0 bg-on-surface/40 backdrop-blur-sm z-[60]"></div>
+<!-- Modal Container: Large Bottom Sheet Style -->
+<div class="fixed inset-x-0 bottom-0 top-12 md:top-auto md:bottom-0 md:inset-x-0 flex items-end justify-center z-[70]">
+<div class="bg-surface-bright w-full max-w-3xl rounded-t-3xl md:rounded-t-[3rem] editorial-shadow flex flex-col max-h-[795px] overflow-hidden">
+<!-- Handle for mobile -->
+<div class="w-full flex justify-center py-4 md:hidden">
+<div class="w-12 h-1.5 bg-surface-container-highest rounded-full"></div>
+</div>
+<div class="px-6 md:px-12 pt-4 pb-8 overflow-y-auto">
+<!-- Header -->
+<div class="flex justify-between items-start mb-10">
+<div>
+<h3 class="font-headline text-3xl font-extrabold text-on-surface leading-tight">Confirm Subscription</h3>
+<p class="text-on-surface-variant mt-2 font-medium">Review your fresh meal journey details.</p>
+</div>
+<button class="w-12 h-12 rounded-full bg-surface-container-low flex items-center justify-center hover:bg-surface-container-highest transition-colors">
+<span class="material-symbols-outlined text-on-surface-variant">close</span>
+</button>
+</div>
+<!-- Plan Card: Glassmorphism / Layered look -->
+<div class="relative bg-surface-container-low rounded-3xl p-6 md:p-8 mb-8 overflow-hidden">
+<div class="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 blur-3xl"></div>
+<div class="relative flex flex-col md:flex-row md:items-center justify-between gap-6">
+<div class="flex items-center gap-5">
+<div class="w-16 h-16 bg-white rounded-2xl flex items-center justify-center shadow-sm">
+<span class="material-symbols-outlined text-primary text-3xl" style="font-variation-settings: 'FILL' 1;">restaurant</span>
+</div>
+<div>
+<span class="text-xs font-bold uppercase tracking-widest text-primary">Selected Plan</span>
+<h4 class="text-2xl font-headline font-bold">Standard Monthly Plan</h4>
+</div>
+</div>
+<div class="text-right">
+<div class="text-3xl font-headline font-extrabold text-on-surface">₹3,400</div>
+<div class="text-sm text-on-surface-variant font-medium">Monthly billing</div>
+</div>
+</div>
+</div>
+<!-- Benefits List -->
+<div class="mb-10">
+<h5 class="text-sm font-bold uppercase tracking-wider text-on-surface-variant mb-6">Plan Privileges</h5>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<div class="flex items-center gap-4 p-4 rounded-2xl bg-surface-container-lowest border border-outline-variant/10">
+<div class="w-10 h-10 rounded-full bg-secondary-container/30 flex items-center justify-center">
+<span class="material-symbols-outlined text-secondary text-xl">event_available</span>
+</div>
+<div>
+<div class="text-on-surface font-semibold">26 Fresh Meals</div>
+<div class="text-xs text-on-surface-variant">Monday to Saturday</div>
+</div>
+</div>
+<div class="flex items-center gap-4 p-4 rounded-2xl bg-surface-container-lowest border border-outline-variant/10">
+<div class="w-10 h-10 rounded-full bg-secondary-container/30 flex items-center justify-center">
+<span class="material-symbols-outlined text-secondary text-xl">rocket_launch</span>
+</div>
+<div>
+<div class="text-on-surface font-semibold">Priority Delivery</div>
+<div class="text-xs text-on-surface-variant">Top of the queue</div>
+</div>
+</div>
+<div class="flex items-center gap-4 p-4 rounded-2xl bg-surface-container-lowest border border-outline-variant/10">
+<div class="w-10 h-10 rounded-full bg-secondary-container/30 flex items-center justify-center">
+<span class="material-symbols-outlined text-secondary text-xl">nutrition</span>
+</div>
+<div>
+<div class="text-on-surface font-semibold">Custom Nutrition</div>
+<div class="text-xs text-on-surface-variant">Dietary preferences</div>
+</div>
+</div>
+<div class="flex items-center gap-4 p-4 rounded-2xl bg-surface-container-lowest border border-outline-variant/10">
+<div class="w-10 h-10 rounded-full bg-secondary-container/30 flex items-center justify-center">
+<span class="material-symbols-outlined text-secondary text-xl">support_agent</span>
+</div>
+<div>
+<div class="text-on-surface font-semibold">Dedicated Concierge</div>
+<div class="text-xs text-on-surface-variant">24/7 assistance</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Start Date Picker Section -->
+<div class="bg-surface-container-low rounded-3xl p-6 mb-10">
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-on-surface-variant">calendar_today</span>
+<div>
+<label class="block text-xs font-bold uppercase tracking-wider text-on-surface-variant mb-1">Starts From</label>
+<span class="text-lg font-bold">Monday, Oct 24, 2023</span>
+</div>
+</div>
+<button class="text-primary font-bold text-sm px-4 py-2 hover:bg-primary/5 rounded-full transition-colors">
+                            Change Date
+                        </button>
+</div>
+</div>
+<!-- Action Button -->
+<div class="flex flex-col gap-4">
+<button class="w-full h-16 bg-gradient-to-r from-primary to-primary-container text-white font-headline font-bold text-lg rounded-full flex items-center justify-center gap-3 active:scale-95 transition-transform duration-200 editorial-shadow">
+                        Confirm &amp; Pay
+                        <span class="material-symbols-outlined">arrow_forward</span>
+</button>
+<p class="text-center text-xs text-on-surface-variant font-medium px-4">
+                        By confirming, you agree to our Terms of Service. Payment will be deducted from your Digi Mess Wallet.
+                    </p>
+</div>
+</div>
+</div>
+</div>
+<!-- Bottom Navigation Shell (Always visible behind modal for context) -->
+<nav class="fixed bottom-0 left-0 w-full flex justify-around items-center px-4 pb-6 pt-3 bg-[#faf9f8]/70 backdrop-blur-xl border-t border-[#1a1c1c]/10 z-50 rounded-t-[2rem]">
+<div class="flex flex-col items-center justify-center text-gray-500 px-4 py-2">
+<span class="material-symbols-outlined">home</span>
+<span class="text-xs font-medium font-body mt-1">Home</span>
+</div>
+<div class="flex flex-col items-center justify-center text-gray-500 px-4 py-2">
+<span class="material-symbols-outlined">restaurant</span>
+<span class="text-xs font-medium font-body mt-1">Mess</span>
+</div>
+<div class="flex flex-col items-center justify-center text-gray-500 px-4 py-2">
+<span class="material-symbols-outlined">account_balance_wallet</span>
+<span class="text-xs font-medium font-body mt-1">Wallet</span>
+</div>
+<div class="flex flex-col items-center justify-center bg-[#F26D21]/10 text-[#F26D21] rounded-2xl px-4 py-2">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">person</span>
+<span class="text-xs font-medium font-body mt-1 text-[#F26D21] font-bold">Profile</span>
+</div>
+</nav>
+</body></html>

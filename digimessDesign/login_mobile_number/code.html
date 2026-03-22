@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Digi Mess - Login</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Be_Vietnam_Pro:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "primary-container": "#f26d21",
+              "secondary": "#1b6d24",
+              "on-error-container": "#93000a",
+              "on-secondary-fixed-variant": "#005312",
+              "surface-container-highest": "#e3e2e1",
+              "outline-variant": "#e0c0b2",
+              "error": "#ba1a1a",
+              "on-error": "#ffffff",
+              "secondary-fixed": "#a3f69c",
+              "secondary-fixed-dim": "#88d982",
+              "surface": "#faf9f8",
+              "on-surface-variant": "#584238",
+              "on-secondary-fixed": "#002204",
+              "primary-fixed": "#ffdbcc",
+              "on-tertiary": "#ffffff",
+              "tertiary": "#7e5700",
+              "surface-container": "#eeeeed",
+              "tertiary-fixed-dim": "#ffba38",
+              "tertiary-container": "#c58a00",
+              "on-surface": "#1a1c1c",
+              "outline": "#8c7166",
+              "on-background": "#1a1c1c",
+              "on-tertiary-fixed-variant": "#604100",
+              "primary": "#a14000",
+              "on-primary-fixed-variant": "#7b2f00",
+              "inverse-primary": "#ffb694",
+              "error-container": "#ffdad6",
+              "tertiary-fixed": "#ffdeac",
+              "surface-container-high": "#e9e8e7",
+              "surface-bright": "#faf9f8",
+              "on-secondary": "#ffffff",
+              "inverse-on-surface": "#f1f0f0",
+              "surface-dim": "#dadad9",
+              "surface-variant": "#e3e2e1",
+              "surface-tint": "#a14000",
+              "on-primary-fixed": "#351000",
+              "surface-container-low": "#f4f3f2",
+              "inverse-surface": "#2f3130",
+              "secondary-container": "#a0f399",
+              "on-primary-container": "#521d00",
+              "on-primary": "#ffffff",
+              "surface-container-lowest": "#ffffff",
+              "background": "#faf9f8",
+              "on-secondary-container": "#217128",
+              "on-tertiary-container": "#3f2a00",
+              "primary-fixed-dim": "#ffb694",
+              "on-tertiary-fixed": "#281900"
+            },
+            fontFamily: {
+              "headline": ["Plus Jakarta Sans"],
+              "body": ["Be Vietnam Pro"],
+              "label": ["Be Vietnam Pro"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            font-family: 'Be Vietnam Pro', sans-serif;
+            background-color: #faf9f8;
+            color: #1a1c1c;
+        }
+        .editorial-shadow {
+            box-shadow: 0 40px 80px -20px rgba(242, 109, 33, 0.08);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="bg-surface min-h-screen flex flex-col items-center justify-between">
+<!-- Top Navigation Suppression: Not rendered on Login/Transactional pages -->
+<main class="w-full max-w-md px-6 pt-20 flex-grow flex flex-col items-center">
+<!-- Brand Identity Section -->
+<div class="mb-16 text-center">
+<div class="inline-flex items-center justify-center w-20 h-20 rounded-3xl mb-6 editorial-shadow transform -rotate-3 overflow-hidden bg-white">
+<img alt="Brand Logo" class="w-full h-full object-contain" data-alt="Abstract vibrant orange and white kitchen symbol" src="https://lh3.googleusercontent.com/aida/ADBb0ugDdIHyRCyUbE4DGx_h8koIG75WSCk1Yum_f50-O5oazP_AsS2sVPItEyfCuppAtCHcv3JUnEfVPO6BrjHiZNvuk9k-1MACcjoKzDZk3yhEJ89rOx3ty6kekec_vhFw_pnp9mLFC8Q_boSdoDtptgiZdtt2akhnimHNA3p7_prTrbQ1N03alKBLdqVEodmDAL0vhgaGLWP1bZTSRocgyQExVBK-TJ_yJXs8PJRNwOIa8MVNU2p3f1WHGhQgDhJBpmDA2ixhLLUf"/>
+</div>
+<h1 class="font-headline font-extrabold text-4xl tracking-tight text-primary-container mb-2">Digi Mess</h1>
+<p class="font-body text-on-surface-variant font-medium">Your digital culinary companion</p>
+</div>
+<!-- Hero Content Section -->
+<div class="w-full space-y-8">
+<div class="space-y-2">
+<h2 class="font-headline font-bold text-2xl text-on-surface">Welcome back</h2>
+<p class="font-body text-on-surface-variant text-md">Enter your mobile number to get started</p>
+</div>
+<!-- Input Section -->
+<div class="space-y-6">
+<div class="relative">
+<div class="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
+<span class="material-symbols-outlined text-outline">call</span>
+</div>
+<input class="w-full h-16 pl-14 pr-6 bg-surface-container-lowest border-none rounded-xl font-body text-lg focus:ring-2 focus:ring-primary-container/20 focus:outline-none transition-all editorial-shadow placeholder:text-outline/50" placeholder="Mobile Number" type="tel"/>
+<!-- The "No-Line" Rule Applied: Using background container-lowest instead of borders -->
+</div>
+<!-- Primary Action Button -->
+<button class="w-full h-16 bg-gradient-to-r from-primary-container to-[#f98d4e] text-on-primary font-headline font-bold text-lg rounded-full shadow-lg shadow-primary-container/20 active:scale-95 transition-transform duration-200 flex items-center justify-center gap-2">
+                    Get OTP
+                    <span class="material-symbols-outlined">arrow_forward</span>
+</button>
+</div>
+<!-- Visual Flourish (Asymmetry) -->
+<div class="relative pt-12">
+<div class="absolute -right-4 top-0 w-32 h-32 bg-secondary-container/20 rounded-full blur-3xl -z-10"></div>
+<div class="bg-surface-container-low p-6 rounded-2xl relative overflow-hidden flex items-center gap-4">
+<div class="flex-grow">
+<p class="font-label text-sm text-secondary font-semibold uppercase tracking-wider mb-1">New Season Specials</p>
+<p class="font-body text-on-surface-variant text-sm leading-relaxed">Join 5,000+ foodies managing their daily meals seamlessly.</p>
+</div>
+<div class="w-20 h-20 flex-shrink-0 rounded-xl overflow-hidden transform rotate-6 border-4 border-surface-container-lowest">
+<img alt="Featured Meal" class="w-full h-full object-cover" data-alt="Close up of a gourmet roasted chicken dish" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBsh9rObrc12nl6vDGCwpfiTWarxTQtVKuswGVO0pPkebmGMgphkYQ7zHiag7jRe-ln0-HsdMl356lwMTs5d7L3MrWIKZrhwDm2oS7klSaDcOPyZSdH63fJexyjtUAHBnnRJZoEGJTxaEOLxjEqoeeomjHdA-KLKniytepVgIxeHn6IQYPDplSP1_qAM_eDrRb3CfgaOVTPOvtDZVGIW8mY6UhqatePRHcD4meE_a3w_NSlw0Amq-ITSCZ9e65CvjxDaFhG_NsOrxU"/>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Footer Section -->
+<footer class="w-full max-w-md px-6 pb-12 pt-8 text-center">
+<div class="flex flex-col items-center gap-6">
+<div class="flex items-center gap-6 text-sm font-label font-medium text-outline">
+<a class="hover:text-primary-container transition-colors" href="#">Terms of Service</a>
+<div class="w-1 h-1 rounded-full bg-outline-variant"></div>
+<a class="hover:text-primary-container transition-colors" href="#">Privacy Policy</a>
+</div>
+<p class="text-xs text-on-surface-variant/60 font-body">
+                © 2024 Digi Mess Editorial Kitchen. All rights reserved.
+            </p>
+</div>
+</footer>
+<!-- Bottom Navigation Suppression: Not rendered on Login/Transactional pages -->
+</body></html>

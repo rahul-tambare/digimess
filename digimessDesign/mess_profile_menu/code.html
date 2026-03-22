@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Digi Mess - Annapurna Traditional</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Be_Vietnam_Pro:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "on-error-container": "#93000a",
+              "on-background": "#1a1c1c",
+              "on-surface-variant": "#584238",
+              "on-primary-fixed": "#351000",
+              "inverse-on-surface": "#f1f0f0",
+              "outline": "#8c7166",
+              "background": "#faf9f8",
+              "on-tertiary-fixed-variant": "#604100",
+              "error-container": "#ffdad6",
+              "on-secondary-fixed-variant": "#005312",
+              "on-secondary-fixed": "#002204",
+              "on-tertiary": "#ffffff",
+              "on-primary": "#ffffff",
+              "error": "#ba1a1a",
+              "primary-container": "#f26d21",
+              "outline-variant": "#e0c0b2",
+              "on-secondary-container": "#217128",
+              "surface-container-low": "#f4f3f2",
+              "secondary": "#1b6d24",
+              "secondary-fixed-dim": "#88d982",
+              "on-tertiary-fixed": "#281900",
+              "on-primary-fixed-variant": "#7b2f00",
+              "tertiary-fixed-dim": "#ffba38",
+              "surface": "#faf9f8",
+              "inverse-primary": "#ffb694",
+              "surface-container-highest": "#e3e2e1",
+              "secondary-container": "#a0f399",
+              "on-error": "#ffffff",
+              "primary": "#a14000",
+              "on-surface": "#1a1c1c",
+              "surface-dim": "#dadad9",
+              "secondary-fixed": "#a3f69c",
+              "primary-fixed-dim": "#ffb694",
+              "on-secondary": "#ffffff",
+              "surface-bright": "#faf9f8",
+              "on-primary-container": "#521d00",
+              "surface-container-high": "#e9e8e7",
+              "surface-container-lowest": "#ffffff",
+              "tertiary-container": "#c58a00",
+              "inverse-surface": "#2f3130",
+              "surface-tint": "#a14000",
+              "on-tertiary-container": "#3f2a00",
+              "tertiary-fixed": "#ffdeac",
+              "tertiary": "#7e5700",
+              "surface-variant": "#e3e2e1",
+              "primary-fixed": "#ffdbcc",
+              "surface-container": "#eeeeed"
+            },
+            fontFamily: {
+              "headline": ["Plus Jakarta Sans"],
+              "body": ["Be Vietnam Pro"],
+              "label": ["Be Vietnam Pro"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .editorial-shadow {
+            box-shadow: 0 20px 40px -15px rgba(26, 28, 28, 0.06);
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body selection:bg-primary-fixed selection:text-on-primary-fixed">
+<!-- TopAppBar: Consistent with COMPONENTS_41 -->
+<header class="fixed top-0 w-full z-50 bg-[#faf9f8]/70 dark:bg-stone-900/70 backdrop-blur-xl">
+<div class="flex justify-between items-center px-6 h-16 w-full max-w-screen-xl mx-auto">
+<div class="flex items-center gap-3 active:scale-95 transition-transform duration-200 cursor-pointer">
+<span class="material-symbols-outlined text-orange-600 dark:text-orange-400" data-icon="menu">menu</span>
+<span class="text-2xl font-extrabold text-orange-600 dark:text-orange-500 italic font-headline">Digi Mess</span>
+</div>
+<!-- Desktop Nav items preserved but styled per new guidelines -->
+<div class="hidden md:flex items-center gap-8 font-label text-sm font-bold">
+<a class="text-stone-500 dark:text-stone-400 hover:opacity-80 transition-opacity" href="#">Home</a>
+<a class="text-orange-600 dark:text-orange-400 hover:opacity-80 transition-opacity" href="#">Mess</a>
+<a class="text-stone-500 dark:text-stone-400 hover:opacity-80 transition-opacity" href="#">Wallet</a>
+<a class="text-stone-500 dark:text-stone-400 hover:opacity-80 transition-opacity" href="#">Profile</a>
+</div>
+<div class="w-10 h-10 rounded-full bg-stone-200/20 dark:bg-stone-800/20 flex items-center justify-center overflow-hidden active:scale-95 transition-transform duration-200 cursor-pointer">
+<img alt="User profile photo" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAC6EeAR8LVm78dLA5UwHPIZ4u_2ADNg4ar02wYh82u7qaUKLjMKRR5Uz1jMION-2Je9tyBh9rHGmIYp1BA9vXaff9g7pGHUMCmD4EF6M1NezOraAfHCGvvvnOjTbRodqvjiAJAcDB-UQmHlO_aOndVuBV0iG3VUYa8U5_r2-y2wkpr68rluScNeOx1l0wLCsyVwgw7WjImJCj8OtpU3lNaYiqgK1h3IObiLhdQCUt8Mbg-CJoOuUK7jBsG4yq2OJlG5RIj3HdzRQQ"/>
+</div>
+</div>
+</header>
+<main class="pt-20 pb-32">
+<!-- Hero Section -->
+<section class="px-6 max-w-7xl mx-auto mt-8">
+<div class="relative w-full h-[353px] md:h-[442px] rounded-[2rem] overflow-hidden group">
+<img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" data-alt="Aerial view of a rustic wooden table with multiple Indian meal thalis" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDzPidZjaiL7NxRGIEr9WtIufpBKzIljf7z-zmrnvdzxdJVZP3-mV0ne8dUWdxFzGKe3MuFBN_ngrUvkBtagio8U6gihvVIjKNx4iExfX-IR2S0xPDqMCGn14ir8pCldeMdYhu1RR23-g3oq5SRZJAYNCCQiXAHes5j3tmmWrY_-Dpi9KwW4SUtpiL8nTqKT358GIbozYZs1bnpFFPRVfMLnDjI6vEBeXg3kBrWBwhd9G77sgC1krBb1koFoHQ61P1z9kQVvS2s8f0"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+<div class="absolute bottom-0 left-0 p-8 md:p-12 w-full flex flex-col md:flex-row md:items-end justify-between gap-6">
+<div>
+<div class="flex items-center gap-2 mb-3">
+<span class="bg-secondary-container text-on-secondary-container px-3 py-1 rounded-full text-xs font-bold font-label uppercase tracking-widest">Premium Mess</span>
+<div class="flex items-center gap-1 bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-white text-xs font-bold">
+<span class="material-symbols-outlined text-[14px] leading-none" style="font-variation-settings: 'FILL' 1;">star</span>
+<span>4.8 (2.4k)</span>
+</div>
+</div>
+<h1 class="text-white font-headline font-extrabold text-4xl md:text-6xl tracking-tight leading-tight">Annapurna Traditional</h1>
+<p class="text-white/80 font-body mt-2 text-lg">Authentic Maharashtrian Soul Food since 1994</p>
+</div>
+<button class="bg-primary-container text-on-primary-container px-8 py-4 rounded-full font-headline font-bold text-lg flex items-center gap-3 editorial-shadow active:scale-95 transition-transform">
+                    Subscribe Now
+                    <span class="material-symbols-outlined">arrow_forward</span>
+</button>
+</div>
+</div>
+</section>
+<!-- Bento Grid Info Section -->
+<section class="px-6 max-w-7xl mx-auto mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
+<div class="bg-surface-container-low p-8 rounded-[2rem] flex flex-col justify-between">
+<span class="material-symbols-outlined text-primary text-4xl" data-icon="schedule">schedule</span>
+<div>
+<h3 class="font-headline font-bold text-xl mt-6">Service Hours</h3>
+<p class="text-on-surface-variant font-body mt-2 leading-relaxed">Lunch: 12:30 PM - 3:30 PM<br/>Dinner: 7:30 PM - 10:30 PM</p>
+</div>
+</div>
+<div class="bg-secondary-container/30 p-8 rounded-[2rem] flex flex-col justify-between border border-secondary-container/50">
+<span class="material-symbols-outlined text-secondary text-4xl" data-icon="eco">eco</span>
+<div>
+<h3 class="font-headline font-bold text-xl mt-6">Sustainability</h3>
+<p class="text-on-surface-variant font-body mt-2 leading-relaxed">We use 100% biodegradable packaging and source organic grains directly from farmers.</p>
+</div>
+</div>
+<div class="bg-surface-container-low p-8 rounded-[2rem] flex flex-col justify-between">
+<span class="material-symbols-outlined text-primary text-4xl" data-icon="location_on">location_on</span>
+<div>
+<h3 class="font-headline font-bold text-xl mt-6">Kitchen Hub</h3>
+<p class="text-on-surface-variant font-body mt-2 leading-relaxed">Lane 5, Prabhat Road, Deccan Gymkhana, Pune - 411004</p>
+</div>
+</div>
+</section>
+<!-- Daily Menu Section -->
+<section class="px-6 max-w-7xl mx-auto mt-20">
+<div class="flex justify-between items-end mb-10">
+<div>
+<h2 class="font-headline font-extrabold text-3xl md:text-4xl tracking-tight">Daily Menu</h2>
+<p class="text-on-surface-variant font-body mt-2">Handcrafted thalis available for today's service</p>
+</div>
+<div class="flex gap-2">
+<button class="w-12 h-12 rounded-full border border-outline-variant flex items-center justify-center hover:bg-surface-container hover:text-primary transition-colors">
+<span class="material-symbols-outlined">chevron_left</span>
+</button>
+<button class="w-12 h-12 rounded-full border border-outline-variant flex items-center justify-center hover:bg-surface-container hover:text-primary transition-colors">
+<span class="material-symbols-outlined">chevron_right</span>
+</button>
+</div>
+</div>
+<div class="flex gap-8 overflow-x-auto hide-scrollbar pb-8">
+<!-- Thali Card 1 -->
+<div class="flex-none w-[320px] md:w-[400px]">
+<div class="group relative bg-surface-container-lowest rounded-[2.5rem] overflow-hidden editorial-shadow transition-all duration-300 hover:-translate-y-2">
+<div class="h-64 overflow-hidden relative">
+<img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" data-alt="Traditional Indian thali with dal, rice, roti and multiple side dishes" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA1nHu4CFHkrDCi9pJCF-k2wZgUE6i-QL1zh_1WJHvAEhbY98tNvJo9-QaMOdIVw3O1YQQKNMPf0wdNU1ABScRV6aX_-45ceRXQQIf-SmuEETWuxZoIOJP-kyhFVGJIk17_PX02KExZqlAJSzOHGXT5jByInUUXuGPsyn6TlxoBsa1sMoQlkQQIkSWdFF4m8LJO36JTx4rIqG0AM_aIEMXGNUdBRS6qLSiyPUhuEYu_0Kluc2CuPUfSpFrs92CPH0v9rCE7DrWkrhs"/>
+<div class="absolute top-4 right-4 bg-white/90 backdrop-blur px-3 py-1 rounded-full text-xs font-bold text-primary tracking-tighter">BEST SELLER</div>
+</div>
+<div class="p-8">
+<div class="flex justify-between items-start mb-4">
+<h3 class="font-headline font-bold text-2xl leading-tight">Royal Maratha Thali</h3>
+<span class="font-headline font-bold text-xl text-primary">₹180</span>
+</div>
+<div class="flex flex-wrap gap-2 mb-6">
+<span class="bg-secondary-container/40 text-on-secondary-container px-3 py-1 rounded-full text-[10px] font-bold uppercase font-label">26g Protein</span>
+<span class="bg-tertiary-fixed text-on-tertiary-container px-3 py-1 rounded-full text-[10px] font-bold uppercase font-label">Gluten Free Option</span>
+</div>
+<p class="text-on-surface-variant font-body text-sm leading-relaxed mb-6">Puran Poli, Katachi Amti, Bharli Vangi, Indrayani Rice, and Sajuk Tup.</p>
+<button class="w-full py-4 rounded-2xl bg-surface-container-high font-headline font-bold text-on-surface hover:bg-primary hover:text-white transition-all duration-300">Add to Meal</button>
+</div>
+</div>
+</div>
+<!-- Thali Card 2 -->
+<div class="flex-none w-[320px] md:w-[400px]">
+<div class="group relative bg-surface-container-lowest rounded-[2.5rem] overflow-hidden editorial-shadow transition-all duration-300 hover:-translate-y-2">
+<div class="h-64 overflow-hidden relative">
+<img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" data-alt="Balanced vegetarian meal with paneer curry and steamed rice" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDYjQXhAI10iEi5ivDKuvAlM-PVrvEydT9MWNGstwoQH-cbn9HdmvZAdWf9CX_qlaMY1AzHD6sOrAGi6WmfNZvIcscWhPctVKxesOmQ2gvWfcYOINAcFrtxVHIGIGh6qjpgs9P56FAyA4i_fvopUmMbEInly0IwpDvIE_UW6zQpQNArbp8YnsvylnGAvhPc5HsedIf9LfDWqDFDdbpG5TWHFbdKmrTMkFH6y40IUwZ60472oAP2doNgkD11MlxkoFFZF_pfBhBlYjs"/>
+</div>
+<div class="p-8">
+<div class="flex justify-between items-start mb-4">
+<h3 class="font-headline font-bold text-2xl leading-tight">Executive High-Fiber</h3>
+<span class="font-headline font-bold text-xl text-primary">₹150</span>
+</div>
+<div class="flex flex-wrap gap-2 mb-6">
+<span class="bg-secondary-container/40 text-on-secondary-container px-3 py-1 rounded-full text-[10px] font-bold uppercase font-label">12g Fiber</span>
+<span class="bg-secondary-container/40 text-on-secondary-container px-3 py-1 rounded-full text-[10px] font-bold uppercase font-label">Low Calorie</span>
+</div>
+<p class="text-on-surface-variant font-body text-sm leading-relaxed mb-6">Jowar Bhakri, Methi Chi Bhaji, Pithla, Sprouts Salad, and Buttermilk.</p>
+<button class="w-full py-4 rounded-2xl bg-surface-container-high font-headline font-bold text-on-surface hover:bg-primary hover:text-white transition-all duration-300">Add to Meal</button>
+</div>
+</div>
+</div>
+<!-- Thali Card 3 -->
+<div class="flex-none w-[320px] md:w-[400px]">
+<div class="group relative bg-surface-container-lowest rounded-[2.5rem] overflow-hidden editorial-shadow transition-all duration-300 hover:-translate-y-2">
+<div class="h-64 overflow-hidden relative">
+<img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" data-alt="Hearty village style meal with coarse grains and spicy curry" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCOibbUmYLKZ9s9u2sgvG3mFpDVsdHoT0CYLMorhLN2aOvP9ZytAktfaG05yCdxi74XQAM_WCxlRO8o_a_eO5gZIvMXzoCzedoBrnSLQhPvOuVPBmjS3kICUQK5mKPBfhoha9TwYtZnN4YmUMZNGKpT_wSTNAxake8I27d-Kq0BhWEKziGirO2tLUTevfv7RjTqFX-TpSEd1Vy9x3vAy3AEW9VSQBDzvikVCApSMVj5JFY9ecb5rrEYsf8EeP6qIYy4WoCza--rr_0"/>
+</div>
+<div class="p-8">
+<div class="flex justify-between items-start mb-4">
+<h3 class="font-headline font-bold text-2xl leading-tight">The Village Special</h3>
+<span class="font-headline font-bold text-xl text-primary">₹210</span>
+</div>
+<div class="flex flex-wrap gap-2 mb-6">
+<span class="bg-secondary-container/40 text-on-secondary-container px-3 py-1 rounded-full text-[10px] font-bold uppercase font-label">High Energy</span>
+</div>
+<p class="text-on-surface-variant font-body text-sm leading-relaxed mb-6">Special Batata Rassa, Masale Bhat, Solkadhi, and Papad variety.</p>
+<button class="w-full py-4 rounded-2xl bg-surface-container-high font-headline font-bold text-on-surface hover:bg-primary hover:text-white transition-all duration-300">Add to Meal</button>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Subscription Plans Section -->
+<section class="px-6 max-w-7xl mx-auto mt-20 mb-12">
+<h2 class="font-headline font-extrabold text-3xl md:text-4xl tracking-tight mb-2">Subscription Plans</h2>
+<p class="text-on-surface-variant font-body mb-10">Commit to wellness with our curated monthly memberships</p>
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+<!-- Standard Monthly Plan -->
+<div class="relative p-10 rounded-[3rem] bg-gradient-to-br from-primary to-primary-container text-white overflow-hidden group">
+<div class="absolute -right-20 -top-20 w-64 h-64 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all duration-700"></div>
+<div class="relative z-10">
+<div class="flex justify-between items-start mb-8">
+<div>
+<h3 class="font-headline font-extrabold text-3xl mb-1">Standard Monthly</h3>
+<p class="text-white/70 font-body">Exclusive to Annapurna Traditional</p>
+</div>
+<div class="text-right">
+<div class="text-4xl font-headline font-black">₹3,400</div>
+<div class="text-white/60 text-xs font-label">/month</div>
+</div>
+</div>
+<ul class="space-y-4 mb-10">
+<li class="flex items-center gap-3">
+<span class="material-symbols-outlined text-white/60">check_circle</span>
+<span class="font-body">26 Lunch or Dinner Thalis</span>
+</li>
+<li class="flex items-center gap-3">
+<span class="material-symbols-outlined text-white/60">check_circle</span>
+<span class="font-body">Priority delivery (Sub-30 mins)</span>
+</li>
+<li class="flex items-center gap-3">
+<span class="material-symbols-outlined text-white/60">check_circle</span>
+<span class="font-body">Complimentary Sunday Dessert</span>
+</li>
+<li class="flex items-center gap-3">
+<span class="material-symbols-outlined text-white/60">check_circle</span>
+<span class="font-body">Cancel or Pause anytime</span>
+</li>
+</ul>
+<button class="w-full py-5 rounded-2xl bg-white text-primary font-headline font-extrabold text-lg hover:shadow-xl active:scale-[0.98] transition-all">Start Subscription</button>
+</div>
+</div>
+<!-- Flexible Bundle -->
+<div class="p-10 rounded-[3rem] bg-surface-container-lowest border border-outline-variant/30 editorial-shadow flex flex-col">
+<div class="flex justify-between items-start mb-8">
+<div>
+<div class="flex items-center gap-2 mb-2">
+<h3 class="font-headline font-extrabold text-3xl">Flexible Bundle</h3>
+<span class="bg-tertiary-fixed text-on-tertiary-container px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest font-label">POPULAR</span>
+</div>
+<p class="text-on-surface-variant font-body">Mix &amp; match with other partner kitchens</p>
+</div>
+<div class="text-right">
+<div class="text-4xl font-headline font-black text-on-surface">₹4,200</div>
+<div class="text-on-surface-variant text-xs font-label">/month</div>
+</div>
+</div>
+<div class="bg-surface-container-low rounded-3xl p-6 mb-8 flex-grow">
+<div class="flex items-center justify-between mb-4">
+<span class="font-headline font-bold text-sm">Bundle Composition</span>
+<span class="text-xs text-primary font-bold">3/5 Spots Filled</span>
+</div>
+<div class="flex gap-3 mb-6">
+<div class="w-12 h-12 rounded-full border-2 border-white overflow-hidden shadow-sm">
+<img class="w-full h-full object-cover" data-alt="Thumbnail of Annapurna Traditional Logo" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDHxZaujprlNweyIkSmbwRSS5nujv1NczrG1Qg9QElPyTCxJR2HE4QIbwakZ4aHJ-iOnZuqe5_zXMKG5-4d-2gkC1E1FsRZ1ScTMtERcHtSFM3TAcaASQUxIon_XwuLwg53cdvDpnG-O08iHwaTm8ywpZPChWnxovLw8-fM4nRP0arKwWVPkdfXzI63h1ucu8kIhqVWGzhXQV7nOpYXCjgTkP5eX4L_0GQWGcTQqQwZd4Os_l65o8lQIyfdUfLvx021mjCk6_1ybEU"/>
+</div>
+<div class="w-12 h-12 rounded-full border-2 border-white bg-surface-container flex items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined text-sm">add</span>
+</div>
+</div>
+<p class="text-on-surface-variant font-body text-sm leading-relaxed italic">"The flexibility of trying 5 different mess kitchens in one billing cycle. Perfect for the culinary explorer."</p>
+</div>
+<button class="w-full py-5 rounded-2xl bg-on-surface text-white font-headline font-extrabold text-lg hover:bg-on-surface/90 active:scale-[0.98] transition-all">Add This Mess to Bundle</button>
+</div>
+</div>
+</section>
+</main>
+<!-- BottomNavBar: Consistent with COMPONENTS_41 -->
+<nav class="fixed bottom-0 left-0 w-full flex justify-around items-center px-8 pb-6 pt-3 bg-[#faf9f8]/80 dark:bg-stone-900/80 backdrop-blur-2xl z-50 rounded-t-[2rem] shadow-[0_-4px_40px_rgba(242,109,33,0.06)]">
+<a class="flex flex-col items-center justify-center text-stone-400 dark:text-stone-500 active:scale-98 transition-all duration-300 ease-out hover:text-orange-500 dark:hover:text-orange-300" href="#">
+<span class="material-symbols-outlined" data-icon="home_storage">home_storage</span>
+<span class="font-['Be_Vietnam_Pro'] text-[10px] font-medium uppercase tracking-widest mt-1">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-950/30 rounded-full px-4 py-1 active:scale-98 transition-all duration-300 ease-out" href="#">
+<span class="material-symbols-outlined" data-icon="restaurant">restaurant</span>
+<span class="font-['Be_Vietnam_Pro'] text-[10px] font-medium uppercase tracking-widest mt-1">Mess</span>
+</a>
+<a class="flex flex-col items-center justify-center text-stone-400 dark:text-stone-500 active:scale-98 transition-all duration-300 ease-out hover:text-orange-500 dark:hover:text-orange-300" href="#">
+<span class="material-symbols-outlined" data-icon="account_balance_wallet">account_balance_wallet</span>
+<span class="font-['Be_Vietnam_Pro'] text-[10px] font-medium uppercase tracking-widest mt-1">Wallet</span>
+</a>
+<a class="flex flex-col items-center justify-center text-stone-400 dark:text-stone-500 active:scale-98 transition-all duration-300 ease-out hover:text-orange-500 dark:hover:text-orange-300" href="#">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span class="font-['Be_Vietnam_Pro'] text-[10px] font-medium uppercase tracking-widest mt-1">Profile</span>
+</a>
+</nav>
+</body></html>

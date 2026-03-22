@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Transaction History - The Editorial Kitchen</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,700;0,800;1,800&amp;family=Be+Vietnam+Pro:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "primary": "#a14000",
+              "surface-container-highest": "#e3e2e1",
+              "on-tertiary": "#ffffff",
+              "on-surface-variant": "#584238",
+              "surface-variant": "#e3e2e1",
+              "on-tertiary-container": "#3f2a00",
+              "on-primary-fixed-variant": "#7b2f00",
+              "inverse-on-surface": "#f1f0f0",
+              "error-container": "#ffdad6",
+              "tertiary-container": "#c58a00",
+              "surface-container": "#eeeeed",
+              "outline-variant": "#e0c0b2",
+              "inverse-primary": "#ffb694",
+              "on-secondary-fixed": "#002204",
+              "error": "#ba1a1a",
+              "background": "#faf9f8",
+              "secondary-container": "#a0f399",
+              "on-tertiary-fixed-variant": "#604100",
+              "on-tertiary-fixed": "#281900",
+              "surface": "#faf9f8",
+              "surface-container-high": "#e9e8e7",
+              "outline": "#8c7166",
+              "surface-tint": "#a14000",
+              "primary-container": "#f26d21",
+              "secondary-fixed-dim": "#88d982",
+              "tertiary-fixed": "#ffdeac",
+              "secondary": "#1b6d24",
+              "on-surface": "#1a1c1c",
+              "on-secondary-fixed-variant": "#005312",
+              "primary-fixed": "#ffdbcc",
+              "secondary-fixed": "#a3f69c",
+              "on-primary-fixed": "#351000",
+              "primary-fixed-dim": "#ffb694",
+              "surface-bright": "#faf9f8",
+              "on-secondary-container": "#217128",
+              "on-error": "#ffffff",
+              "on-primary": "#ffffff",
+              "on-secondary": "#ffffff",
+              "inverse-surface": "#2f3130",
+              "tertiary": "#7e5700",
+              "surface-dim": "#dadad9",
+              "on-primary-container": "#521d00",
+              "surface-container-lowest": "#ffffff",
+              "surface-container-low": "#f4f3f2",
+              "on-error-container": "#93000a",
+              "on-background": "#1a1c1c",
+              "tertiary-fixed-dim": "#ffba38"
+            },
+            fontFamily: {
+              "headline": ["Plus Jakarta Sans"],
+              "body": ["Be Vietnam Pro"],
+              "label": ["Be Vietnam Pro"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            line-height: 1;
+            text-transform: none;
+            letter-spacing: normal;
+            word-wrap: normal;
+            white-space: nowrap;
+            direction: ltr;
+        }
+        body {
+            font-family: 'Be Vietnam Pro', sans-serif;
+            background-color: #faf9f8;
+            color: #1a1c1c;
+        }
+        h1, h2, h3 {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+    </style>
+</head>
+<body class="bg-surface text-on-surface min-h-screen pb-32">
+<!-- TopAppBar from {{DATA:COMPONENTS:COMPONENTS_52}} -->
+<header class="fixed top-0 z-50 w-full bg-[#faf9f8] dark:bg-gray-950">
+<div class="flex items-center justify-between px-6 h-16 w-full max-w-7xl mx-auto">
+<button class="flex items-center justify-center p-2 text-[#F26D21] dark:text-orange-500 active:scale-95 duration-200 ease-in-out">
+<span class="material-symbols-outlined text-2xl" data-icon="arrow_back">arrow_back</span>
+</button>
+<h1 class="font-['Plus_Jakarta_Sans'] font-bold text-2xl tracking-tight text-on-surface">History</h1>
+<div class="flex items-center gap-2">
+<button class="flex items-center justify-center rounded-full overflow-hidden w-10 h-10 border-2 border-[#F26D21] active:scale-95 duration-200 ease-in-out">
+<img alt="Profile" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuADpGmsOJSkvOg0njadmqpc8f0gDt-M26yYRzuTyIZkuf7_jOWuSU20JBHHyD-AcWHXA5d1QWMfP2ZSrmIckysVd-4cLc7GC3RwZYaWOP1xPs3u96AcExI04aeBhdLgT7GtC8XcSdfay9AhDfnII1kq-8YioXULpCSQAkOmWiBDZQgHZNa_3NkJTHxPNXx-HOakd3esFWrKNVb73I9lUo_Xz7owzBDw26el0h1eeRTeDH23JXo2juUkdZ9qfmkYkaFFsPz0wNjFzyU"/>
+</button>
+</div>
+</div>
+<div class="bg-[#f4f3f2] dark:bg-gray-900 h-px w-full"></div>
+</header>
+<main class="pt-24 px-6 max-w-2xl mx-auto">
+<!-- Summary Card preserved from SCREEN_51 -->
+<section class="mb-10 relative overflow-hidden bg-primary-container text-on-primary rounded-[2.5rem] p-8 shadow-[0_20px_40px_rgba(161,64,0,0.15)]">
+<div class="relative z-10">
+<p class="font-label text-sm uppercase tracking-widest opacity-80 mb-1">Total Balance</p>
+<h2 class="font-headline text-4xl font-extrabold mb-6">$1,240.50</h2>
+<div class="flex gap-4">
+<button class="flex items-center gap-2 bg-surface-container-lowest text-primary px-5 py-2.5 rounded-full font-label text-sm font-bold active:scale-95 transition-all">
+<span class="material-symbols-outlined text-sm" data-icon="add_circle">add_circle</span>
+                        Top-up
+                    </button>
+<button class="flex items-center gap-2 bg-white/20 backdrop-blur-md text-white px-5 py-2.5 rounded-full font-label text-sm font-bold active:scale-95 transition-all">
+<span class="material-symbols-outlined text-sm" data-icon="download">download</span>
+                        Report
+                    </button>
+</div>
+</div>
+<!-- Decorative abstraction -->
+<div class="absolute -right-10 -bottom-10 w-48 h-48 bg-white/10 rounded-full blur-3xl"></div>
+<div class="absolute right-10 top-5 w-24 h-24 border-4 border-white/5 rounded-full"></div>
+</section>
+<!-- Filters Section -->
+<section class="mb-8">
+<div class="flex items-center justify-between mb-4">
+<h3 class="font-headline text-xl font-bold">Activities</h3>
+<button class="flex items-center gap-1 text-primary font-bold text-sm">
+<span class="material-symbols-outlined text-lg" data-icon="filter_list">filter_list</span>
+                    Filter
+                </button>
+</div>
+<div class="flex gap-3 overflow-x-auto pb-2 no-scrollbar">
+<button class="whitespace-nowrap px-6 py-2 rounded-full bg-primary-container text-on-primary font-label text-sm font-medium">All Time</button>
+<button class="whitespace-nowrap px-6 py-2 rounded-full bg-surface-container-low text-on-surface-variant font-label text-sm font-medium border border-transparent hover:border-outline-variant transition-all">Credit</button>
+<button class="whitespace-nowrap px-6 py-2 rounded-full bg-surface-container-low text-on-surface-variant font-label text-sm font-medium border border-transparent hover:border-outline-variant transition-all">Debit</button>
+<button class="whitespace-nowrap px-6 py-2 rounded-full bg-surface-container-low text-on-surface-variant font-label text-sm font-medium border border-transparent hover:border-outline-variant transition-all">Subscriptions</button>
+</div>
+</section>
+<!-- Transaction List preserved from SCREEN_51 -->
+<section class="space-y-4">
+<!-- Date Header -->
+<div class="flex items-center gap-4 py-2">
+<span class="font-label text-xs font-bold uppercase tracking-widest text-outline">Today, Oct 24</span>
+<div class="flex-1 h-px bg-surface-container"></div>
+</div>
+<!-- Transaction Item 1 -->
+<div class="group flex items-center gap-4 p-4 rounded-3xl bg-surface-container-lowest hover:bg-surface-container-low transition-colors duration-300">
+<div class="w-14 h-14 rounded-2xl bg-secondary-container/30 flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined" data-icon="restaurant" style="font-variation-settings: 'FILL' 1;">restaurant</span>
+</div>
+<div class="flex-1">
+<h4 class="font-headline font-bold text-on-surface">Artisan Sourdough Meal</h4>
+<p class="font-body text-sm text-on-surface-variant">Order #9821 • 12:45 PM</p>
+</div>
+<div class="text-right">
+<p class="font-headline font-bold text-error">-$24.00</p>
+<div class="flex items-center justify-end gap-1 mt-1">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+<span class="font-label text-[10px] font-bold text-secondary uppercase tracking-tighter">Success</span>
+</div>
+</div>
+</div>
+<!-- Transaction Item 2 -->
+<div class="group flex items-center gap-4 p-4 rounded-3xl bg-surface-container-lowest hover:bg-surface-container-low transition-colors duration-300">
+<div class="w-14 h-14 rounded-2xl bg-primary-fixed/30 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined" data-icon="account_balance_wallet" style="font-variation-settings: 'FILL' 1;">account_balance_wallet</span>
+</div>
+<div class="flex-1">
+<h4 class="font-headline font-bold text-on-surface">Wallet Top-up</h4>
+<p class="font-body text-sm text-on-surface-variant">Via Apple Pay • 09:15 AM</p>
+</div>
+<div class="text-right">
+<p class="font-headline font-bold text-secondary">+$150.00</p>
+<div class="flex items-center justify-end gap-1 mt-1">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+<span class="font-label text-[10px] font-bold text-secondary uppercase tracking-tighter">Success</span>
+</div>
+</div>
+</div>
+<!-- Date Header -->
+<div class="flex items-center gap-4 py-2 mt-6">
+<span class="font-label text-xs font-bold uppercase tracking-widest text-outline">Yesterday, Oct 23</span>
+<div class="flex-1 h-px bg-surface-container"></div>
+</div>
+<!-- Transaction Item 3 -->
+<div class="group flex items-center gap-4 p-4 rounded-3xl bg-surface-container-lowest hover:bg-surface-container-low transition-colors duration-300">
+<div class="w-14 h-14 rounded-2xl bg-tertiary-fixed/30 flex items-center justify-center text-tertiary">
+<span class="material-symbols-outlined" data-icon="calendar_month" style="font-variation-settings: 'FILL' 1;">calendar_month</span>
+</div>
+<div class="flex-1">
+<h4 class="font-headline font-bold text-on-surface">Monthly Subscription</h4>
+<p class="font-body text-sm text-on-surface-variant">Editorial Kitchen Pass • 11:30 PM</p>
+</div>
+<div class="text-right">
+<p class="font-headline font-bold text-error">-$89.99</p>
+<div class="flex items-center justify-end gap-1 mt-1">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+<span class="font-label text-[10px] font-bold text-secondary uppercase tracking-tighter">Success</span>
+</div>
+</div>
+</div>
+<!-- Transaction Item 4 (Pending) -->
+<div class="group flex items-center gap-4 p-4 rounded-3xl bg-surface-container-lowest hover:bg-surface-container-low transition-colors duration-300 opacity-80">
+<div class="w-14 h-14 rounded-2xl bg-surface-container flex items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined" data-icon="receipt_long">receipt_long</span>
+</div>
+<div class="flex-1">
+<h4 class="font-headline font-bold text-on-surface">Dinner: Chef's Special</h4>
+<p class="font-body text-sm text-on-surface-variant">Order #9744 • 07:45 PM</p>
+</div>
+<div class="text-right">
+<p class="font-headline font-bold text-on-surface-variant">-$42.50</p>
+<div class="flex items-center justify-end gap-1 mt-1">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+<span class="font-label text-[10px] font-bold text-tertiary uppercase tracking-tighter">Pending</span>
+</div>
+</div>
+</div>
+<!-- Transaction Item 5 -->
+<div class="group flex items-center gap-4 p-4 rounded-3xl bg-surface-container-lowest hover:bg-surface-container-low transition-colors duration-300">
+<div class="w-14 h-14 rounded-2xl bg-secondary-container/30 flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined" data-icon="restaurant" style="font-variation-settings: 'FILL' 1;">restaurant</span>
+</div>
+<div class="flex-1">
+<h4 class="font-headline font-bold text-on-surface">Truffle Risotto</h4>
+<p class="font-body text-sm text-on-surface-variant">Order #9712 • 12:20 PM</p>
+</div>
+<div class="text-right">
+<p class="font-headline font-bold text-error">-$38.00</p>
+<div class="flex items-center justify-end gap-1 mt-1">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+<span class="font-label text-[10px] font-bold text-secondary uppercase tracking-tighter">Success</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Load More Section -->
+<div class="py-12 flex flex-col items-center">
+<button class="px-8 py-3 rounded-full border-2 border-surface-container text-on-surface-variant font-bold text-sm hover:bg-surface-container transition-all">
+                Load older transactions
+            </button>
+</div>
+</main>
+<!-- BottomNavBar from {{DATA:COMPONENTS:COMPONENTS_52}} -->
+<nav class="fixed bottom-0 left-0 w-full z-50 rounded-t-[2rem] bg-[#faf9f8]/70 dark:bg-gray-950/70 backdrop-blur-xl shadow-[0_-4px_40px_rgba(0,0,0,0.06)] border-t border-gray-100/10">
+<div class="flex justify-around items-center px-4 pb-6 pt-3">
+<a class="flex flex-col items-center justify-center text-gray-500 dark:text-gray-400 px-5 py-2 hover:text-[#F26D21] dark:hover:text-orange-300 transition-all active:scale-95 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+<span class="font-['Be_Vietnam_Pro'] text-[11px] font-medium tracking-wide mt-1">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-gray-500 dark:text-gray-400 px-5 py-2 hover:text-[#F26D21] dark:hover:text-orange-300 transition-all active:scale-95 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="restaurant">restaurant</span>
+<span class="font-['Be_Vietnam_Pro'] text-[11px] font-medium tracking-wide mt-1">Mess</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#F26D21] dark:text-orange-400 bg-orange-50 dark:bg-orange-950/30 rounded-2xl px-5 py-2 active:scale-95 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="account_balance_wallet" style="font-variation-settings: 'FILL' 1;">account_balance_wallet</span>
+<span class="font-['Be_Vietnam_Pro'] text-[11px] font-medium tracking-wide mt-1">Wallet</span>
+</a>
+<a class="flex flex-col items-center justify-center text-gray-500 dark:text-gray-400 px-5 py-2 hover:text-[#F26D21] dark:hover:text-orange-300 transition-all active:scale-95 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span class="font-['Be_Vietnam_Pro'] text-[11px] font-medium tracking-wide mt-1">Profile</span>
+</a>
+</div>
+</nav>
+</body></html>

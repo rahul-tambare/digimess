@@ -1,0 +1,45 @@
+# Technical Implementation Guide: Digi Mess React Native
+
+This document outlines the architecture and implementation steps to translate the **Digi Mess** design into a cross-platform React Native application.
+
+## 1. Project Setup
+- **Framework:** React Native (Expo recommended for rapid development).
+- **Navigation:** [React Navigation](https://reactnavigation.org/) (Stack & Bottom Tabs).
+- **Styling:** [NativeWind](https://www.nativewind.dev/) (to maintain Tailwind CSS consistency from our HTML designs).
+- **Icons:** [Lucide React Native](https://lucide.dev/guide/packages/lucide-react-native) or [Material Community Icons](https://github.com/oblador/react-native-vector-icons).
+
+## 2. Design Tokens (Theme)
+Map the 'Harvest Crisp' design system properties to a theme object:
+- **Primary Color:** `#F26D21` (Brand Orange).
+- **Background:** `#FAF9F8` (Off-white editorial feel).
+- **Typography:** Plus Jakarta Sans (Headlines), Be Vietnam Pro (Body).
+- **Border Radius:** 8px (Round Eight setting).
+
+## 3. Component Architecture
+Create reusable shared components based on the unified elements we've built:
+- **`Header`**: Standardized brand header with "Digi Mess" logo and profile/notification triggers.
+- **`BottomTabs`**: The 4-tab navigation (Home, Mess, Wallet, Profile).
+- **`MessCard`**: For the 'Explore Messes' and 'Home' screens.
+- **`ThaliItem`**: For menu selection and cart views.
+- **`SubscriptionCard`**: To display plan details and privileges.
+
+## 4. Navigation Structure
+### Bottom Tab Navigator
+1. **HomeStack**: Home Dashboard, Featured Details.
+2. **MessStack**: Explore Messes, Mess Profile, Daily Menu.
+3. **WalletStack**: Wallet Balance, Top-up Pop-up, Transaction History.
+4. **ProfileStack**: User Settings, My Subscriptions, Saved Addresses.
+
+### Auth Stack (Initial Flow)
+- Login (Mobile Number Entry)
+- OTP Verification
+
+## 5. Screen Implementation Guide
+For each screen we've designed (e.g., {{DATA:SCREEN:SCREEN_16}}, {{DATA:SCREEN:SCREEN_56}}, {{DATA:SCREEN:SCREEN_5}}, {{DATA:SCREEN:SCREEN_37}}):
+1. **View Code:** Use the **</> View Code** button on the canvas for each screen to see the HTML/Tailwind structure.
+2. **Translate to JSX:** Replace HTML tags with React Native components (`<div>` -> `<View>`, `<span>/<h1>` -> `<Text>`, `<img>` -> `<Image>`).
+3. **Styling:** Use NativeWind classes that match the Tailwind classes in the design.
+
+## 6. Key Features to Build
+- **State Management:** Use Context API or Zustand to manage the user's wallet balance, selected items in the basket, and auth state.
+- **API Integration:** Connect your screens to a backend (Node.js/Firebase) for real-time menu updates and order processing.

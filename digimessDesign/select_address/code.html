@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Be+Vietnam+Pro:wght@300;400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "on-secondary-fixed-variant": "#005312",
+              "on-surface": "#1a1c1c",
+              "secondary": "#1b6d24",
+              "surface-bright": "#faf9f8",
+              "secondary-fixed": "#a3f69c",
+              "on-primary-fixed": "#351000",
+              "primary-fixed": "#ffdbcc",
+              "primary-fixed-dim": "#ffb694",
+              "on-primary": "#ffffff",
+              "inverse-surface": "#2f3130",
+              "on-secondary": "#ffffff",
+              "on-secondary-container": "#217128",
+              "on-error": "#ffffff",
+              "on-background": "#1a1c1c",
+              "tertiary-fixed-dim": "#ffba38",
+              "surface-dim": "#dadad9",
+              "on-primary-container": "#521d00",
+              "tertiary": "#7e5700",
+              "surface-container-lowest": "#ffffff",
+              "surface-container-low": "#f4f3f2",
+              "on-error-container": "#93000a",
+              "error-container": "#ffdad6",
+              "outline-variant": "#e0c0b2",
+              "inverse-primary": "#ffb694",
+              "tertiary-container": "#c58a00",
+              "surface-container": "#eeeeed",
+              "surface-container-highest": "#e3e2e1",
+              "on-tertiary": "#ffffff",
+              "on-surface-variant": "#584238",
+              "primary": "#a14000",
+              "on-primary-fixed-variant": "#7b2f00",
+              "inverse-on-surface": "#f1f0f0",
+              "surface-variant": "#e3e2e1",
+              "on-tertiary-container": "#3f2a00",
+              "background": "#faf9f8",
+              "error": "#ba1a1a",
+              "on-secondary-fixed": "#002204",
+              "surface-container-high": "#e9e8e7",
+              "surface-tint": "#a14000",
+              "outline": "#8c7166",
+              "secondary-container": "#a0f399",
+              "surface": "#faf9f8",
+              "on-tertiary-fixed-variant": "#604100",
+              "on-tertiary-fixed": "#281900",
+              "tertiary-fixed": "#ffdeac",
+              "primary-container": "#f26d21",
+              "secondary-fixed-dim": "#88d982"
+            },
+            fontFamily: {
+              "headline": ["Plus Jakarta Sans"],
+              "body": ["Be Vietnam Pro"],
+              "label": ["Be Vietnam Pro"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+      .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      }
+      .glass-panel {
+        background: rgba(250, 249, 248, 0.7);
+        backdrop-filter: blur(24px);
+      }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface font-body text-on-surface min-h-screen">
+<!-- Header (Shared Component: TopAppBar) -->
+<header class="bg-[#faf9f8] dark:bg-gray-950 flex justify-between items-center px-6 py-4 w-full max-w-7xl mx-auto docked full-width top-0 z-50">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-[#F26D21]" data-icon="restaurant_menu">restaurant_menu</span>
+<h1 class="text-2xl font-bold text-[#F26D21] tracking-tight font-headline">Digi Mess</h1>
+</div>
+<div class="w-10 h-10 rounded-full bg-surface-container-highest overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="User profile avatar photo" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDFVlyah26fzMJqikLUFwSXTYnqOddwDS6tP4QoNpad8k5VLKJhXlpeX75d9yEKC_ZT93OM2-3nez90rWJ8r7ChQQAGRQ9Nc_EZdat9uS5QqYLEwln8Rc7eyrSngypF3r8QLOjS20TUx8FOSnVXLw1LCAMYL04zVOCihxqIZ5MV2wJUBxdSZzV80mIBHfj1BweXnDgBOsPjKQO5cZR899riRxEb38Gf-4muaicn2eJkG5mViFLrKEGe7yxzQ6xnFl9goBI31WeWw68"/>
+</div>
+</header>
+<!-- Main Content Canvas (Checkout Mockup Background) -->
+<main class="max-w-md mx-auto px-6 pt-8 pb-32">
+<section class="mb-10">
+<h2 class="text-3xl font-headline font-extrabold mb-2 text-on-surface">Checkout</h2>
+<p class="text-on-surface-variant text-sm">Review your order and delivery details.</p>
+</section>
+<!-- Mock Order Summary Card -->
+<div class="bg-surface-container-low rounded-xl p-6 mb-6">
+<div class="flex justify-between items-start mb-4">
+<div>
+<h3 class="font-headline font-bold text-lg">Lunch Thali</h3>
+<p class="text-sm text-on-surface-variant">Standard Mess Plan</p>
+</div>
+<span class="font-bold text-primary">₹120.00</span>
+</div>
+<div class="flex gap-2 mb-6">
+<span class="bg-secondary-container text-on-secondary-container px-3 py-1 rounded-full text-xs font-medium">Healthy</span>
+<span class="bg-secondary-container text-on-secondary-container px-3 py-1 rounded-full text-xs font-medium">High Protein</span>
+</div>
+<div class="border-t border-outline-variant/15 pt-4 flex justify-between font-bold">
+<span>Total</span>
+<span>₹120.00</span>
+</div>
+</div>
+<div class="space-y-4">
+<div class="p-5 bg-surface-container-low rounded-xl flex items-center justify-between">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-primary" data-icon="location_on">location_on</span>
+<div>
+<p class="text-xs uppercase tracking-wider font-bold text-on-surface-variant">Deliver to</p>
+<p class="font-medium">Please select an address</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline" data-icon="chevron_right">chevron_right</span>
+</div>
+</div>
+</main>
+<!-- Bottom Sheet Overlay (Dim Background) -->
+<div class="fixed inset-0 bg-on-surface/40 z-[60] backdrop-blur-sm"></div>
+<!-- Delivery Address Bottom Sheet -->
+<div class="fixed bottom-0 left-0 right-0 z-[70] bg-surface rounded-t-[2.5rem] shadow-[0_-10px_40px_rgba(0,0,0,0.12)] max-w-2xl mx-auto overflow-hidden">
+<!-- Handlebar -->
+<div class="w-12 h-1.5 bg-surface-container-highest rounded-full mx-auto mt-4 mb-6"></div>
+<div class="px-8 pb-10">
+<header class="mb-8">
+<h3 class="text-2xl font-headline font-extrabold text-on-surface leading-tight">Select Delivery Address</h3>
+<p class="text-on-surface-variant text-sm mt-1">Choose where you'd like your meal delivered today.</p>
+</header>
+<!-- Saved Addresses List -->
+<div class="space-y-3 mb-8">
+<!-- Address Option: Home (Active) -->
+<label class="relative group cursor-pointer block">
+<input checked="" class="peer sr-only" name="address" type="radio"/>
+<div class="p-5 rounded-2xl bg-surface-container-low border-2 border-transparent peer-checked:border-primary-container peer-checked:bg-surface-container-lowest transition-all duration-200">
+<div class="flex items-start justify-between">
+<div class="flex gap-4">
+<div class="w-10 h-10 rounded-full bg-primary-fixed flex items-center justify-center">
+<span class="material-symbols-outlined text-on-primary-fixed text-xl" data-icon="home">home</span>
+</div>
+<div>
+<h4 class="font-headline font-bold text-on-surface">Home</h4>
+<p class="text-sm text-on-surface-variant mt-1 leading-relaxed">24th Avenue, Sterling Apartments, Block B, Floor 4, Bangalore 560001</p>
+</div>
+</div>
+<div class="w-6 h-6 rounded-full border-2 border-outline-variant flex items-center justify-center peer-checked:bg-primary-container peer-checked:border-primary-container">
+<div class="w-2.5 h-2.5 rounded-full bg-white opacity-0 peer-checked:opacity-100 transition-opacity"></div>
+</div>
+</div>
+</div>
+<!-- Custom radio state mimic since peer doesn't target children easily in some tailwind configs without specific setup -->
+<style>
+                        input[name="address"]:checked + div .w-6 { background-color: #f26d21; border-color: #f26d21; }
+                        input[name="address"]:checked + div .w-2.5 { opacity: 1; }
+                    </style>
+</label>
+<!-- Address Option: Work -->
+<label class="relative group cursor-pointer block">
+<input class="peer sr-only" name="address" type="radio"/>
+<div class="p-5 rounded-2xl bg-surface-container-low border-2 border-transparent peer-checked:border-primary-container peer-checked:bg-surface-container-lowest transition-all duration-200">
+<div class="flex items-start justify-between">
+<div class="flex gap-4">
+<div class="w-10 h-10 rounded-full bg-surface-container-highest flex items-center justify-center">
+<span class="material-symbols-outlined text-on-surface-variant text-xl" data-icon="work">work</span>
+</div>
+<div>
+<h4 class="font-headline font-bold text-on-surface">Work</h4>
+<p class="text-sm text-on-surface-variant mt-1 leading-relaxed">Tech Park One, Tower C, 8th Floor, Whitefield, Bangalore 560066</p>
+</div>
+</div>
+<div class="w-6 h-6 rounded-full border-2 border-outline-variant flex items-center justify-center">
+<div class="w-2.5 h-2.5 rounded-full bg-white opacity-0 transition-opacity"></div>
+</div>
+</div>
+</div>
+</label>
+<!-- Add New Address Trigger -->
+<button class="w-full p-5 rounded-2xl border-2 border-dashed border-outline-variant hover:border-primary transition-colors flex items-center justify-center gap-3 group">
+<span class="material-symbols-outlined text-primary group-hover:scale-110 transition-transform" data-icon="add_circle">add_circle</span>
+<span class="font-headline font-bold text-primary">Add New Address</span>
+</button>
+</div>
+<!-- Action Button -->
+<button class="w-full py-5 px-8 rounded-full bg-gradient-to-r from-primary to-primary-container text-on-primary font-headline font-extrabold text-lg shadow-lg active:scale-95 transition-all duration-200 uppercase tracking-wide">
+                Deliver to this Address
+            </button>
+</div>
+</div>
+<!-- Navigation Shell (Shared Component: BottomNavBar) -->
+<!-- Suppressed on this focused task screen per rule: "Task-Focused: Any sub-page featuring a 'Close' or 'Back' action" -->
+</body></html>
