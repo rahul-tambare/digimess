@@ -8,26 +8,57 @@ exports.placeOrder = async (req, res) => {
     
     await connection.beginTransaction();
 
-    // 1. Check Wallet Balance
-    const [userRows] = await connection.query('SELECT walletBalance FROM Users WHERE id = ? FOR UPDATE', [req.user.id]);
-    const balance = parseFloat(userRows[0].walletBalance);
-    const amount = parseFloat(totalAmount);
-
-    if (balance < amount) {
-      await connection.rollback();
-      return res.status(400).json({ error: 'Insufficient wallet balance', shortfall: amount - balance });
-    }
-
-    // 2. Deduct Wallet
-    await connection.query('UPDATE Users SET walletBalance = walletBalance - ? WHERE id = ?', [amount, req.user.id]);
-
-    // 3. Log Wallet Transaction
-    const txId = require('crypto').randomUUID();
-    const description = `Order placed${messId ? ' at mess' : ''}`;
-    await connection.query(
-      'INSERT INTO WalletTransactions (id, userId, amount, type, description) VALUES (?, ?, ?, ?, ?)',
-      [txId, req.user.id, amount, 'debit', description]
+    // 1. Check for Active Subscription first
+    // We prioritize specific-mess subscriptions (messId matches) over bundles/universal ones
+    const [subRows] = await connection.query(
+      `SELECT id, mealsRemaining FROM Subscriptions 
+       WHERE customerId = ? 
+         AND isActive = 1 
+         AND mealsRemaining > 0 
+         AND (
+           messId = ? 
+           OR (messId IS NULL AND JSON_CONTAINS(allowedMesses, JSON_QUOTE(?)))
+           OR (messId IS NULL AND allowedMesses IS NULL)
+         )
+       ORDER BY messId DESC FOR UPDATE`,
+      [req.user.id, messId, messId]
     );
+
+    let isSubscriptionOrder = false;
+    let amount = parseFloat(totalAmount);
+
+    if (subRows.length > 0) {
+      // Use subscription meal
+      isSubscriptionOrder = true;
+      amount = 0; // No cost for this order
+      const subId = subRows[0].id;
+      
+      // Deduct 1 meal
+      await connection.query(
+        'UPDATE Subscriptions SET mealsRemaining = mealsRemaining - 1 WHERE id = ?',
+        [subId]
+      );
+    } else {
+      // 2. Fallback: Check Wallet Balance
+      const [userRows] = await connection.query('SELECT walletBalance FROM Users WHERE id = ? FOR UPDATE', [req.user.id]);
+      const balance = parseFloat(userRows[0].walletBalance);
+
+      if (balance < amount) {
+        await connection.rollback();
+        return res.status(400).json({ error: 'Insufficient wallet balance or no active subscription', shortfall: amount - balance });
+      }
+
+      // 3. Deduct Wallet
+      await connection.query('UPDATE Users SET walletBalance = walletBalance - ? WHERE id = ?', [amount, req.user.id]);
+
+      // 4. Log Wallet Transaction
+      const txId = require('crypto').randomUUID();
+      const description = `Order placed${messId ? ' at mess' : ''}`;
+      await connection.query(
+        'INSERT INTO WalletTransactions (id, userId, amount, type, description) VALUES (?, ?, ?, ?, ?)',
+        [txId, req.user.id, amount, 'debit', description]
+      );
+    }
 
     // Ensure valid messId for the order
     let finalMessId = messId;
@@ -38,15 +69,19 @@ exports.placeOrder = async (req, res) => {
       }
     }
 
-    // 4. Create Order
+    // 5. Create Order
     const orderId = require('crypto').randomUUID();
     await connection.query(
       'INSERT INTO Orders (id, customerId, messId, totalAmount, orderType, items) VALUES (?, ?, ?, ?, ?, ?)',
-      [orderId, req.user.id, finalMessId, amount, orderType || 'on_demand', JSON.stringify(items || [])]
+      [orderId, req.user.id, finalMessId, amount, isSubscriptionOrder ? 'subscription' : (orderType || 'on_demand'), JSON.stringify(items || [])]
     );
 
     await connection.commit();
-    res.status(201).json({ message: 'Order placed successfully', orderId });
+    res.status(201).json({ 
+      message: isSubscriptionOrder ? 'Order placed using subscription' : 'Order placed successfully', 
+      orderId,
+      usedSubscription: isSubscriptionOrder
+    });
   } catch (e) {
     await connection.rollback();
     console.error(e);

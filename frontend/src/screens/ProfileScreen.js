@@ -46,7 +46,7 @@ export default function ProfileScreen({ navigation }) {
   }, [navigation]);
 
   const handleSignOut = async () => {
-    await AsyncStorage.removeItem('token');
+    await SecureStore.deleteItemAsync('token');
     navigation.replace('Login');
   };
 

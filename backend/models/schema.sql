@@ -106,3 +106,40 @@ CREATE TABLE IF NOT EXISTS AppConfig (
     configValue TEXT,
     updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
+
+-- User delivery addresses (synced to backend)
+CREATE TABLE IF NOT EXISTS Addresses (
+    id VARCHAR(36) PRIMARY KEY,
+    customerId VARCHAR(36) NOT NULL,
+    label ENUM('Home', 'Work', 'Other') DEFAULT 'Home',
+    addressLine VARCHAR(255) NOT NULL,
+    area VARCHAR(255),
+    city VARCHAR(100) NOT NULL,
+    pincode VARCHAR(10) NOT NULL,
+    isDefault BOOLEAN DEFAULT FALSE,
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (customerId) REFERENCES Users(id) ON DELETE CASCADE
+);
+
+-- Mess reviews and ratings
+CREATE TABLE IF NOT EXISTS Reviews (
+    id VARCHAR(36) PRIMARY KEY,
+    orderId VARCHAR(36),
+    customerId VARCHAR(36) NOT NULL,
+    messId VARCHAR(36) NOT NULL,
+    rating DECIMAL(2,1) NOT NULL,
+    reviewText TEXT,
+    foodQuality DECIMAL(2,1),
+    deliveryTime DECIMAL(2,1),
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (customerId) REFERENCES Users(id) ON DELETE CASCADE,
+    FOREIGN KEY (messId) REFERENCES Messes(id) ON DELETE CASCADE,
+    FOREIGN KEY (orderId) REFERENCES Orders(id) ON DELETE SET NULL
+);
+
+-- Enhance Menus table with dietary info (run once)
+ALTER TABLE Menus
+    ADD COLUMN IF NOT EXISTS isVeg BOOLEAN DEFAULT TRUE,
+    ADD COLUMN IF NOT EXISTS calories INT DEFAULT NULL,
+    ADD COLUMN IF NOT EXISTS category VARCHAR(100) DEFAULT NULL;
+

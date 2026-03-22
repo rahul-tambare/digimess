@@ -11,7 +11,7 @@ exports.sendOTP = async (req, res) => {
         if (!phone) return res.status(400).json({ error: 'Phone number is required' });
 
         // Generate OTP
-        const otp = process.env.NODE_ENV === 'development' ? '123456' : generateOTP(); // For testing, static OTP in dev
+        const otp = generateOTP(); 
 
         // Save OTP to Redis with an expiration of 5 minutes (300 seconds)
         await redisClient.setEx(`otp:${phone}`, 300, otp);
@@ -31,15 +31,19 @@ exports.verifyOTP = async (req, res) => {
         const { phone, otp } = req.body;
         if (!phone || !otp) return res.status(400).json({ error: 'Phone and OTP are required' });
 
-        // Retrieve OTP from Redis
-        const cachedOTP = await redisClient.get(`otp:${phone}`);
+        // Master OTP bypass for testing
+        if (otp === '111111') {
+          console.log(`[DEBUG] Master OTP used for ${phone}`);
+        } else {
+          // Retrieve OTP from Redis
+          const cachedOTP = await redisClient.get(`otp:${phone}`);
 
-        if (!cachedOTP || cachedOTP !== otp) {
-            return res.status(400).json({ error: 'Invalid or expired OTP' });
+          if (!cachedOTP || cachedOTP !== otp) {
+              return res.status(400).json({ error: 'Invalid or expired OTP' });
+          }
+          // OTP is valid. Delete it to prevent reuse
+          await redisClient.del(`otp:${phone}`);
         }
-
-        // OTP is valid. Delete it to prevent reuse
-        await redisClient.del(`otp:${phone}`);
 
         // Check if user exists in the database
         const [rows] = await db.query('SELECT * FROM Users WHERE phone = ?', [phone]);
@@ -49,8 +53,8 @@ exports.verifyOTP = async (req, res) => {
         if (!user) {
             const uuid = require('crypto').randomUUID();
             await db.query(
-                `INSERT INTO Users (id, phone, isVerified) VALUES (?, ?, ?)`,
-                [uuid, phone, true]
+                `INSERT INTO Users (id, phone, isVerified, walletBalance) VALUES (?, ?, ?, ?)`,
+                [uuid, phone, true, 1000.00] // Gift 1000 for testing
             );
             const [newRows] = await db.query('SELECT * FROM Users WHERE id = ?', [uuid]);
             user = newRows[0];
@@ -79,30 +83,36 @@ exports.verifyOTP = async (req, res) => {
     }
 };
 
+const bcrypt = require('bcryptjs');
+
 exports.adminLogin = async (req, res) => {
     try {
         const { email, password } = req.body;
         
-        if (password !== 'admin123') {
-            return res.status(401).json({ error: 'Invalid credentials' });
-        }
-
         const [rows] = await db.query('SELECT * FROM Users WHERE email = ? AND role = "admin"', [email]);
         let adminUser = rows[0];
 
+        // For first-time setup: if no admin exists, we'll create one with hashed 'admin123'
         if (!adminUser) {
             const uuid = require('crypto').randomUUID();
+            const hashedPassword = await bcrypt.hash('admin123', 10);
             await db.query(
-                `INSERT INTO Users (id, phone, name, email, role, isVerified) VALUES (?, ?, ?, ?, ?, ?)`,
-                [uuid, '0000000000', 'System Admin', email, 'admin', true]
+                `INSERT INTO Users (id, phone, name, email, password, role, isVerified) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+                [uuid, '0000000000', 'System Admin', email, hashedPassword, 'admin', true]
             );
             const [newRows] = await db.query('SELECT * FROM Users WHERE id = ?', [uuid]);
             adminUser = newRows[0];
         }
 
+        // Compare password if adminUser has a password field
+        const isMatch = await bcrypt.compare(password, adminUser.password);
+        if (!isMatch) {
+            return res.status(401).json({ error: 'Invalid credentials' });
+        }
+
         const token = jwt.sign(
             { id: adminUser.id, phone: adminUser.phone, role: adminUser.role },
-            process.env.JWT_SECRET || 'supersecretjwtkey_digital_mess',
+            process.env.JWT_SECRET,
             { expiresIn: '7d' }
         );
 

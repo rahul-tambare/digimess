@@ -156,6 +156,24 @@ export default function MessProfileScreen({ navigation, route }) {
                       <Text style={styles.thaliName}>{t.itemName}</Text>
                       <Text style={styles.thaliPrice}>₹{t.price}</Text>
                     </View>
+                    {/* Veg / Non-veg badge + calories + category */}
+                    <View style={styles.thaliTagsRow}>
+                      <View style={[styles.thaliTag, { backgroundColor: t.isVeg ? 'rgba(160,243,153,0.4)' : 'rgba(255,80,80,0.12)' }]}>
+                        <Text style={[styles.thaliTagText, { color: t.isVeg ? '#005312' : '#8b0000' }]}>
+                          {t.isVeg ? '🟢 Veg' : '🔴 Non-Veg'}
+                        </Text>
+                      </View>
+                      {t.calories ? (
+                        <View style={[styles.thaliTag, { backgroundColor: 'rgba(255,219,172,0.5)' }]}>
+                          <Text style={[styles.thaliTagText, { color: '#3f2a00' }]}>🔥 {t.calories} kcal</Text>
+                        </View>
+                      ) : null}
+                      {t.category ? (
+                        <View style={[styles.thaliTag, { backgroundColor: 'rgba(226,226,226,0.6)' }]}>
+                          <Text style={[styles.thaliTagText, { color: '#333' }]}>{t.category}</Text>
+                        </View>
+                      ) : null}
+                    </View>
                     <Text style={styles.thaliDesc}>{t.itemDescription}</Text>
                     <TouchableOpacity 
                       style={styles.addToMealBtn}

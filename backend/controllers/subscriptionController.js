@@ -34,9 +34,20 @@ exports.subscribe = async (req, res) => {
     const endDate = new Date(startDate);
     endDate.setMonth(endDate.getMonth() + 1); // 1 month default
 
+    const { allowedMesses } = req.body;
+
     await connection.query(
-      'INSERT INTO Subscriptions (id, customerId, messId, type, startDate, endDate, mealsRemaining) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      [subId, req.user.id, messId || null, 'single_mess', startDate, endDate, req.body.mealsCount || 30]
+      'INSERT INTO Subscriptions (id, customerId, messId, type, startDate, endDate, mealsRemaining, allowedMesses) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      [
+        subId, 
+        req.user.id, 
+        messId || null, 
+        allowedMesses ? 'multi_mess' : 'single_mess', 
+        startDate, 
+        endDate, 
+        req.body.mealsCount || 30,
+        allowedMesses ? JSON.stringify(allowedMesses) : null
+      ]
     );
 
     await connection.commit();

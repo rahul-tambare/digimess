@@ -10,7 +10,8 @@ const COLORS = {
   onSurface: '#1a1c1c',
   onSurfaceVariant: '#584238',
   primaryContainer: '#f26d21',
-  primaryFixed: '#ffdbcc'
+  primaryFixed: '#ffdbcc',
+  outlineVariant: '#e0c0b2'
 };
 
 export default function OrderSuccessScreen({ navigation, route }) {
@@ -79,6 +80,17 @@ export default function OrderSuccessScreen({ navigation, route }) {
             {isSubscription ? '🗺️ View Transactions' : '🗺️ Track Order'}
           </Text>
         </TouchableOpacity>
+
+        {/* Rate Order button — only show for on-demand orders */}
+        {!isSubscription && orderId && (
+          <TouchableOpacity
+            style={styles.rateBtn}
+            onPress={() => navigation.navigate('Review', { orderId })}
+          >
+            <Text style={styles.rateBtnText}>⭐ Rate Your Order</Text>
+          </TouchableOpacity>
+        )}
+
         <TouchableOpacity style={styles.homeBtn} onPress={() => navigation.navigate('MainTabs')}>
           <Text style={styles.homeBtnText}>← Back to Home</Text>
         </TouchableOpacity>
@@ -113,6 +125,8 @@ const styles = StyleSheet.create({
   tagOrangeText: { fontSize: 10, fontWeight: '800', color: '#7b2f00' },
   trackBtn: { width: '100%', backgroundColor: COLORS.primary, paddingVertical: 18, borderRadius: 32, alignItems: 'center', marginBottom: 16 },
   trackBtnText: { color: '#fff', fontSize: 16, fontWeight: '800' },
+  rateBtn: { width: '100%', backgroundColor: COLORS.surfaceContainerLow, paddingVertical: 18, borderRadius: 32, alignItems: 'center', marginBottom: 16, borderWidth: 2, borderColor: COLORS.outlineVariant },
+  rateBtnText: { color: COLORS.primary, fontSize: 16, fontWeight: '800' },
   homeBtn: { width: '100%', backgroundColor: '#e3e2e1', paddingVertical: 18, borderRadius: 32, alignItems: 'center' },
   homeBtnText: { color: COLORS.primary, fontSize: 16, fontWeight: '800' }
 });

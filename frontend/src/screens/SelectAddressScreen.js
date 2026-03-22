@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Platform, ScrollView } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-
+import React, { useState, useCallback } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Platform, ScrollView, Alert, ActivityIndicator } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
+import api from '../utils/api';
 
 const COLORS = {
   primary: '#a14000',
@@ -18,33 +18,54 @@ const COLORS = {
 
 const BOTTOM_PAD = Platform.OS === 'android' ? 16 : 32;
 
-export default function SelectAddressScreen({ navigation }) {
-  const [addresses, setAddresses] = useState([
-    { id: '1', label: 'Home', description: '24th Avenue, Sterling Apartments, Block B, Floor 4, Bangalore 560001', icon: '🏠' },
-    { id: '2', label: 'Work', description: 'Tech Park One, Tower C, 8th Floor, Whitefield, Bangalore 560066', icon: '🏢' }
-  ]);
-  const [selectedId, setSelectedId] = useState('1');
+const iconFor = (label) => label === 'Work' ? '🏢' : label === 'Home' ? '🏠' : '📍';
 
-  useEffect(() => {
-    const loadAddresses = async () => {
-      try {
-        const saved = await AsyncStorage.getItem('@addresses');
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          setAddresses(prev => {
-            const existingIds = new Set(prev.map(a => a.id));
-            const newAddrs = parsed.filter(a => !existingIds.has(a.id));
-            return [...prev, ...newAddrs.map(a => ({...a, icon: a.label === 'Work' ? '🏢' : a.label === 'Home' ? '🏠' : '📍'}))];
-          });
+export default function SelectAddressScreen({ navigation }) {
+  const [addresses, setAddresses] = useState([]);
+  const [selectedId, setSelectedId] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  const loadAddresses = useCallback(async () => {
+    try {
+      setLoading(true);
+      const res = await api.get('/user/addresses');
+      const list = res.data || [];
+      setAddresses(list);
+      // auto-select the default or first address
+      const def = list.find(a => a.isDefault) || list[0];
+      if (def) setSelectedId(def.id);
+    } catch (e) {
+      console.error('Failed to load addresses:', e);
+      Alert.alert('Error', 'Could not load saved addresses.');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadAddresses();
+    }, [loadAddresses])
+  );
+
+  const handleDelete = (id) => {
+    Alert.alert('Delete Address', 'Are you sure you want to remove this address?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await api.delete(`/user/addresses/${id}`);
+            setAddresses(prev => prev.filter(a => a.id !== id));
+            if (selectedId === id) setSelectedId(null);
+          } catch (e) {
+            Alert.alert('Error', 'Could not delete address.');
+          }
         }
-      } catch (e) {
-        console.error(e);
       }
-    };
-    const unsubscribe = navigation.addListener('focus', loadAddresses);
-    loadAddresses();
-    return unsubscribe;
-  }, [navigation]);
+    ]);
+  };
 
   return (
     <View style={styles.container}>
@@ -58,29 +79,51 @@ export default function SelectAddressScreen({ navigation }) {
           <Text style={styles.subtitle}>Choose where you'd like your meal delivered today.</Text>
         </View>
 
-        <ScrollView style={styles.body} contentContainerStyle={{gap: 12, paddingBottom: 20}}>
-          {addresses.map(addr => {
-            const isActive = selectedId === addr.id;
-            return (
-              <TouchableOpacity key={addr.id} style={isActive ? styles.addressCardActive : styles.addressCard} onPress={() => setSelectedId(addr.id)}>
-                <View style={styles.addressLeft}>
-                  <View style={[styles.addressIcon, {backgroundColor: isActive ? COLORS.primaryFixed : COLORS.surfaceContainerHighest}]}><Text>{addr.icon}</Text></View>
-                  <View style={styles.addressInfo}>
-                    <Text style={styles.addressName}>{addr.label}</Text>
-                    <Text style={styles.addressDesc}>{addr.description}</Text>
+        {loading ? (
+          <View style={{padding: 40, alignItems: 'center'}}>
+            <ActivityIndicator size="large" color={COLORS.primary} />
+          </View>
+        ) : (
+          <ScrollView style={styles.body} contentContainerStyle={{gap: 12, paddingBottom: 20}}>
+            {addresses.length === 0 && (
+              <Text style={{color: COLORS.onSurfaceVariant, textAlign: 'center', fontStyle: 'italic', paddingVertical: 16}}>
+                No saved addresses yet.
+              </Text>
+            )}
+            {addresses.map(addr => {
+              const isActive = selectedId === addr.id;
+              const description = [addr.addressLine, addr.area, addr.city, addr.pincode].filter(Boolean).join(', ');
+              return (
+                <TouchableOpacity
+                  key={addr.id}
+                  style={isActive ? styles.addressCardActive : styles.addressCard}
+                  onPress={() => setSelectedId(addr.id)}
+                  onLongPress={() => handleDelete(addr.id)}
+                >
+                  <View style={styles.addressLeft}>
+                    <View style={[styles.addressIcon, {backgroundColor: isActive ? COLORS.primaryFixed : COLORS.surfaceContainerHighest}]}>
+                      <Text>{iconFor(addr.label)}</Text>
+                    </View>
+                    <View style={styles.addressInfo}>
+                      <Text style={styles.addressName}>{addr.label}</Text>
+                      <Text style={styles.addressDesc}>{description}</Text>
+                    </View>
                   </View>
-                </View>
-                {isActive ? <View style={styles.radioActive}><View style={styles.radioInner} /></View> : <View style={styles.radioInactive} />}
-              </TouchableOpacity>
-            )
-          })}
+                  {isActive
+                    ? <View style={styles.radioActive}><View style={styles.radioInner} /></View>
+                    : <View style={styles.radioInactive} />
+                  }
+                </TouchableOpacity>
+              );
+            })}
 
-          {/* Add New */}
-          <TouchableOpacity style={styles.addNewBtn} onPress={() => navigation.navigate('AddAddress')}>
-            <Text style={{fontSize: 20}}>➕</Text>
-            <Text style={styles.addNewText}>Add New Address</Text>
-          </TouchableOpacity>
-        </ScrollView>
+            {/* Add New */}
+            <TouchableOpacity style={styles.addNewBtn} onPress={() => navigation.navigate('AddAddress')}>
+              <Text style={{fontSize: 20}}>➕</Text>
+              <Text style={styles.addNewText}>Add New Address</Text>
+            </TouchableOpacity>
+          </ScrollView>
+        )}
 
         <View style={styles.footer}>
           <TouchableOpacity style={styles.actionBtn} onPress={() => navigation.goBack()}>
