@@ -19,6 +19,8 @@ import TransactionHistoryScreen from '../screens/TransactionHistoryScreen';
 import SelectAddressScreen from '../screens/SelectAddressScreen';
 import CartScreen from '../screens/CartScreen';
 import TrackOrderScreen from '../screens/TrackOrderScreen';
+import AddAddressScreen from '../screens/AddAddressScreen';
+import MySubscriptionsScreen from '../screens/MySubscriptionsScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -96,6 +98,8 @@ export default function AppNavigator() {
         <Stack.Screen name="SelectAddress" component={SelectAddressScreen} options={{ presentation: 'transparentModal' }} />
         <Stack.Screen name="Cart" component={CartScreen} />
         <Stack.Screen name="TrackOrder" component={TrackOrderScreen} />
+        <Stack.Screen name="AddAddress" component={AddAddressScreen} options={{ presentation: 'modal' }} />
+        <Stack.Screen name="MySubscriptions" component={MySubscriptionsScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

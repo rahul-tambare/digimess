@@ -96,7 +96,7 @@ export default function ProfileScreen({ navigation }) {
         <Text style={styles.settingsTitle}>Account Settings</Text>
         <View style={styles.settingsList}>
           
-          <TouchableOpacity style={styles.settingItem}>
+          <TouchableOpacity style={styles.settingItem} onPress={() => navigation.navigate('MySubscriptions')}>
             <View style={[styles.settingIconWrap, {backgroundColor: COLORS.secondaryContainer}]}>
               <Text style={{fontSize: 20}}>📺</Text>
             </View>

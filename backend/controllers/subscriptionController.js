@@ -49,3 +49,21 @@ exports.subscribe = async (req, res) => {
     connection.release();
   }
 };
+
+// GET /api/user/subscriptions
+exports.getMySubscriptions = async (req, res) => {
+  try {
+    const [rows] = await db.query(
+      `SELECT s.*, m.name AS messName, m.images AS messImages
+       FROM Subscriptions s
+       LEFT JOIN Messes m ON s.messId = m.id
+       WHERE s.customerId = ?
+       ORDER BY s.createdAt DESC`,
+      [req.user.id]
+    );
+    res.json(rows);
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};

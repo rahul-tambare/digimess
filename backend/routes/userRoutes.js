@@ -8,5 +8,6 @@ router.get('/profile', auth, userController.getProfile);
 router.put('/profile', auth, userController.updateProfile);
 
 router.post('/subscriptions', auth, subscriptionController.subscribe);
+router.get('/subscriptions', auth, subscriptionController.getMySubscriptions);
 
 module.exports = router;

@@ -1,12 +1,24 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Image, TouchableOpacity, StyleSheet, Text } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useIsFocused } from '@react-navigation/native';
+import api from '../utils/api';
 
 const LOGO = require('../../assets/logo.png');
 
 const Header = ({ navigation, showProfile = true, showBack = false, style, noTopInset = false }) => {
   const insets = useSafeAreaInsets();
   const paddingTop = noTopInset ? 16 : insets.top + 16;
+  const isFocused = useIsFocused();
+  const [hasSubscription, setHasSubscription] = useState(false);
+
+  useEffect(() => {
+    if (isFocused && showProfile) {
+      api.get('/user/profile')
+         .then(res => setHasSubscription(res.data.hasActiveSubscription))
+         .catch(() => null);
+    }
+  }, [isFocused, showProfile]);
 
   return (
     <View style={[styles.header, { paddingTop }, style]}>
@@ -28,7 +40,7 @@ const Header = ({ navigation, showProfile = true, showBack = false, style, noTop
 
         {showProfile && (
           <TouchableOpacity 
-            style={styles.profileAvatar} 
+            style={[styles.profileAvatar, hasSubscription && { borderColor: '#1b6d24' }]} 
             onPress={() => navigation.navigate('Profile')}
           >
             <View style={styles.avatarPlaceholder}>

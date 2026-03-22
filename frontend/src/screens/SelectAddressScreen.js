@@ -1,5 +1,6 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Platform, ScrollView } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 
 const COLORS = {
@@ -18,6 +19,33 @@ const COLORS = {
 const BOTTOM_PAD = Platform.OS === 'android' ? 16 : 32;
 
 export default function SelectAddressScreen({ navigation }) {
+  const [addresses, setAddresses] = useState([
+    { id: '1', label: 'Home', description: '24th Avenue, Sterling Apartments, Block B, Floor 4, Bangalore 560001', icon: '🏠' },
+    { id: '2', label: 'Work', description: 'Tech Park One, Tower C, 8th Floor, Whitefield, Bangalore 560066', icon: '🏢' }
+  ]);
+  const [selectedId, setSelectedId] = useState('1');
+
+  useEffect(() => {
+    const loadAddresses = async () => {
+      try {
+        const saved = await AsyncStorage.getItem('@addresses');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          setAddresses(prev => {
+            const existingIds = new Set(prev.map(a => a.id));
+            const newAddrs = parsed.filter(a => !existingIds.has(a.id));
+            return [...prev, ...newAddrs.map(a => ({...a, icon: a.label === 'Work' ? '🏢' : a.label === 'Home' ? '🏠' : '📍'}))];
+          });
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    };
+    const unsubscribe = navigation.addListener('focus', loadAddresses);
+    loadAddresses();
+    return unsubscribe;
+  }, [navigation]);
+
   return (
     <View style={styles.container}>
       <View style={styles.scrim} />
@@ -30,37 +58,29 @@ export default function SelectAddressScreen({ navigation }) {
           <Text style={styles.subtitle}>Choose where you'd like your meal delivered today.</Text>
         </View>
 
-        <View style={styles.body}>
-          {/* Active Address */}
-          <TouchableOpacity style={styles.addressCardActive}>
-            <View style={styles.addressLeft}>
-              <View style={[styles.addressIcon, {backgroundColor: COLORS.primaryFixed}]}><Text>🏠</Text></View>
-              <View style={styles.addressInfo}>
-                <Text style={styles.addressName}>Home</Text>
-                <Text style={styles.addressDesc}>24th Avenue, Sterling Apartments, Block B, Floor 4, Bangalore 560001</Text>
-              </View>
-            </View>
-            <View style={styles.radioActive}><View style={styles.radioInner} /></View>
-          </TouchableOpacity>
-
-          {/* Inactive Address */}
-          <TouchableOpacity style={styles.addressCard}>
-            <View style={styles.addressLeft}>
-              <View style={[styles.addressIcon, {backgroundColor: COLORS.surfaceContainerHighest}]}><Text>🏢</Text></View>
-              <View style={styles.addressInfo}>
-                <Text style={styles.addressName}>Work</Text>
-                <Text style={styles.addressDesc}>Tech Park One, Tower C, 8th Floor, Whitefield, Bangalore 560066</Text>
-              </View>
-            </View>
-            <View style={styles.radioInactive} />
-          </TouchableOpacity>
+        <ScrollView style={styles.body} contentContainerStyle={{gap: 12, paddingBottom: 20}}>
+          {addresses.map(addr => {
+            const isActive = selectedId === addr.id;
+            return (
+              <TouchableOpacity key={addr.id} style={isActive ? styles.addressCardActive : styles.addressCard} onPress={() => setSelectedId(addr.id)}>
+                <View style={styles.addressLeft}>
+                  <View style={[styles.addressIcon, {backgroundColor: isActive ? COLORS.primaryFixed : COLORS.surfaceContainerHighest}]}><Text>{addr.icon}</Text></View>
+                  <View style={styles.addressInfo}>
+                    <Text style={styles.addressName}>{addr.label}</Text>
+                    <Text style={styles.addressDesc}>{addr.description}</Text>
+                  </View>
+                </View>
+                {isActive ? <View style={styles.radioActive}><View style={styles.radioInner} /></View> : <View style={styles.radioInactive} />}
+              </TouchableOpacity>
+            )
+          })}
 
           {/* Add New */}
-          <TouchableOpacity style={styles.addNewBtn}>
+          <TouchableOpacity style={styles.addNewBtn} onPress={() => navigation.navigate('AddAddress')}>
             <Text style={{fontSize: 20}}>➕</Text>
             <Text style={styles.addNewText}>Add New Address</Text>
           </TouchableOpacity>
-        </View>
+        </ScrollView>
 
         <View style={styles.footer}>
           <TouchableOpacity style={styles.actionBtn} onPress={() => navigation.goBack()}>

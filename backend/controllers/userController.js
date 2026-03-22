@@ -5,7 +5,12 @@ exports.getProfile = async (req, res) => {
   try {
     const [rows] = await db.query('SELECT id, phone, name, email, role, walletBalance FROM Users WHERE id = ?', [req.user.id]);
     if (!rows[0]) return res.status(404).json({ error: 'User not found' });
-    res.json(rows[0]);
+    const user = rows[0];
+
+    const [subRows] = await db.query('SELECT id FROM Subscriptions WHERE customerId = ? AND isActive = TRUE AND endDate >= CURDATE() LIMIT 1', [req.user.id]);
+    user.hasActiveSubscription = subRows.length > 0;
+
+    res.json(user);
   } catch (e) {
     console.error(e);
     res.status(500).json({ error: 'Internal server error' });

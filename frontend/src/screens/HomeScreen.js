@@ -23,22 +23,29 @@ const COLORS = {
 
 export default function HomeScreen({ navigation }) {
   const [config, setConfig] = useState({});
+  const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const { addToCart, totalItems } = useCart();
 
   useEffect(() => {
-    const fetchConfig = async () => {
+    const fetchData = async () => {
       try {
-        const response = await api.get('/config');
-        setConfig(response.data);
+        const [configRes, profileRes] = await Promise.all([
+          api.get('/config'),
+          api.get('/user/profile').catch(() => ({ data: {} }))
+        ]);
+        setConfig(configRes.data);
+        setProfile(profileRes.data);
       } catch (e) {
-        console.error('Failed to fetch app config', e);
+        console.error('Failed to fetch app data', e);
       } finally {
         setLoading(false);
       }
     };
-    fetchConfig();
-  }, []);
+    const unsubscribe = navigation.addListener('focus', fetchData);
+    fetchData();
+    return unsubscribe;
+  }, [navigation]);
 
   return (
 
@@ -49,22 +56,24 @@ export default function HomeScreen({ navigation }) {
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Subscription Hero */}
-        <View style={styles.heroCard}>
-          <View style={styles.heroTextContent}>
-            <View style={styles.limitedBadge}><Text style={styles.limitedText}>LIMITED OFFER</Text></View>
-            <Text style={styles.heroTitle}>{config.heroTitle || 'Monthly Subscription'}</Text>
-            <Text style={styles.heroBody}>{config.heroSubtitle || 'Get unlimited access to premium home-cooked meals. Save 40% on daily dining.'}</Text>
-            <TouchableOpacity style={styles.subscribeBtn} onPress={() => navigation.navigate('ConfirmSubscription')}>
-              <Text style={styles.subscribeBtnText}>Subscribe Now</Text>
-            </TouchableOpacity>
+        {!profile?.hasActiveSubscription && (
+          <View style={styles.heroCard}>
+            <View style={styles.heroTextContent}>
+              <View style={styles.limitedBadge}><Text style={styles.limitedText}>LIMITED OFFER</Text></View>
+              <Text style={styles.heroTitle}>{config.heroTitle || 'Monthly Subscription'}</Text>
+              <Text style={styles.heroBody}>{config.heroSubtitle || 'Get unlimited access to premium home-cooked meals. Save 40% on daily dining.'}</Text>
+              <TouchableOpacity style={styles.subscribeBtn} onPress={() => navigation.navigate('ConfirmSubscription')}>
+                <Text style={styles.subscribeBtnText}>Subscribe Now</Text>
+              </TouchableOpacity>
+            </View>
+            <View style={styles.heroImageContainer}>
+              <Image 
+                source={{uri: config.heroImage || 'https://lh3.googleusercontent.com/aida-public/AB6AXuBqAqgZ1KKpVBjNKgGyrpc36_z2qrJ1CTimpnFwSG_mI0aS70qYteToXy6NLZXdCVVOXsjwv-VdRL8WV-z8aO4VJN3tGVjug9lOU8CYMse1pB4h_grrPDydpJFplDDTBxSZJMMPAf8TLSZdBkGEZzasdQM8_V9AcnzLIagFJw4uatBd_G5BF-q_dpBFfCmW-ueXeLhEHaTlYHHz1k_-bCNajtWtWEwo2cZn358gdp7QZFsV512yKnBdWpPyizH1UwaCo2WKeXKRyn0'}} 
+                style={styles.heroImage} 
+              />
+            </View>
           </View>
-          <View style={styles.heroImageContainer}>
-            <Image 
-              source={{uri: config.heroImage || 'https://lh3.googleusercontent.com/aida-public/AB6AXuBqAqgZ1KKpVBjNKgGyrpc36_z2qrJ1CTimpnFwSG_mI0aS70qYteToXy6NLZXdCVVOXsjwv-VdRL8WV-z8aO4VJN3tGVjug9lOU8CYMse1pB4h_grrPDydpJFplDDTBxSZJMMPAf8TLSZdBkGEZzasdQM8_V9AcnzLIagFJw4uatBd_G5BF-q_dpBFfCmW-ueXeLhEHaTlYHHz1k_-bCNajtWtWEwo2cZn358gdp7QZFsV512yKnBdWpPyizH1UwaCo2WKeXKRyn0'}} 
-              style={styles.heroImage} 
-            />
-          </View>
-        </View>
+        )}
 
         {/* Categories */}
         <View style={styles.sectionHeader}>

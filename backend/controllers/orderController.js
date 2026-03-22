@@ -29,11 +29,20 @@ exports.placeOrder = async (req, res) => {
       [txId, req.user.id, amount, 'debit', description]
     );
 
+    // Ensure valid messId for the order
+    let finalMessId = messId;
+    if (!finalMessId || finalMessId === 'default-mess-id') {
+      const [messes] = await connection.query('SELECT id FROM Messes LIMIT 1');
+      if (messes.length > 0) {
+        finalMessId = messes[0].id;
+      }
+    }
+
     // 4. Create Order
     const orderId = require('crypto').randomUUID();
     await connection.query(
       'INSERT INTO Orders (id, customerId, messId, totalAmount, orderType, items) VALUES (?, ?, ?, ?, ?, ?)',
-      [orderId, req.user.id, messId || 'default-mess-id', amount, orderType || 'on_demand', JSON.stringify(items || [])]
+      [orderId, req.user.id, finalMessId, amount, orderType || 'on_demand', JSON.stringify(items || [])]
     );
 
     await connection.commit();
