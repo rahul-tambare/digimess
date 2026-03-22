@@ -5,7 +5,7 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 
 const db = require('./config/db');
-require('./config/redis'); // Initializing redis
+require('./config/redis');
 
 const app = express();
 
@@ -16,14 +16,19 @@ app.use(morgan('dev'));
 
 // Routes
 const authRoutes = require('./routes/authRoutes');
-app.use('/api/auth', authRoutes);
+const userRoutes = require('./routes/userRoutes');
+const messRoutes = require('./routes/messRoutes');
+const orderRoutes = require('./routes/orderRoutes');
+const walletRoutes = require('./routes/walletRoutes');
 
-// Basic health check
-app.get('/', (req, res) => {
-  res.send({ status: 'API is running' });
-});
+app.use('/api/auth', authRoutes);
+app.use('/api/user', userRoutes);
+app.use('/api/messes', messRoutes);
+app.use('/api/orders', orderRoutes);
+app.use('/api/wallet', walletRoutes);
+
+// Health check
+app.get('/', (req, res) => res.json({ status: 'Digi Mess API is running 🍱' }));
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`Server started on port ${PORT}`);
-});
+app.listen(PORT, () => console.log(`Server started on port ${PORT}`));
