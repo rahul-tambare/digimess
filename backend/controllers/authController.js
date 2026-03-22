@@ -78,3 +78,47 @@ exports.verifyOTP = async (req, res) => {
         res.status(500).json({ error: 'Internal server error' });
     }
 };
+
+exports.adminLogin = async (req, res) => {
+    try {
+        const { email, password } = req.body;
+        
+        if (password !== 'admin123') {
+            return res.status(401).json({ error: 'Invalid credentials' });
+        }
+
+        const [rows] = await db.query('SELECT * FROM Users WHERE email = ? AND role = "admin"', [email]);
+        let adminUser = rows[0];
+
+        if (!adminUser) {
+            const uuid = require('crypto').randomUUID();
+            await db.query(
+                `INSERT INTO Users (id, phone, name, email, role, isVerified) VALUES (?, ?, ?, ?, ?, ?)`,
+                [uuid, '0000000000', 'System Admin', email, 'admin', true]
+            );
+            const [newRows] = await db.query('SELECT * FROM Users WHERE id = ?', [uuid]);
+            adminUser = newRows[0];
+        }
+
+        const token = jwt.sign(
+            { id: adminUser.id, phone: adminUser.phone, role: adminUser.role },
+            process.env.JWT_SECRET || 'supersecretjwtkey_digital_mess',
+            { expiresIn: '7d' }
+        );
+
+        res.status(200).json({
+            message: 'Admin login successful',
+            token,
+            user: {
+                id: adminUser.id,
+                email: adminUser.email,
+                name: adminUser.name,
+                role: adminUser.role
+            }
+        });
+
+    } catch (err) {
+        console.error('Admin login error:', err);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+};
