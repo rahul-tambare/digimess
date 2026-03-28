@@ -1,7 +1,10 @@
 import axios from 'axios';
 
 // Since the backend runs on port 5000:
-const API_URL = 'http://localhost:5000/api';
+// API URL depending on mode
+const API_URL = import.meta.env.PROD 
+  ? 'https://api.rahultambare.click/api' 
+  : 'http://localhost:5000/api';
 
 const api = axios.create({
   baseURL: API_URL,

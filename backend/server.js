@@ -17,7 +17,25 @@ require('./config/redis');
 const app = express();
 
 app.use(helmet());
-app.use(cors());
+const allowedOrigins = [
+  'https://rahultambare.click',
+  'https://admin.rahultambare.click',
+  'http://localhost:3000', // for local testing
+  'http://localhost:5173'  // for local testing
+];
+
+app.use(cors({
+  origin: function (origin, callback) {
+    // allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) === -1) {
+      const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+      return callback(new Error(msg), false);
+    }
+    return callback(null, true);
+  },
+  credentials: true
+}));
 app.use(express.json());
 app.use(morgan('dev'));
 

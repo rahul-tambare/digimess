@@ -1,8 +1,10 @@
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 
-// Change this to your machine's local IP when testing on a physical device
-const BASE_URL = 'http://10.128.30.26:5000/api';
+// Use production URL if available, otherwise use local IP for development
+const BASE_URL = process.env.NODE_ENV === 'production' 
+  ? 'https://api.rahultambare.click/api' 
+  : 'http://10.128.30.26:5000/api';
 
 const api = axios.create({
   baseURL: BASE_URL,
