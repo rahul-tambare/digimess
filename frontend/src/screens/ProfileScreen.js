@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Image, ActivityIndicator } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import api from '../utils/api';
+import api, { removeToken } from '../utils/api';
 import Header from '../components/Header';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as SecureStore from 'expo-secure-store';
 
 
 
@@ -47,7 +45,7 @@ export default function ProfileScreen({ navigation }) {
   }, [navigation]);
 
   const handleSignOut = async () => {
-    await SecureStore.deleteItemAsync('token');
+    await removeToken();
     navigation.replace('Login');
   };
 

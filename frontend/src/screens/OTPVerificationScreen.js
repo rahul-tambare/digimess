@@ -5,8 +5,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as SecureStore from 'expo-secure-store';
-import api from '../utils/api';
+import api, { saveToken } from '../utils/api';
 
 const COLORS = {
   primary: '#f26d21',
@@ -63,7 +62,7 @@ export default function OTPVerificationScreen({ route, navigation }) {
     setLoading(true);
     try {
       const res = await api.post('/auth/verify-otp', { phone, otp: fullOtp });
-      await SecureStore.setItemAsync('token', res.data.token);
+      await saveToken(res.data.token);
       await AsyncStorage.setItem('user', JSON.stringify(res.data.user));
       Alert.alert('Success', 'Login successful!');
       // Save token successfully, now navigate to home tabs

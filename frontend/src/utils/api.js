@@ -1,6 +1,5 @@
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
-
 import { Platform } from 'react-native';
 
 // Use production URL if available, otherwise use local IP for development
@@ -15,11 +14,48 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
+// Helper to handle storage for different platforms
+const getToken = async () => {
+  try {
+    if (Platform.OS === 'web') {
+      return localStorage.getItem('token');
+    }
+    return await SecureStore.getItemAsync('token');
+  } catch (err) {
+    console.error('Error fetching token:', err);
+    return null;
+  }
+};
+
+export const saveToken = async (token) => {
+  try {
+    if (Platform.OS === 'web') {
+      localStorage.setItem('token', token);
+    } else {
+      await SecureStore.setItemAsync('token', token);
+    }
+  } catch (err) {
+    console.error('Error saving token:', err);
+  }
+};
+
+export const removeToken = async () => {
+  try {
+    if (Platform.OS === 'web') {
+      localStorage.removeItem('token');
+    } else {
+      await SecureStore.deleteItemAsync('token');
+    }
+  } catch (err) {
+    console.error('Error removing token:', err);
+  }
+};
+
 // Attach JWT token to every request if available
 api.interceptors.request.use(async (config) => {
   try {
     console.log('Interceptor: fetching token...');
-    const token = await SecureStore.getItemAsync('token');
+    const token = await getToken();
     console.log('Interceptor: token found:', !!token);
     if (token) config.headers.Authorization = `Bearer ${token}`;
   } catch (err) {
