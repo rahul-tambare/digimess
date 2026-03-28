@@ -26,71 +26,71 @@ const MessDetailScreen = () => {
 
   return (
     <div className="flex-col gap-6">
-      {/* Back button */}
-      <button className="btn-secondary" style={{ alignSelf: 'flex-start', padding: '10px 20px' }} onClick={() => navigate('/messes')}>
+      <button className="btn-secondary w-full md-w-auto" style={{ alignSelf: 'flex-start', padding: '10px 20px' }} onClick={() => navigate('/messes')}>
         <ArrowLeft size={18} /> Back to Messes
       </button>
 
-      {/* Hero */}
       <div className="card glass" style={{ padding: 0, overflow: 'hidden' }}>
         {images.length > 0 ? (
-          <img src={images[0]} alt={mess.name} style={{ width: '100%', height: 280, objectFit: 'cover' }} />
+          <img src={images[0]} alt={mess.name} style={{ width: '100%', height: 'auto', maxHeight: 400, objectFit: 'cover' }} />
         ) : (
-          <div style={{ width: '100%', height: 280, background: 'var(--surface-low)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 64 }}>🥘</div>
+          <div style={{ width: '100%', height: 200, background: 'var(--surface-low)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 48 }}>🥘</div>
         )}
-        <div style={{ padding: 32 }}>
-          <div className="flex justify-between items-center" style={{ marginBottom: 12 }}>
-            <h1 style={{ fontSize: '2rem' }}>{mess.name}</h1>
-            <div className="flex items-center gap-2" style={{ background: 'var(--surface-low)', padding: '8px 16px', borderRadius: 99 }}>
-              <Star size={18} color="#f26d21" fill="#f26d21" />
-              <span style={{ fontWeight: 800, fontSize: 16 }}>{mess.rating || 'New'}</span>
+        <div style={{ padding: '24px 32px' }}>
+          <div className="flex-col md-flex-row md-items-center justify-between gap-4 mb-4">
+            <h1 style={{ fontSize: 'clamp(1.5rem, 4vw, 2.5rem)' }}>{mess.name}</h1>
+            <div className="flex items-center gap-2 self-start md-self-auto" style={{ background: 'rgba(var(--primary-rgb), 0.1)', padding: '8px 16px', borderRadius: 99 }}>
+              <Star size={18} color="var(--primary)" fill="var(--primary)" />
+              <span style={{ fontWeight: 800, fontSize: 16, color: 'var(--primary)' }}>{mess.rating || 'New'}</span>
             </div>
           </div>
           {mess.address && (
-            <div className="flex items-center gap-2 text-muted" style={{ marginBottom: 16 }}>
-              <MapPin size={18} /> <span style={{ fontWeight: 500 }}>{mess.address}</span>
+            <div className="flex items-start gap-2 text-muted mb-4">
+              <MapPin size={18} style={{ marginTop: 2, flexShrink: 0 }} /> 
+              <span style={{ fontWeight: 500, fontSize: 14 }}>{mess.address}</span>
             </div>
           )}
-          {mess.description && <p className="text-muted" style={{ fontSize: 16, lineHeight: 1.6 }}>{mess.description}</p>}
+          {mess.description && <p className="text-muted" style={{ fontSize: 15, lineHeight: 1.6 }}>{mess.description}</p>}
         </div>
       </div>
 
-      {/* Menu Items */}
       <div>
-        <div className="flex items-center gap-3" style={{ marginBottom: 20 }}>
-          <UtensilsCrossed size={24} color="var(--primary)" />
-          <h2>Menu Items</h2>
+        <div className="flex items-center gap-3 mb-4">
+          <UtensilsCrossed size={20} color="var(--primary)" />
+          <h2 style={{ fontSize: '1.25rem' }}>Menu Items</h2>
         </div>
         {mess.menu && mess.menu.length > 0 ? (
           <div className="card glass" style={{ padding: 0, overflow: 'hidden' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead>
-                <tr style={{ borderBottom: '1px solid var(--outline)', background: 'var(--surface)' }}>
-                  <th style={{ padding: '14px 24px', fontWeight: 800, fontSize: 12, color: 'var(--on-surface-variant)', letterSpacing: 1, textAlign: 'left' }}>ITEM</th>
-                  <th style={{ padding: '14px 24px', fontWeight: 800, fontSize: 12, color: 'var(--on-surface-variant)', letterSpacing: 1, textAlign: 'left' }}>DESCRIPTION</th>
-                  <th style={{ padding: '14px 24px', fontWeight: 800, fontSize: 12, color: 'var(--on-surface-variant)', letterSpacing: 1, textAlign: 'right' }}>PRICE</th>
-                  <th style={{ padding: '14px 24px', fontWeight: 800, fontSize: 12, color: 'var(--on-surface-variant)', letterSpacing: 1, textAlign: 'center' }}>AVAILABLE</th>
-                </tr>
-              </thead>
-              <tbody>
-                {mess.menu.map(item => (
-                  <tr key={item.id} className="hover-row" style={{ borderBottom: '1px solid var(--outline)' }}>
-                    <td style={{ padding: '14px 24px', fontWeight: 700, fontSize: 15 }}>{item.itemName}</td>
-                    <td style={{ padding: '14px 24px', color: 'var(--on-surface-variant)', fontSize: 14 }}>{item.itemDescription || '—'}</td>
-                    <td style={{ padding: '14px 24px', fontWeight: 800, color: 'var(--primary)', textAlign: 'right' }}>₹{parseFloat(item.price).toFixed(2)}</td>
-                    <td style={{ padding: '14px 24px', textAlign: 'center' }}>
-                      <span style={{ padding: '4px 12px', borderRadius: 8, background: item.isAvailable ? '#a0f399' : '#ffdad6', color: item.isAvailable ? '#005312' : '#ba1a1a', fontWeight: 800, fontSize: 12 }}>
-                        {item.isAvailable ? 'YES' : 'NO'}
-                      </span>
-                    </td>
+            <div className="table-container">
+              <table>
+                <thead>
+                  <tr style={{ background: 'var(--surface-low)' }}>
+                    <th style={{ fontWeight: 800, fontSize: 12, color: 'var(--on-surface-variant)', letterSpacing: 1 }}>ITEM</th>
+                    <th style={{ fontWeight: 800, fontSize: 12, color: 'var(--on-surface-variant)', letterSpacing: 1 }}>DESCRIPTION</th>
+                    <th style={{ fontWeight: 800, fontSize: 12, color: 'var(--on-surface-variant)', letterSpacing: 1, textAlign: 'right' }}>PRICE</th>
+                    <th style={{ fontWeight: 800, fontSize: 12, color: 'var(--on-surface-variant)', letterSpacing: 1, textAlign: 'center' }}>AVAIL</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {mess.menu.map(item => (
+                    <tr key={item.id}>
+                      <td style={{ fontWeight: 700, fontSize: 14 }}>{item.itemName}</td>
+                      <td style={{ color: 'var(--on-surface-variant)', fontSize: 13 }}>{item.itemDescription || '—'}</td>
+                      <td style={{ fontWeight: 800, color: 'var(--primary)', textAlign: 'right' }}>₹{parseFloat(item.price).toFixed(2)}</td>
+                      <td style={{ textAlign: 'center' }}>
+                        <span style={{ padding: '4px 10px', borderRadius: 8, background: item.isAvailable ? 'rgba(27, 109, 36, 0.1)' : 'rgba(186, 26, 26, 0.1)', color: item.isAvailable ? 'var(--success)' : 'var(--error)', fontWeight: 800, fontSize: 11 }}>
+                          {item.isAvailable ? 'YES' : 'NO'}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         ) : (
-          <div className="card glass" style={{ textAlign: 'center', padding: 40, color: 'var(--on-surface-variant)', fontWeight: 600 }}>
-            No menu items added yet.
+          <div className="card glass" style={{ textAlign: 'center', padding: 40, color: 'var(--on-surface-variant)' }}>
+            No menu items listed yet.
           </div>
         )}
       </div>

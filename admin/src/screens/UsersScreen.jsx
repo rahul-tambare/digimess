@@ -17,61 +17,63 @@ const UsersScreen = () => {
 
   return (
     <div className="flex-col gap-6">
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex-col md-flex-row md-items-center justify-between gap-4 mb-2">
         <div>
-          <h1>User Management</h1>
-          <p className="text-muted mt-2" style={{fontSize: 18}}>View and manage all registered users on Digimess.</p>
+          <h1 style={{ fontSize: 'clamp(1.5rem, 5vw, 2.5rem)' }}>User Management</h1>
+          <p className="text-muted mt-1" style={{fontSize: 'clamp(14px, 2vw, 18px)'}}>View and manage all registered platform users.</p>
         </div>
       </div>
 
       <div className="card glass" style={{ padding: 0, overflow: 'hidden' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-          <thead>
-            <tr style={{ borderBottom: '1px solid var(--outline)', background: 'var(--surface)' }}>
-              <th style={{ padding: '16px 24px', fontWeight: 800, fontSize: 13, color: 'var(--on-surface-variant)', letterSpacing: 1 }}>USER</th>
-              <th style={{ padding: '16px 24px', fontWeight: 800, fontSize: 13, color: 'var(--on-surface-variant)', letterSpacing: 1 }}>CONTACT</th>
-              <th style={{ padding: '16px 24px', fontWeight: 800, fontSize: 13, color: 'var(--on-surface-variant)', letterSpacing: 1 }}>ROLE</th>
-              <th style={{ padding: '16px 24px', fontWeight: 800, fontSize: 13, color: 'var(--on-surface-variant)', letterSpacing: 1 }}>WALLET</th>
-              <th style={{ padding: '16px 24px', fontWeight: 800, fontSize: 13, color: 'var(--on-surface-variant)', letterSpacing: 1 }}>JOINED</th>
-            </tr>
-          </thead>
-          <tbody>
-            {users.map(user => (
-              <tr key={user.id} style={{ borderBottom: '1px solid var(--outline)', transition: 'background 0.2s' }} className="hover-row">
-                <td style={{ padding: '16px 24px' }}>
-                  <div className="flex items-center gap-3">
-                    <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'var(--primary-fixed)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: 18 }}>
-                      {user.name?.charAt(0).toUpperCase() || 'U'}
-                    </div>
-                    <span style={{ fontWeight: 700, fontSize: 16 }}>{user.name || 'Anonymous User'}</span>
-                  </div>
-                </td>
-                <td style={{ padding: '16px 24px' }}>
-                  <div className="flex-col gap-1">
-                    <span className="flex items-center gap-2 text-sm"><Mail size={16} className="text-muted"/> {user.email || 'N/A'}</span>
-                    <span className="flex items-center gap-2 text-sm"><Phone size={16} className="text-muted"/> {user.phone}</span>
-                  </div>
-                </td>
-                <td style={{ padding: '16px 24px' }}>
-                  <span style={{ padding: '6px 12px', borderRadius: 8, background: user.role === 'admin' ? 'var(--primary-fixed)' : 'var(--surface-low)', color: user.role === 'admin' ? 'var(--primary)' : 'var(--on-surface)', fontSize: 12, fontWeight: 800, textTransform: 'uppercase' }}>
-                    {user.role}
-                  </span>
-                </td>
-                <td style={{ padding: '16px 24px' }}>
-                  <span className="flex items-center gap-2" style={{ fontWeight: 800, fontSize: 16 }}>
-                    <Wallet size={18} color="var(--success)" /> ₹{parseFloat(user.walletBalance).toFixed(2)}
-                  </span>
-                </td>
-                <td style={{ padding: '16px 24px', color: 'var(--on-surface-variant)', fontSize: 15, fontWeight: 500 }}>
-                  {new Date(user.createdAt).toLocaleDateString()}
-                </td>
+        <div className="table-container">
+          <table>
+            <thead>
+              <tr style={{ background: 'var(--surface-low)' }}>
+                <th style={{ fontWeight: 800, fontSize: 12, color: 'var(--on-surface-variant)', letterSpacing: 1, textTransform: 'uppercase' }}>User</th>
+                <th style={{ fontWeight: 800, fontSize: 12, color: 'var(--on-surface-variant)', letterSpacing: 1, textTransform: 'uppercase' }}>Contact</th>
+                <th style={{ fontWeight: 800, fontSize: 12, color: 'var(--on-surface-variant)', letterSpacing: 1, textTransform: 'uppercase' }}>Role</th>
+                <th style={{ fontWeight: 800, fontSize: 12, color: 'var(--on-surface-variant)', letterSpacing: 1, textTransform: 'uppercase' }}>Wallet</th>
+                <th style={{ fontWeight: 800, fontSize: 12, color: 'var(--on-surface-variant)', letterSpacing: 1, textTransform: 'uppercase' }}>Joined</th>
               </tr>
-            ))}
-            {users.length === 0 && (
-              <tr><td colSpan={5} style={{ padding: 40, textAlign: 'center', color: 'var(--on-surface-variant)' }}>No users found.</td></tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {users.map(user => (
+                <tr key={user.id}>
+                  <td>
+                    <div className="flex items-center gap-3">
+                      <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'rgba(var(--primary-rgb), 0.1)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>
+                        {user.name?.charAt(0).toUpperCase() || 'U'}
+                      </div>
+                      <span style={{ fontWeight: 700, fontSize: 15 }}>{user.name || 'Anonymous User'}</span>
+                    </div>
+                  </td>
+                  <td>
+                    <div className="flex-col gap-1">
+                      <span className="flex items-center gap-2 text-sm"><Mail size={14} className="text-muted"/> {user.email || 'N/A'}</span>
+                      <span className="flex items-center gap-2 text-sm"><Phone size={14} className="text-muted"/> {user.phone}</span>
+                    </div>
+                  </td>
+                  <td>
+                    <span style={{ padding: '6px 12px', borderRadius: 8, background: user.role === 'admin' ? 'rgba(var(--primary-rgb), 0.1)' : 'var(--surface-low)', color: user.role === 'admin' ? 'var(--primary)' : 'var(--on-surface)', fontSize: 11, fontWeight: 800, textTransform: 'uppercase' }}>
+                      {user.role}
+                    </span>
+                  </td>
+                  <td>
+                    <span className="flex items-center gap-2" style={{ fontWeight: 800, fontSize: 15 }}>
+                      ₹{parseFloat(user.walletBalance).toFixed(2)}
+                    </span>
+                  </td>
+                  <td style={{ color: 'var(--on-surface-variant)', fontSize: 14 }}>
+                    {new Date(user.createdAt).toLocaleDateString()}
+                  </td>
+                </tr>
+              ))}
+              {users.length === 0 && (
+                <tr><td colSpan={5} style={{ padding: 40, textAlign: 'center', color: 'var(--on-surface-variant)' }}>No users found in the system.</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
