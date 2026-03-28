@@ -25,6 +25,7 @@ export default function LoginScreen({ navigation }) {
   const [loading, setLoading] = useState(false);
 
   const handleGetOTP = async () => {
+    console.log('Get OTP clicked. Phone:', phone);
     if (!phone || phone.length < 10) {
       Alert.alert('Error', 'Please enter a valid 10-digit mobile number.');
       return;

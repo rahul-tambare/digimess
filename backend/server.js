@@ -19,7 +19,9 @@ const app = express();
 app.use(helmet());
 const allowedOrigins = [
   'https://rahultambare.click',
+  'http://rahultambare.click',
   'https://admin.rahultambare.click',
+  'http://admin.rahultambare.click',
   'http://localhost:3000', // for local testing
   'http://localhost:5173'  // for local testing
 ];
