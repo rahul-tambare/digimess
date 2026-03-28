@@ -20,6 +20,8 @@ app.use(helmet());
 const allowedOrigins = [
   'https://rahultambare.click',
   'http://rahultambare.click',
+  'https://www.rahultambare.click',
+  'http://www.rahultambare.click',
   'https://admin.rahultambare.click',
   'http://admin.rahultambare.click',
   'http://localhost:5173', // for local testing

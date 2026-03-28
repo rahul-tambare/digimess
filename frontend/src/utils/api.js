@@ -3,8 +3,12 @@ import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 import * as NavigationService from './navigation';
 
+// Detect if running on production domain
+const isProductionDomain = typeof window !== 'undefined' && 
+  (window.location.hostname === 'rahultambare.click' || window.location.hostname === 'www.rahultambare.click');
+
 // Use production URL if available
-const BASE_URL = !__DEV__
+const BASE_URL = (!__DEV__ || isProductionDomain)
   ? 'https://api.rahultambare.click/api'
   : 'http://10.128.30.26:5000/api';
 
