@@ -22,8 +22,12 @@ const allowedOrigins = [
   'http://rahultambare.click',
   'https://admin.rahultambare.click',
   'http://admin.rahultambare.click',
-  'http://localhost:3000', // for local testing
-  'http://localhost:5173'  // for local testing
+  'http://localhost:5173', // for local testing
+  'http://10.128.30.26:19006', // Expo web local IP
+  'http://10.128.30.26:19000', // Expo native local IP
+  'http://10.128.30.26:8081',  // Expo dev tools / new bundler
+  'http://10.128.30.26:3000',  // React local IP
+  'http://10.128.30.26:5173'   // Vite local IP
 ];
 
 app.use(cors({

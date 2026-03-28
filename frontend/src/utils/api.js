@@ -1,10 +1,11 @@
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
+import * as NavigationService from './navigation';
 
-// Use production URL if available, otherwise use local IP for development
-const BASE_URL = Platform.OS === 'web' && !__DEV__
-  ? 'https://api.rahultambare.click/api' 
+// Use production URL if available
+const BASE_URL = !__DEV__
+  ? 'https://api.rahultambare.click/api'
   : 'http://10.128.30.26:5000/api';
 
 console.log('API Base URL:', BASE_URL);
@@ -66,5 +67,18 @@ api.interceptors.request.use(async (config) => {
   console.error('Interceptor Request Error:', error);
   return Promise.reject(error);
 });
+
+// Handle Response Errors (especially 401 Unauthorized)
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    if (error.response?.status === 401) {
+      console.warn('Session expired or unauthorized. Clearing token.');
+      await removeToken();
+      NavigationService.reset('Login');
+    }
+    return Promise.reject(error);
+  }
+);
 
 export default api;
