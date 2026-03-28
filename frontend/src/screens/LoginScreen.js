@@ -32,9 +32,12 @@ export default function LoginScreen({ navigation }) {
     }
     setLoading(true);
     try {
-      await api.post('/auth/send-otp', { phone });
+      console.log('API Request: sending to /auth/send-otp...');
+      const response = await api.post('/auth/send-otp', { phone });
+      console.log('API Response received:', response.status);
       navigation.navigate('OTPVerification', { phone });
     } catch (error) {
+      console.error('API Error details:', error);
       Alert.alert('Error', error.response?.data?.error || 'Failed to send OTP. Please check your connection.');
     } finally {
       setLoading(false);

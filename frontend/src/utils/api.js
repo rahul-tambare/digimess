@@ -17,9 +17,18 @@ const api = axios.create({
 
 // Attach JWT token to every request if available
 api.interceptors.request.use(async (config) => {
-  const token = await SecureStore.getItemAsync('token');
-  if (token) config.headers.Authorization = `Bearer ${token}`;
+  try {
+    console.log('Interceptor: fetching token...');
+    const token = await SecureStore.getItemAsync('token');
+    console.log('Interceptor: token found:', !!token);
+    if (token) config.headers.Authorization = `Bearer ${token}`;
+  } catch (err) {
+    console.warn('Interceptor: SecureStore error', err);
+  }
   return config;
+}, (error) => {
+  console.error('Interceptor Request Error:', error);
+  return Promise.reject(error);
 });
 
 export default api;
