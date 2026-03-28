@@ -32,6 +32,9 @@ CREATE TABLE IF NOT EXISTS Menus (
     itemDescription TEXT,
     price DECIMAL(10, 2) NOT NULL,
     isAvailable BOOLEAN DEFAULT TRUE,
+    isVeg BOOLEAN DEFAULT TRUE,
+    calories INT DEFAULT NULL,
+    category VARCHAR(100) DEFAULT NULL,
     images JSON, -- Array of image URLs for menu items
     createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -137,9 +140,5 @@ CREATE TABLE IF NOT EXISTS Reviews (
     FOREIGN KEY (orderId) REFERENCES Orders(id) ON DELETE SET NULL
 );
 
--- Enhance Menus table with dietary info (run once)
-ALTER TABLE Menus
-    ADD COLUMN IF NOT EXISTS isVeg BOOLEAN DEFAULT TRUE,
-    ADD COLUMN IF NOT EXISTS calories INT DEFAULT NULL,
-    ADD COLUMN IF NOT EXISTS category VARCHAR(100) DEFAULT NULL;
+-- Schema completed
 

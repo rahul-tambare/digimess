@@ -16,8 +16,10 @@ sudo npm install -g pm2
 # Install Git
 sudo apt install -y git
 
-# Install MySQL Client
-sudo apt install -y mysql-client
+# Install MySQL Server and Client
+sudo apt install -y mysql-server mysql-client
+sudo systemctl enable mysql
+sudo systemctl start mysql
 
 # Install Redis
 sudo apt install -y redis-server
