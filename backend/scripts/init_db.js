@@ -1,7 +1,10 @@
 const fs = require('fs');
 const path = require('path');
 const mysql = require('mysql2/promise');
+const AWS = require('aws-sdk');
 require('dotenv').config();
+
+AWS.config.update({ region: process.env.AWS_REGION || 'ap-south-1' });
 
 const initDB = async () => {
     try {
@@ -11,6 +14,7 @@ const initDB = async () => {
             host: process.env.DB_HOST || 'localhost',
             user: process.env.DB_USER || 'root',
             password: process.env.DB_PASS || '',
+            ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false, ca: fs.readFileSync(path.join(__dirname, '../global-bundle.pem')) } : undefined,
             multipleStatements: true // Essential for running multiple SQL queries in one go
         });
 

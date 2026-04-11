@@ -14,7 +14,7 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Deploy to EC2
+      - name: Deploy to EC2 via Docker
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.HOST_DNS }}
@@ -24,33 +24,14 @@ jobs:
             cd ~/digimess
             git pull origin main
             
-            # 1. Update Backend
-            cd backend
-            npm install
-            cd ..
+            # Rebuild and start updated containers
+            sudo docker compose up -d --build
             
-            # 2. Rebuild Admin
-            cd admin
-            npm install
-            npm run build
-            cd ..
+            # Clean up old unused docker images to prevent filling the EC2 disk
+            sudo docker image prune -f
             
-            # 3. Rebuild User Web App
-            cd frontend
-            npm install
-            npx expo install react-dom react-native-web
-            npx expo export --platform web
-            cd ..
+            # Run database initialization/migrations inside the backend container
+            # (Note: -T avoids "the input device is not a TTY" error in GitHub Actions)
+            sudo docker compose exec -T backend npm run db:init || echo "Database initialized or encountered non-fatal error"
             
-            # 4. Rebuild Provider Web App
-            cd provider
-            npm install
-            npx expo install react-dom react-native-web
-            npx expo export --platform web
-            cd ..
-            
-            # 5. Restart Services
-            pm2 restart 0
-            sudo systemctl restart nginx
-            
-            echo "Deployment Complete! 🚀"
+            echo "Deployment Complete via Docker Compose! 🚀"
