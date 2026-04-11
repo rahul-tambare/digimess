@@ -58,22 +58,28 @@ const authLimiter = rateLimit({
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 const messRoutes = require('./routes/messRoutes');
+const menuRoutes = require('./routes/menuRoutes');
 const orderRoutes = require('./routes/orderRoutes');
 const walletRoutes = require('./routes/walletRoutes');
 const configRoutes = require('./routes/configRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const addressRoutes = require('./routes/addressRoutes');
 const reviewRoutes = require('./routes/reviewRoutes');
+const notificationRoutes = require('./routes/notificationRoutes');
+const invoiceRoutes = require('./routes/invoiceRoutes');
 
 app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/messes', messRoutes);
+app.use('/api/menus', menuRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/wallet', walletRoutes);
 app.use('/api', configRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/user/addresses', addressRoutes);
 app.use('/api/orders/:id/review', reviewRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/invoices', invoiceRoutes);
 
 // Health check
 app.get('/', (req, res) => res.json({ status: 'Digi Mess API is running 🍱' }));

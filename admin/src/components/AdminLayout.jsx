@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Users, Store, LogOut, Bell, Menu, X } from 'lucide-react';
+import { LayoutDashboard, Users, Store, LogOut, Bell, Menu, X, ClipboardList, Settings, Zap, HelpCircle, IndianRupee } from 'lucide-react';
 
 const AdminLayout = () => {
   const navigate = useNavigate();
@@ -48,11 +48,26 @@ const AdminLayout = () => {
           <NavLink to="/" className={({isActive}) => `nav-link ${isActive ? 'active' : ''}`} onClick={closeSidebar} end>
             <LayoutDashboard size={20} /> Dashboard
           </NavLink>
+          <NavLink to="/orders" className={({isActive}) => `nav-link ${isActive ? 'active' : ''}`} onClick={closeSidebar}>
+            <ClipboardList size={20} /> Orders
+          </NavLink>
+          <NavLink to="/subscriptions" className={({isActive}) => `nav-link ${isActive ? 'active' : ''}`} onClick={closeSidebar}>
+            <Zap size={20} /> Subscriptions
+          </NavLink>
           <NavLink to="/users" className={({isActive}) => `nav-link ${isActive ? 'active' : ''}`} onClick={closeSidebar}>
             <Users size={20} /> Users
           </NavLink>
           <NavLink to="/messes" className={({isActive}) => `nav-link ${isActive ? 'active' : ''}`} onClick={closeSidebar}>
             <Store size={20} /> Messes
+          </NavLink>
+          <NavLink to="/faqs" className={({isActive}) => `nav-link ${isActive ? 'active' : ''}`} onClick={closeSidebar}>
+            <HelpCircle size={20} /> FAQs
+          </NavLink>
+          <NavLink to="/charges" className={({isActive}) => `nav-link ${isActive ? 'active' : ''}`} onClick={closeSidebar}>
+            <IndianRupee size={20} /> Admin Charges
+          </NavLink>
+          <NavLink to="/config" className={({isActive}) => `nav-link ${isActive ? 'active' : ''}`} onClick={closeSidebar}>
+            <Settings size={20} /> App Settings
           </NavLink>
         </nav>
 

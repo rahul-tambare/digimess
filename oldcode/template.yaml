@@ -1,0 +1,941 @@
+# TODO
+# - Enhance Policies for each lambda function
+# - Nested template.yml structure [https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-template-nested-applications.html]
+# - Solar linter for build process
+
+AWSTemplateFormatVersion: 2010-09-09
+Transform:
+  - AWS::Serverless-2016-10-31
+Description: >-
+  khana-backend
+
+Parameters:
+  DBHOST:
+    Description: ""
+    Type: "String"
+    Default: "khanadatabase.czwecio2ew2d.ap-south-1.rds.amazonaws.com"
+  DBNAME:
+    Description: ""
+    Type: "String"
+    Default: "khana_test"
+  DBUSER:
+    Description: ""
+    Type: "String"
+    Default: "khanadb"
+  DBPASSWORD:
+    Description: ""
+    Type: "String"
+    Default: "TechKhana#24"
+  DBPORT:
+    Description: ""
+    Type: "String"
+    Default: "3306"
+  SMSKEY:
+    Description: ""
+    Type: "String"
+    Default: "e2b658cd81f940afa781b043878a21da"
+  SMSHEADER:
+    Description: ""
+    Type: "String"
+    Default: "ea2a110e707044d7875e536624e75a95"
+  SMSURL:
+    Description: ""
+    Type: "String"
+    Default: "http://sms.pearlsms.com/public/sms/sendjson"
+
+# Parameters:
+#   DBHOST:
+#     Description: ""
+#     Type: "String"
+#     Default: "ka-devops.crqw00kkqjni.ap-south-1.rds.amazonaws.com"
+#   DBNAME:
+#     Description: ""
+#     Type: "String"
+#     Default: "khana_prod"
+#   DBUSER:
+#     Description: ""
+#     Type: "String"
+#     Default: "kaprod"
+#   DBPASSWORD:
+#     Description: ""
+#     Type: "String"
+#     Default: "Khana2020"
+#   DBPORT:
+#     Description: ""
+#     Type: "String"
+#     Default: "3306"
+#   SMSKEY:
+#     Description: ""
+#     Type: "String"
+#     Default: "e2b658cd81f940afa781b043878a21da"
+#   SMSHEADER:
+#     Description: ""
+#     Type: "String"
+#     Default: "ea2a110e707044d7875e536624e75a95"
+#   SMSURL:
+#     Description: ""
+#     Type: "String"
+#     Default: "http://sms.pearlsms.com/public/sms/sendjson"
+
+Globals:
+  # Api:
+  #   Auth:
+  #     AddDefaultAuthorizerToCorsPreflight: false
+  #     DefailtAuthorizer: RequestAuthorizer
+  #     Authorizers:
+  #       RequestAuthorizer:
+  #         FunctionPayloadType: REQUEST
+  #         FunctionArn: !GetAtt ka-authorizer-function.Arn
+  #         Identity:
+  #           ReauthorizeEvery: 0
+  # Cors:
+  #   AllowMethods: "'GET,POST,OPTIONS'"
+  #   AlloweHeaders: "'*'"
+  #   AllowOrigin: "'*'"
+  #   AllowCredentials: "'*'"
+  # GatewayResponses:
+  #   DEFAULT_4XX:
+  #     ResponseParameters:
+  #       Headers:
+  #         Access-Control-Allow-Menthods: "'GET,POST,OPTIONS'"
+  #         Access-Control-Allow-Headers: "'*'"
+  #         Access-Control-Allow-Origin: "'*'"
+  #         Access-Control-Allow-Credentials: "'*'"
+  #   DEFAULT_5XX:
+  #     ResponseParameters:
+  #       Headers:
+  #         Access-Control-Allow-Menthods: "'GET,POST,OPTIONS'"
+  #         Access-Control-Allow-Headers: "'*'"
+  #         Access-Control-Allow-Origin: "'*'"
+  #         Access-Control-Allow-Credentials: "'*'"
+
+  Api:
+    Cors:
+      AllowHeaders: "'*'"
+      AllowMethods: "'GET,POST, PUT, OPTIONS'"
+      AllowOrigin: "'*'"
+
+  Function:
+    Environment:
+      Variables:
+        DB_HOST: !Ref DBHOST
+        DB_NAME: !Ref DBNAME
+        DB_USER: !Ref DBUSER
+        DB_PASSWORD: !Ref DBPASSWORD
+        DB_PORT: !Ref DBPORT
+        LIMIT: 20
+    Runtime: nodejs18.x
+    MemorySize: 256
+    Timeout: 60
+    Layers:
+      - !Ref CommonLayer
+Resources:
+  lambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
+        - arn:aws:iam::aws:policy/SecretsManagerReadWrite
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaRole
+        - arn:aws:iam::aws:policy/AWSLambdaExecute
+        - arn:aws:iam::aws:policy/AmazonS3FullAccess
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+
+  CommonLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      LayerName: common-layer
+      Description: Code shared across all lambda functions
+      ContentUri: src/layers/common-layer
+      CompatibleRuntimes:
+        - nodejs18.x
+      RetentionPolicy: Delete
+    Metadata:
+      BuildMethod: makefile
+
+  createCustomer:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/handlers/createCustomer
+      Handler: index.handler
+      FunctionName: createCustomer
+      Description: "A lambda to create customer."
+      Role: !GetAtt lambdaExecutionRole.Arn
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: "/createCustomer"
+            Method: POST
+      # Layers:
+      #  - !Ref CommonCodeLayer
+    Metadata:
+      BuildMethod: nodejs18.x
+
+  manageConsAddress:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/handlers/manageConsAddress
+      Handler: index.handler
+      FunctionName: manageConsAddress
+      Description: "A lambda to manage customer address."
+      Role: !GetAtt lambdaExecutionRole.Arn
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: "/manageConsAddress"
+            Method: POST
+      # Layers:
+      # - !Ref CommonCodeLayer
+    Metadata:
+      BuildMethod: nodejs18.x
+
+  validateOTP:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/handlers/validateOTP
+      Handler: index.handler
+      FunctionName: validateOTP
+      Description: "A lambda to validate OTP"
+      Role: !GetAtt lambdaExecutionRole.Arn
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: "/validateOTP"
+            Method: POST
+      # Layers:
+      # - !Ref CommonCodeLayer
+    Metadata:
+      BuildMethod: nodejs18.x
+
+  getConsAddresses:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/handlers/getConsAddresses
+      Handler: index.handler
+      FunctionName: getConsAddresses
+      Description: "A lambda to get list of consumer addresses"
+      Role: !GetAtt lambdaExecutionRole.Arn
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: "/getConsAddresses"
+            Method: POST
+      # Layers:
+      # - !Ref CommonCodeLayer
+    Metadata:
+      BuildMethod: nodejs18.x
+
+  signIn:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/handlers/signIn
+      Handler: index.handler
+      FunctionName: signIn
+      Description: "A lambda to signIn"
+      Role: !GetAtt lambdaExecutionRole.Arn
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: "/signIn"
+            Method: POST
+      # Layers:
+      # - !Ref CommonCodeLayer
+    Metadata:
+      BuildMethod: nodejs18.x
+
+  getPackageList:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/handlers/getPackageList
+      Handler: index.handler
+      FunctionName: getPackageList
+      Description: "A lambda to get packages list"
+      Role: !GetAtt lambdaExecutionRole.Arn
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: "/getPackageList"
+            Method: POST
+      # Layers:
+      # - !Ref CommonCodeLayer
+    Metadata:
+      BuildMethod: nodejs18.x
+
+  getEnrolledPackages:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/handlers/getEnrolledPackages
+      Handler: index.handler
+      FunctionName: getEnrolledPackages
+      Description: "A lambda to get packages list"
+      Role: !GetAtt lambdaExecutionRole.Arn
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: "/getEnrolledPackages"
+            Method: POST
+      # Layers:
+      # - !Ref CommonCodeLayer
+    Metadata:
+      BuildMethod: nodejs18.x
+
+  manageMSPAddress:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/handlers/manageMSPAddress
+      Handler: index.handler
+      FunctionName: manageMSPAddress
+      Description: "A lambda to manage MSP address"
+      Role: !GetAtt lambdaExecutionRole.Arn
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: "/manageMSPAddress"
+            Method: POST
+      # Layers:
+      # - !Ref CommonCodeLayer
+    Metadata:
+      BuildMethod: nodejs18.x
+
+  manageRecharge:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/handlers/manageRecharge
+      Handler: index.handler
+      FunctionName: manageRecharge
+      Description: "A lambda to get packages list"
+      Role: !GetAtt lambdaExecutionRole.Arn
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: "/manageRecharge"
+            Method: POST
+      #Layers:
+      # - !Ref CommonCodeLayer
+    Metadata:
+      BuildMethod: nodejs18.x
+
+  getAvailableMSPs:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/handlers/getAvailableMSPs
+      Handler: index.handler
+      FunctionName: getAvailableMSPs
+      Description: "A lambda to get packages list"
+      Role: !GetAtt lambdaExecutionRole.Arn
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: "/getAvailableMSPs"
+            Method: POST
+      #Layers:
+      # - !Ref CommonCodeLayer
+    Metadata:
+      BuildMethod: nodejs18.x
+
+  KACustomAuthorizer:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: index.handler
+      Runtime: nodejs18.x
+      CodeUri: src/handlers/authorizer
+      FunctionName: ka-authorizer-function
+      Role: !GetAtt lambdaExecutionRole.Arn
+      Environment:
+        Variables:
+          PARAMETER_NAME: VALUE
+      Events:
+        MyAuthorizer:
+          Type: Api
+          Properties:
+            Path: /authorizer
+            Method: POST
+
+  getMSPMenuDetails:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/handlers/getMSPMenuDetails
+      Handler: index.handler
+      FunctionName: getMSPMenuDetails
+      Description: "A lambda to get packages list"
+      Role: !GetAtt lambdaExecutionRole.Arn
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: "/getMSPMenuDetails"
+            Method: POST
+      #Layers:
+      # - !Ref CommonCodeLayer
+    Metadata:
+      BuildMethod: nodejs18.x
+
+  createMealOrder:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/handlers/createMealOrder
+      Handler: index.handler
+      FunctionName: createMealOrder
+      Description: "A lambda to get packages list"
+      Role: !GetAtt lambdaExecutionRole.Arn
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: "/createMealOrder"
+            Method: POST
+      #Layers:
+      # - !Ref CommonCodeLayer
+    Metadata:
+      BuildMethod: nodejs18.x
+
+  editConsumerProfile:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/handlers/editConsumerProfile
+      Handler: index.handler
+      FunctionName: editConsumerProfile
+      Description: "A lambda to validate OTP"
+      Role: !GetAtt lambdaExecutionRole.Arn
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: "/editConsumerProfile"
+            Method: POST
+      #Layers:
+      # - !Ref CommonCodeLayer
+    Metadata:
+      BuildMethod: nodejs18.x
+
+  resendOTP:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/handlers/resendOTP
+      Handler: index.handler
+      FunctionName: resendOTP
+      Description: "A lambda to validate OTP"
+      Role: !GetAtt lambdaExecutionRole.Arn
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: "/resendOTP"
+            Method: POST
+      #Layers:
+      # - !Ref CommonCodeLayer
+    Metadata:
+      BuildMethod: nodejs18.x
+
+  getFAQs:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/handlers/getFAQs
+      Handler: index.handler
+      FunctionName: getFAQs
+      Description: "A lambda to get FAQ data"
+      Role: !GetAtt lambdaExecutionRole.Arn
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: "/getFAQs"
+            Method: POST
+      #Layers:
+      # - !Ref CommonCodeLayer
+    Metadata:
+      BuildMethod: nodejs18.x
+
+  manageMSPSettings:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/handlers/manageMSPSettings
+      Handler: index.handler
+      FunctionName: manageMSPSettings
+      Description: "A lambda to manage MSP Settings"
+      Role: !GetAtt lambdaExecutionRole.Arn
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: "/manageMSPSettings"
+            Method: POST
+      #Layers:
+      # - !Ref CommonCodeLayer
+    Metadata:
+      BuildMethod: nodejs18.x
+
+  manageBankDetails:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/handlers/manageBankDetails
+      Handler: index.handler
+      FunctionName: manageBankDetails
+      Description: "A lambda to manage MSP Bank Details"
+      Role: !GetAtt lambdaExecutionRole.Arn
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: "/manageBankDetails"
+            Method: POST
+      #Layers:
+      # - !Ref CommonCodeLayer
+    Metadata:
+      BuildMethod: nodejs18.x
+
+  getOrderHistory:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/handlers/getOrderHistory
+      Handler: index.handler
+      FunctionName: getOrderHistory
+      Description: "A lambda to getOrderHistory"
+      Role: !GetAtt lambdaExecutionRole.Arn
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: "/getOrderHistory"
+            Method: POST
+      #Layers:
+      # - !Ref CommonCodeLayer
+    Metadata:
+      BuildMethod: nodejs18.x
+
+  getRechargeHistory:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/handlers/getRechargeHistory
+      Handler: index.handler
+      FunctionName: getRechargeHistory
+      Description: "A lambda to getRechargeHistory"
+      Role: !GetAtt lambdaExecutionRole.Arn
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: "/getRechargeHistory"
+            Method: POST
+      #Layers:
+      # - !Ref CommonCodeLayer
+    Metadata:
+      BuildMethod: nodejs18.x
+
+  getInvoiceItems:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/handlers/getInvoiceItems
+      Handler: index.handler
+      FunctionName: getInvoiceItems
+      Description: "A lambda to getInvoiceItems"
+      Role: !GetAtt lambdaExecutionRole.Arn
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: "/getInvoiceItems"
+            Method: POST
+      #Layers:
+      # - !Ref CommonCodeLayer
+    Metadata:
+      BuildMethod: nodejs18.x
+
+  getMspStatus:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/handlers/getMspStatus
+      Handler: index.handler
+      FunctionName: getMspStatus
+      Description: "A lambda to getMspStatus"
+      Role: !GetAtt lambdaExecutionRole.Arn
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: "/getMspStatus"
+            Method: POST
+      #Layers:
+      # - !Ref CommonCodeLayer
+    Metadata:
+      BuildMethod: nodejs18.x
+
+  getMenuItemList:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/handlers/getMenuItemList
+      Handler: index.handler
+      FunctionName: getMenuItemList
+      Description: "A lambda to getMenuItemList"
+      Role: !GetAtt lambdaExecutionRole.Arn
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: "/getMenuItemList"
+            Method: POST
+      #Layers:
+      # - !Ref CommonCodeLayer
+    Metadata:
+      BuildMethod: nodejs18.x
+
+  addMenuDetails:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/handlers/addMenuDetails
+      Handler: index.handler
+      FunctionName: addMenuDetails
+      Description: "A lambda to addMenuDetails"
+      Role: !GetAtt lambdaExecutionRole.Arn
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: "/addMenuDetails"
+            Method: POST
+      #Layers:
+      # - !Ref CommonCodeLayer
+    Metadata:
+      BuildMethod: nodejs18.x
+
+  addFCMToken:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/handlers/addFCMToken
+      Handler: index.handler
+      FunctionName: addFCMToken
+      Description: "A lambda to addFCMToken"
+      Role: !GetAtt lambdaExecutionRole.Arn
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: "/addFCMToken"
+            Method: POST
+      #Layers:
+      # - !Ref CommonCodeLayer
+    Metadata:
+      BuildMethod: nodejs18.x
+
+  manageOrderStatus:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/handlers/manageOrderStatus
+      Handler: index.handler
+      FunctionName: manageOrderStatus
+      Description: "A lambda to manageOrderStatus"
+      Role: !GetAtt lambdaExecutionRole.Arn
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: "/manageOrderStatus"
+            Method: POST
+      #Layers:
+      # - !Ref CommonCodeLayer
+    Metadata:
+      BuildMethod: nodejs18.x
+
+  generateInvoices:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/handlers/generateInvoices
+      Handler: index.handler
+      FunctionName: generateInvoices
+      Description: "A lambda to generateInvoices"
+      Role: !GetAtt lambdaExecutionRole.Arn
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: "/generateInvoices"
+            Method: POST
+      #Layers:
+      # - !Ref CommonCodeLayer
+    Metadata:
+      BuildMethod: nodejs18.x
+
+  getmanageMess:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/handlers/manageMess
+      Handler: index.handler
+      FunctionName: getmanageMess
+      Description: "A lambda to getmanageMess"
+      Role: !GetAtt lambdaExecutionRole.Arn
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: "/getmanageMess"
+            Method: POST
+      #Layers:
+      # - !Ref CommonCodeLayer
+    Metadata:
+      BuildMethod: nodejs18.x
+
+  getmanagePayment:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/handlers/managePayment
+      Handler: index.handler
+      FunctionName: getmanagePayment
+      Description: "A lambda to getmanagePayment"
+      Role: !GetAtt lambdaExecutionRole.Arn
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: "/getmanagePayment"
+            Method: GET
+      #Layers:
+      # - !Ref CommonCodeLayer
+    Metadata:
+      BuildMethod: nodejs18.x
+
+  getmanageConsumer:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/handlers/manageConsumer
+      Handler: index.handler
+      FunctionName: getmanageConsumer
+      Description: "A lambda to getmanageConsumer"
+      Role: !GetAtt lambdaExecutionRole.Arn
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: "/getmanageConsumer"
+            Method: GET
+      #Layers:
+      # - !Ref CommonCodeLayer
+    Metadata:
+      BuildMethod: nodejs18.x
+
+  getmanageOrder:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/handlers/manageOrder
+      Handler: index.handler
+      FunctionName: getmanageOrder
+      Description: "A lambda to getmanageOrder"
+      Role: !GetAtt lambdaExecutionRole.Arn
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: "/getmanageOrder"
+            Method: GET
+      #Layers:
+      # - !Ref CommonCodeLayer
+    Metadata:
+      BuildMethod: nodejs18.x
+
+  managePackage:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/handlers/managePackage
+      Handler: index.handler
+      FunctionName: managePackage
+      Description: "A lambda to managePackage"
+      Role: !GetAtt lambdaExecutionRole.Arn
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: "/managePackage"
+            Method: POST
+      #Layers:
+      # - !Ref CommonCodeLayer
+    Metadata:
+      BuildMethod: nodejs18.x
+
+  manageMenuItem:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/handlers/manageMenuItem
+      Handler: index.handler
+      FunctionName: manageMenuItem
+      Description: "A lambda to manageMenuItem"
+      Role: !GetAtt lambdaExecutionRole.Arn
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: "/manageMenuItem"
+            Method: POST
+      #Layers:
+      # - !Ref CommonCodeLayer
+    Metadata:
+      BuildMethod: nodejs18.x
+
+  manageMenu:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/handlers/manageMenu
+      Handler: index.handler
+      FunctionName: manageMenu
+      Description: "A lambda to manageMenu"
+      Role: !GetAtt lambdaExecutionRole.Arn
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: "/manageMenu"
+            Method: POST
+      #Layers:
+      # - !Ref CommonCodeLayer
+    Metadata:
+      BuildMethod: nodejs18.x
+
+  manageUserCoin:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/handlers/manageUserCoin
+      Handler: index.handler
+      FunctionName: manageUserCoin
+      Description: "A lambda to manageUserCoin"
+      Role: !GetAtt lambdaExecutionRole.Arn
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: "/manageUserCoin"
+            Method: POST
+      #Layers:
+      # - !Ref CommonCodeLayer
+    Metadata:
+      BuildMethod: nodejs18.x
+
+  manageAdminChrg:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/handlers/manageAdminChrg
+      Handler: index.handler
+      FunctionName: manageAdminChrg
+      Description: "A lambda to manageAdminChrg"
+      Role: !GetAtt lambdaExecutionRole.Arn
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: "/manageAdminChrg"
+            Method: POST
+      #Layers:
+      # - !Ref CommonCodeLayer
+    Metadata:
+      BuildMethod: nodejs18.x
+
+  manageTodaysOrder:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/handlers/manageTodaysOrder
+      Handler: index.handler
+      FunctionName: manageTodaysOrder
+      Description: "A lambda to manageTodaysOrder"
+      Role: !GetAtt lambdaExecutionRole.Arn
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: "/manageTodaysOrder"
+            Method: POST
+      #Layers:
+      # - !Ref CommonCodeLayer
+    Metadata:
+      BuildMethod: nodejs18.x
+
+  manageInvoice:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/handlers/manageInvoice
+      Handler: index.handler
+      FunctionName: manageInvoice
+      Description: "A lambda to manageInvoice"
+      Role: !GetAtt lambdaExecutionRole.Arn
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: "/manageInvoice"
+            Method: POST
+      #Layers:
+      # - !Ref CommonCodeLayer
+    Metadata:
+      BuildMethod: nodejs18.x
+
+  deleteAccount:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/handlers/deleteAccount
+      Handler: index.handler
+      FunctionName: deleteAccount
+      Description: "A lambda to deleteAccount"
+      Role: !GetAtt lambdaExecutionRole.Arn
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: "/deleteAccount"
+            Method: POST
+      #Layers:
+      # - !Ref CommonCodeLayer
+    Metadata:
+      BuildMethod: nodejs18.x
+
+  get-fcm-token:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/handlers/getFCMToken
+      Handler: index.handler
+      FunctionName: get-fcm-token
+      Description: "A lambda to handle Firebase Admin operations"
+      Role: !GetAtt lambdaExecutionRole.Arn
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: "/get-fcm-token/{userId}"
+            Method: GET
+      #Layers:
+      # - !Ref CommonCodeLayer
+      Metadata:
+        BuildMethod: nodejs18.x
+
+  send_notification:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/handlers/send_notification
+      Handler: index.handler
+      FunctionName: send_notification
+      Description: "A lambda to send Firebase notifications"
+      Role: !GetAtt lambdaExecutionRole.Arn
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: "/send_notification"
+            Method: POST
+      #Layers:
+      # - !Ref CommonCodeLayer
+      Metadata:
+        BuildMethod: nodejs18.x

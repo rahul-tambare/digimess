@@ -128,7 +128,7 @@ export default function ProfileScreen({ navigation }) {
             <Text style={styles.chevron}>›</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.settingItem}>
+          <TouchableOpacity style={styles.settingItem} onPress={() => navigation.navigate('FAQ')}>
             <View style={[styles.settingIconWrap, {backgroundColor: COLORS.surfaceContainerHighest}]}>
               <Text style={{fontSize: 20}}>🎧</Text>
             </View>

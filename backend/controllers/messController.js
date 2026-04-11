@@ -43,3 +43,44 @@ exports.createMess = async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 };
+
+// GET /api/messes/provider/my-messes (For Providers)
+exports.getMyMesses = async (req, res) => {
+  try {
+    const [messes] = await db.query('SELECT * FROM Messes WHERE vendorId = ?', [req.user.id]);
+    res.json(messes);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+// PUT /api/messes/:id (For Providers to update their mess details)
+exports.updateMess = async (req, res) => {
+  try {
+    const messId = req.params.id;
+    const { name, description, address, images, isOpen } = req.body;
+
+    // Verify ownership
+    const [messCheck] = await db.query('SELECT id FROM Messes WHERE id = ? AND vendorId = ?', [messId, req.user.id]);
+    if (messCheck.length === 0) {
+      return res.status(403).json({ error: 'Unauthorized to update this mess' });
+    }
+
+    await db.query(
+      `UPDATE Messes SET 
+        name = COALESCE(?, name),
+        description = COALESCE(?, description),
+        address = COALESCE(?, address),
+        images = COALESCE(?, images),
+        isOpen = COALESCE(?, isOpen)
+       WHERE id = ?`,
+       [name, description, address, images ? JSON.stringify(images) : null, isOpen !== undefined ? isOpen : null, messId]
+    );
+
+    res.json({ message: 'Mess updated successfully' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};

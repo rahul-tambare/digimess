@@ -49,6 +49,8 @@ CREATE TABLE IF NOT EXISTS Subscriptions (
     type ENUM('single_mess', 'multi_mess') DEFAULT 'single_mess',
     startDate DATE NOT NULL,
     endDate DATE NOT NULL,
+    pauseStartDate DATE DEFAULT NULL,
+    pauseEndDate DATE DEFAULT NULL,
     mealsRemaining INT NOT NULL DEFAULT 0,
     isActive BOOLEAN DEFAULT TRUE,
     createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -138,6 +140,50 @@ CREATE TABLE IF NOT EXISTS Reviews (
     FOREIGN KEY (customerId) REFERENCES Users(id) ON DELETE CASCADE,
     FOREIGN KEY (messId) REFERENCES Messes(id) ON DELETE CASCADE,
     FOREIGN KEY (orderId) REFERENCES Orders(id) ON DELETE SET NULL
+);
+
+-- Push Notifications and Device Tokens
+CREATE TABLE IF NOT EXISTS DeviceRegistration (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    userId VARCHAR(36) NOT NULL,
+    fcmToken VARCHAR(255) NOT NULL,
+    deviceType VARCHAR(50),
+    lastUsed TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (userId) REFERENCES Users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS NotificationLogs (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    userId VARCHAR(36) NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    body TEXT NOT NULL,
+    data JSON,
+    isRead BOOLEAN DEFAULT FALSE,
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (userId) REFERENCES Users(id) ON DELETE CASCADE
+);
+
+-- Push Notifications and Device Tokens
+CREATE TABLE IF NOT EXISTS DeviceRegistration (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    userId VARCHAR(36) NOT NULL,
+    fcmToken VARCHAR(255) NOT NULL,
+    deviceType VARCHAR(50),
+    lastUsed TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (userId) REFERENCES Users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS NotificationLogs (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    userId VARCHAR(36) NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    body TEXT NOT NULL,
+    data JSON,
+    isRead BOOLEAN DEFAULT FALSE,
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (userId) REFERENCES Users(id) ON DELETE CASCADE
 );
 
 -- Schema completed

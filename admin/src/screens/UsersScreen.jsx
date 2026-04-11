@@ -1,19 +1,113 @@
 import React, { useState, useEffect } from 'react';
-import { Mail, Phone, Wallet } from 'lucide-react';
+import { Mail, Phone, Wallet, Plus, Minus, X } from 'lucide-react';
 import api from '../utils/api';
+
+const WalletModal = ({ user, onClose, onUpdate }) => {
+  const [amount, setAmount] = useState('');
+  const [type, setType] = useState('credit');
+  const [description, setDescription] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      await api.post('/admin/users/wallet', {
+        userId: user.id,
+        amount: parseFloat(amount),
+        type,
+        description: description || `Admin ${type}`
+      });
+      onUpdate();
+      onClose();
+    } catch (err) {
+      console.error('Failed to update wallet', err);
+      alert('Failed to update wallet balance.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="sidebar-overlay open" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+      <div className="card glass" style={{ width: '90%', maxWidth: 400, padding: 32 }}>
+        <div className="flex justify-between items-center mb-6">
+          <h2 style={{ fontSize: '1.25rem' }}>Update Wallet</h2>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={20}/></button>
+        </div>
+        
+        <p className="text-muted mb-6" style={{ fontSize: 14 }}>Updating wallet for <strong>{user.name}</strong></p>
+
+        <form onSubmit={handleSubmit} className="flex-col gap-4">
+          <div className="flex gap-2">
+            <button 
+              type="button" 
+              className={`flex-1 btn-secondary ${type === 'credit' ? 'active' : ''}`}
+              onClick={() => setType('credit')}
+              style={{ background: type === 'credit' ? 'var(--success)' : 'var(--surface-low)', color: type === 'credit' ? 'white' : 'var(--on-surface)' }}
+            >
+              <Plus size={16} /> Credit
+            </button>
+            <button 
+              type="button" 
+              className={`flex-1 btn-secondary ${type === 'debit' ? 'active' : ''}`}
+              onClick={() => setType('debit')}
+              style={{ background: type === 'debit' ? 'var(--error)' : 'var(--surface-low)', color: type === 'debit' ? 'white' : 'var(--on-surface)' }}
+            >
+              <Minus size={16} /> Debit
+            </button>
+          </div>
+
+          <div className="input-group">
+            <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--on-surface-variant)' }}>Amount (₹)</label>
+            <input 
+              type="number" 
+              className="input" 
+              value={amount} 
+              onChange={(e) => setAmount(e.target.value)} 
+              required 
+              placeholder="0.00"
+            />
+          </div>
+
+          <div className="input-group">
+            <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--on-surface-variant)' }}>Description (Optional)</label>
+            <input 
+              type="text" 
+              className="input" 
+              value={description} 
+              onChange={(e) => setDescription(e.target.value)} 
+              placeholder="e.g., Refund for Order #123"
+            />
+          </div>
+
+          <button type="submit" className="btn-primary w-full" disabled={loading || !amount}>
+            {loading ? 'Processing...' : 'Update Balance'}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+};
 
 const UsersScreen = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedUser, setSelectedUser] = useState(null);
 
-  useEffect(() => {
+  const fetchUsers = () => {
+    setLoading(true);
     api.get('/admin/users')
       .then(res => setUsers(res.data))
       .catch(err => console.error('Failed to view users', err))
       .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    fetchUsers();
   }, []);
 
-  if (loading) return <div style={{padding: 40, textAlign: 'center', color: 'var(--primary)', fontWeight: 700}}>Loading user database...</div>;
+  if (loading && users.length === 0) return <div style={{padding: 40, textAlign: 'center', color: 'var(--primary)', fontWeight: 700}}>Loading user database...</div>;
 
   return (
     <div className="flex-col gap-6">
@@ -33,7 +127,7 @@ const UsersScreen = () => {
                 <th style={{ fontWeight: 800, fontSize: 12, color: 'var(--on-surface-variant)', letterSpacing: 1, textTransform: 'uppercase' }}>Contact</th>
                 <th style={{ fontWeight: 800, fontSize: 12, color: 'var(--on-surface-variant)', letterSpacing: 1, textTransform: 'uppercase' }}>Role</th>
                 <th style={{ fontWeight: 800, fontSize: 12, color: 'var(--on-surface-variant)', letterSpacing: 1, textTransform: 'uppercase' }}>Wallet</th>
-                <th style={{ fontWeight: 800, fontSize: 12, color: 'var(--on-surface-variant)', letterSpacing: 1, textTransform: 'uppercase' }}>Joined</th>
+                <th style={{ fontWeight: 800, fontSize: 12, color: 'var(--on-surface-variant)', letterSpacing: 1, textTransform: 'uppercase' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -63,8 +157,14 @@ const UsersScreen = () => {
                       ₹{parseFloat(user.walletBalance).toFixed(2)}
                     </span>
                   </td>
-                  <td style={{ color: 'var(--on-surface-variant)', fontSize: 14 }}>
-                    {new Date(user.createdAt).toLocaleDateString()}
+                  <td>
+                    <button 
+                      className="btn-secondary" 
+                      style={{ padding: '8px 12px', fontSize: 12 }}
+                      onClick={() => setSelectedUser(user)}
+                    >
+                      <Plus size={14} /> Wallet
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -75,6 +175,14 @@ const UsersScreen = () => {
           </table>
         </div>
       </div>
+
+      {selectedUser && (
+        <WalletModal 
+          user={selectedUser} 
+          onClose={() => setSelectedUser(null)} 
+          onUpdate={fetchUsers} 
+        />
+      )}
     </div>
   );
 };

@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity,
-  StyleSheet, StatusBar, Alert, ActivityIndicator,
+  StyleSheet, StatusBar, Alert, ActivityIndicator, Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -64,8 +64,18 @@ export default function OTPVerificationScreen({ route, navigation }) {
       const res = await api.post('/auth/verify-otp', { phone, otp: fullOtp });
       await saveToken(res.data.token);
       await AsyncStorage.setItem('user', JSON.stringify(res.data.user));
+      
+      // Register device for notifications (v3.0)
+      try {
+        await api.post('/user/devices', {
+          fcmToken: 'placeholder_token_' + Date.now(),
+          deviceType: Platform.OS === 'android' ? 'android' : 'ios'
+        });
+      } catch (devErr) {
+        console.log('Device registration failed (non-critical):', devErr);
+      }
+
       Alert.alert('Success', 'Login successful!');
-      // Save token successfully, now navigate to home tabs
       navigation.replace('MainTabs');
     } catch (error) {
       Alert.alert('Error', error.response?.data?.error || 'Invalid OTP. Please try again.');

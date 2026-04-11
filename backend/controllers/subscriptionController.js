@@ -78,3 +78,60 @@ exports.getMySubscriptions = async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 };
+
+// POST /api/user/subscriptions/:id/pause
+exports.pauseSubscription = async (req, res) => {
+  try {
+    const subId = req.params.id;
+    const { pauseStartDate, pauseEndDate } = req.body; // YYYY-MM-DD
+    
+    // Validate ownership
+    const [sub] = await db.query('SELECT * FROM Subscriptions WHERE id = ? AND customerId = ? AND isActive = 1', [subId, req.user.id]);
+    if (sub.length === 0) return res.status(403).json({ error: 'Subscription not found or inactive' });
+    
+    // We can allow users to pause if they aren't already paused
+    await db.query('UPDATE Subscriptions SET pauseStartDate = ?, pauseEndDate = ? WHERE id = ?', [pauseStartDate, pauseEndDate, subId]);
+    res.json({ message: 'Subscription paused successfully' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Server error pausing subscription' });
+  }
+};
+
+// POST /api/user/subscriptions/:id/resume
+exports.resumeSubscription = async (req, res) => {
+  try {
+    const subId = req.params.id;
+    
+    const [subRows] = await db.query('SELECT * FROM Subscriptions WHERE id = ? AND customerId = ? AND isActive = 1', [subId, req.user.id]);
+    if (subRows.length === 0) return res.status(403).json({ error: 'Subscription not found or inactive' });
+    
+    const sub = subRows[0];
+    if (sub.pauseStartDate && sub.pauseEndDate) {
+      // Calculate how many days were actually paused up to today, and extend endDate
+      const today = new Date();
+      const pauseStart = new Date(sub.pauseStartDate);
+      let daysPaused = 0;
+      
+      if (today > pauseStart) {
+         // Pause started in the past, calculate paused days
+         const pauseEnd = today > new Date(sub.pauseEndDate) ? new Date(sub.pauseEndDate) : today;
+         daysPaused = Math.ceil((pauseEnd.getTime() - pauseStart.getTime()) / (1000 * 60 * 60 * 24));
+      }
+      
+      // Update the endDate to add the days paused
+      const newEndDate = new Date(sub.endDate);
+      newEndDate.setDate(newEndDate.getDate() + daysPaused);
+      
+      await db.query(
+        'UPDATE Subscriptions SET pauseStartDate = NULL, pauseEndDate = NULL, endDate = ? WHERE id = ?', 
+        [newEndDate, subId]
+      );
+    }
+    
+    res.json({ message: 'Subscription resumed successfully' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Server error resuming subscription' });
+  }
+};

@@ -98,7 +98,7 @@ exports.getMyOrders = async (req, res) => {
       `SELECT o.*, m.name AS messName, m.images AS messImages
        FROM Orders o
        JOIN Messes m ON o.messId = m.id
-       WHERE o.customerId = ?
+       WHERE o.customerId = ? AND o.isDeleted = 0
        ORDER BY o.createdAt DESC`,
       [req.user.id]
     );
@@ -109,11 +109,99 @@ exports.getMyOrders = async (req, res) => {
   }
 };
 
+// GET /api/orders/provider/my-orders — get orders for provider's messes
+exports.getProviderOrders = async (req, res) => {
+  try {
+     const [rows] = await db.query(
+       `SELECT o.*, 
+               u.name AS customerName, u.phone AS customerPhone,
+               m.name AS messName 
+        FROM Orders o
+        JOIN Messes m ON o.messId = m.id
+        JOIN Users u ON o.customerId = u.id
+        WHERE m.vendorId = ? AND o.isDeleted = 0
+        ORDER BY o.createdAt DESC`,
+       [req.user.id]
+     );
+     res.json(rows);
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+// GET /api/orders/provider/forecast — Dashboard overview of required meals today
+exports.getKitchenForecast = async (req, res) => {
+  try {
+    const providerId = req.user.id;
+    const today = new Date().toISOString().split('T')[0];
+
+    // 1. Calculate Active Subscriptions for today (not paused)
+    const [subscriptions] = await db.query(
+      `SELECT COUNT(s.id) as totalActiveSubs 
+       FROM Subscriptions s
+       JOIN Messes m ON s.messId = m.id
+       WHERE m.vendorId = ? 
+         AND s.isActive = 1 
+         AND s.mealsRemaining > 0 
+         AND s.startDate <= ? 
+         AND s.endDate >= ? 
+         AND (s.pauseStartDate IS NULL OR s.pauseStartDate > ? OR s.pauseEndDate < ?)`,
+      [providerId, today, today, today, today]
+    );
+
+    // 2. Calculate Today's On-Demand Orders
+    const [orders] = await db.query(
+      `SELECT COUNT(o.id) as totalPendingOrders
+       FROM Orders o
+       JOIN Messes m ON o.messId = m.id
+       WHERE m.vendorId = ? 
+         AND o.status IN ('pending', 'confirmed', 'preparing')
+         AND DATE(o.createdAt) = ?`,
+      [providerId, today]
+    );
+
+    res.json({
+      message: 'Kitchen Forecast for ' + today,
+      data: {
+        activeSubscriptionsToday: subscriptions[0].totalActiveSubs,
+        pendingOnDemandOrders: orders[0].totalPendingOrders,
+        totalMealsToPrepare: subscriptions[0].totalActiveSubs + orders[0].totalPendingOrders
+      }
+    });
+
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'Internal server error calculating forecast' });
+  }
+};
+
 // PATCH /api/orders/:id/status — update status (vendor/admin)
 exports.updateOrderStatus = async (req, res) => {
   try {
     const { status } = req.body;
-    await db.query('UPDATE Orders SET status = ? WHERE id = ?', [status, req.params.id]);
+    const orderId = req.params.id;
+
+    // Verify ownership if role is vendor
+    if (req.user && req.user.role === 'vendor') {
+      const [orderCheck] = await db.query(
+        'SELECT o.id, o.customerId FROM Orders o JOIN Messes m ON o.messId = m.id WHERE o.id = ? AND m.vendorId = ?',
+        [orderId, req.user.id]
+      );
+      if (orderCheck.length === 0) {
+        return res.status(403).json({ error: 'Unauthorized to update this order' });
+      }
+
+      await db.query('UPDATE Orders SET status = ? WHERE id = ?', [status, orderId]);
+      
+      // Send Push Notification securely
+      const customerId = orderCheck[0].customerId;
+      const { sendPushNotification } = require('./notificationController');
+      await sendPushNotification(customerId, 'Order Update', `Your order #${orderId.slice(0,6)} is now ${status}.`, { orderId, status });
+    } else {
+      await db.query('UPDATE Orders SET status = ? WHERE id = ?', [status, orderId]);
+    }
+
     res.json({ message: 'Order status updated' });
   } catch (e) {
     console.error(e);

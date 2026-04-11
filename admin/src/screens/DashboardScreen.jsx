@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Users, Store, DollarSign, Activity } from 'lucide-react';
 import api from '../utils/api';
 
-const StatCard = ({ title, value, icon: Icon, color }) => (
-  <div className="card glass flex items-center gap-4 md-gap-6">
+import { Link } from 'react-router-dom';
+
+const StatCard = ({ title, value, icon: Icon, color, link }) => (
+  <Link to={link || '#'} className="card glass flex items-center gap-4 md-gap-6" style={{ textDecoration: 'none', color: 'inherit' }}>
     <div style={{ 
       width: 56, 
       height: 56, 
@@ -21,8 +23,9 @@ const StatCard = ({ title, value, icon: Icon, color }) => (
       <p className="text-muted" style={{ fontWeight: 800, fontSize: 10, letterSpacing: 1, marginBottom: 4, textTransform: 'uppercase' }}>{title}</p>
       <h2 style={{ fontSize: '1.75rem', fontWeight: 900, lineHeight: 1.2 }}>{value}</h2>
     </div>
-  </div>
+  </Link>
 );
+
 
 const DashboardScreen = () => {
   const [stats, setStats] = useState({ totalUsers: 0, totalMesses: 0, totalRevenue: 0, activeSubs: 0 });
@@ -47,11 +50,12 @@ const DashboardScreen = () => {
       </div>
 
       <div className="stats-grid">
-        <StatCard title="TOTAL USERS" value={stats.totalUsers} icon={Users} color="#1b6d24" />
-        <StatCard title="PARTNER MESSES" value={stats.totalMesses} icon={Store} color="#a14000" />
-        <StatCard title="ACTIVE SUBS" value={stats.activeSubs} icon={Activity} color="#005fb8" />
-        <StatCard title="TOTAL REVENUE" value={`₹${stats.totalRevenue}`} icon={DollarSign} color="#ba1a1a" />
+        <StatCard title="TOTAL USERS" value={stats.totalUsers} icon={Users} color="#1b6d24" link="/users" />
+        <StatCard title="PARTNER MESSES" value={stats.totalMesses} icon={Store} color="#a14000" link="/messes" />
+        <StatCard title="ACTIVE SUBS" value={stats.activeSubs} icon={Activity} color="#005fb8" link="/subscriptions" />
+        <StatCard title="TOTAL REVENUE" value={`₹${stats.totalRevenue}`} icon={DollarSign} color="#ba1a1a" link="/orders" />
       </div>
+
 
       <div className="card glass mt-4" style={{ minHeight: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
          <div className="flex-col items-center text-center p-6">

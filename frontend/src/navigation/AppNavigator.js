@@ -23,6 +23,7 @@ import TrackOrderScreen from '../screens/TrackOrderScreen';
 import AddAddressScreen from '../screens/AddAddressScreen';
 import MySubscriptionsScreen from '../screens/MySubscriptionsScreen';
 import ReviewScreen from '../screens/ReviewScreen';
+import FAQScreen from '../screens/FAQScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -103,6 +104,7 @@ export default function AppNavigator() {
         <Stack.Screen name="AddAddress" component={AddAddressScreen} options={{ presentation: 'modal' }} />
         <Stack.Screen name="MySubscriptions" component={MySubscriptionsScreen} />
         <Stack.Screen name="Review" component={ReviewScreen} />
+        <Stack.Screen name="FAQ" component={FAQScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
