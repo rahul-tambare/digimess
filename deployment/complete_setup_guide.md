@@ -81,13 +81,16 @@ pm2 save
 pm2 startup
 ```
 
-### 4.3 Build Frontend & Admin
+### 4.3 Build Frontend, Admin, & Provider
 ```bash
 # Admin Panel
 cd admin && npm install && npm run build
 
-# Web App
+# User Web App
 cd ../frontend && npx expo install react-dom react-native-web && npx expo export --platform web
+
+# Provider Web App
+cd ../provider && npx expo install react-dom react-native-web && npx expo export --platform web
 ```
 
 ---
@@ -107,11 +110,13 @@ Add **A Records** for your Elastic IP:
 - `www.rahultambare.click`
 - `admin.rahultambare.click`
 - `api.rahultambare.click`
+- `provider.rahultambare.click`
+- `www.provider.rahultambare.click`
 
 ### 5.3 SSL (HTTPS)
 ```bash
 sudo apt install python3-certbot-nginx
-sudo certbot --nginx -d rahultambare.click -d www.rahultambare.click -d admin.rahultambare.click -d api.rahultambare.click
+sudo certbot --nginx -d rahultambare.click -d www.rahultambare.click -d admin.rahultambare.click -d api.rahultambare.click -d provider.rahultambare.click -d www.provider.rahultambare.click
 ```
 
 ---
