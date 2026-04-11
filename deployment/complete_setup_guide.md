@@ -125,4 +125,7 @@ sudo certbot --nginx -d rahultambare.click -d www.rahultambare.click -d admin.ra
 
 -   **Update Code**: `git pull origin main`.
 -   **Restart API**: `pm2 restart digimess-api`.
+-   **Rebuild Admin**: `cd admin && npm install && npm run build`
+-   **Rebuild User Web**: `cd frontend && npx expo export --platform web`
+-   **Rebuild Provider Web**: `cd provider && npx expo export --platform web`
 -   **Check Logs**: `pm2 logs` or `sudo tail -f /var/log/nginx/error.log`.

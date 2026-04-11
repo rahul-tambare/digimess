@@ -9,6 +9,7 @@ This document serves as a permanent reference for the Digimess deployment archit
 - **Subdomains**:
   - `api.rahultambare.click` (Backend API)
   - `admin.rahultambare.click` (Admin Panel)
+  - `provider.rahultambare.click` (Provider Web Application)
   - `rahultambare.click` (User Web Application)
 - **Database**: MySQL (Local)
 - **Cache**: Redis (Local)
@@ -22,6 +23,7 @@ This document serves as a permanent reference for the Digimess deployment archit
 ├── .env                  # Main production environment variables
 ├── backend/              # Node.js Express server
 ├── admin/dist/           # Built Admin static files (Vite)
+├── provider/dist/        # Built Provider Web static files (Expo)
 ├── frontend/dist/        # Built User Web static files (Expo)
 └── deployment/           # Nginx and PM2 configurations
 ```
@@ -67,6 +69,9 @@ cd admin && npm install && npm run build
 
 # Build User Web App
 cd ../frontend && npx expo install react-dom react-native-web && npx expo export --platform web
+
+# Build Provider Web App
+cd ../provider && npx expo install react-dom react-native-web && npx expo export --platform web
 ```
 
 ### 4. Nginx & SSL
@@ -78,7 +83,7 @@ sudo nginx -t && sudo systemctl restart nginx
 
 # Enable HTTPS (SSL)
 sudo apt install python3-certbot-nginx
-sudo certbot --nginx -d rahultambare.click -d www.rahultambare.click -d admin.rahultambare.click -d api.rahultambare.click
+sudo certbot --nginx -d rahultambare.click -d www.rahultambare.click -d admin.rahultambare.click -d api.rahultambare.click -d provider.rahultambare.click -d www.provider.rahultambare.click
 ```
 
 ## Maintenance Commands
@@ -87,4 +92,5 @@ sudo certbot --nginx -d rahultambare.click -d www.rahultambare.click -d admin.ra
 - **Restart API**: `pm2 restart digimess-api`
 - **Rebuild Admin**: `cd admin && npm run build`
 - **Rebuild User Web**: `cd frontend && npx expo export --platform web`
+- **Rebuild Provider Web**: `cd provider && npx expo export --platform web`
 - **Check Logs**: `pm2 logs` or `sudo tail -f /var/log/nginx/error.log`
