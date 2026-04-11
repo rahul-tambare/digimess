@@ -6,7 +6,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install only production dependencies
-RUN --mount=type=cache,target=/root/.npm npm install --omit=dev
+RUN --mount=type=cache,id=backend-npm,target=/root/.npm npm install --omit=dev
 
 # Copy the rest of the application
 COPY . .

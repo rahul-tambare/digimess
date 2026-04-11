@@ -3,7 +3,7 @@ FROM node:24-alpine AS builder
 WORKDIR /app
 
 COPY package*.json ./
-RUN --mount=type=cache,target=/root/.npm npm install
+RUN --mount=type=cache,id=frontend-npm,target=/root/.npm npm install
 
 COPY . .
 RUN npx expo install react-dom react-native-web

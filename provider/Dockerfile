@@ -4,7 +4,7 @@ WORKDIR /app
 
 COPY package*.json ./
 # Provider pkg uses react 19, there might be peer deps issues, handle gracefully
-RUN --mount=type=cache,target=/root/.npm npm install || npm install --legacy-peer-deps
+RUN --mount=type=cache,id=provider-npm,target=/root/.npm npm install || npm install --legacy-peer-deps
 
 COPY . .
 RUN npx expo install react-dom react-native-web
