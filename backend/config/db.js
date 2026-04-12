@@ -1,10 +1,7 @@
 const mysql = require('mysql2/promise');
 const fs = require('fs');
 const path = require('path');
-const AWS = require('aws-sdk');
 require('dotenv').config();
-
-AWS.config.update({ region: process.env.AWS_REGION || 'ap-south-1' });
 
 const pool = mysql.createPool({
     host: process.env.DB_HOST || 'localhost',
