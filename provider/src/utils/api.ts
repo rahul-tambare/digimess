@@ -2,7 +2,11 @@ import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 
-const BASE_URL = 'http://10.128.30.26:5000/api'; // Local dev backend
+const isProductionDomain = typeof window !== 'undefined' && window.location.hostname.includes('rahultambare.click');
+
+const BASE_URL = (!__DEV__ || isProductionDomain)
+  ? 'https://api.rahultambare.click/api'
+  : 'http://10.128.30.26:5000/api'; // Local dev backend
 
 const api = axios.create({
   baseURL: BASE_URL,
