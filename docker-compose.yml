@@ -63,7 +63,7 @@ services:
       context: ./provider
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.provider.rule=Host(`provider.rahultambare.click`) || Host(`www.provider.rahultambare.click`)"
+      - "traefik.http.routers.provider.rule=Host(`provider.rahultambare.click`)"
       - "traefik.http.routers.provider.entrypoints=websecure"
       - "traefik.http.routers.provider.tls.certresolver=myresolver"
       - "traefik.http.services.provider.loadbalancer.server.port=80"
