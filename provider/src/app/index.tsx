@@ -15,7 +15,7 @@ export default function LoginScreen() {
     if (!phone) return Alert.alert('Error', 'Please enter your phone number');
     setLoading(true);
     try {
-      await api.post('/auth/login', { phone });
+      await api.post('/auth/send-otp', { phone });
       setStep('OTP');
     } catch (e: any) {
       Alert.alert('Error', e.response?.data?.error || 'Failed to send OTP');
