@@ -81,3 +81,23 @@ sudo docker compose exec backend npm run db:init
 
 Regularly backup your `.env` file and `letsencrypt/acme.json` file.
 For Redis, the data volume (`redis_data`) persists locally. Please ensure you configure automated backups for your database directly from your AWS RDS Console.
+
+## Troubleshooting Common Issues
+
+### 1. ERR_CONNECTION_REFUSED (Nginx Port Collision)
+If you previously used Nginx, it might still be running in the background and monopolizing Ports 80 and 443, preventing Traefik from binding them.
+```bash
+sudo systemctl stop nginx
+sudo systemctl disable nginx
+sudo docker compose restart traefik
+```
+
+### 2. HTTPS Broken ("Not Secure")
+If your browser says the SSL cert is invalid (self-signed), Let's Encrypt likely rejected the `acme.json` file due to improper permissions. Let's Encrypt strictly demands that only the owner can read/write this file.
+```bash
+sudo chmod 600 letsencrypt/acme.json
+sudo docker compose restart traefik
+```
+
+### 3. DNS Traffic Hitting an ELB instead of EC2
+If you ever migrate to a new EC2 instance, ensure your AWS Route 53 `A Records` strictly point to the **Raw EC2 Public IPv4 Address**. If you see `awselb/2.0` headers when curled from terminal, you accidentally turned on "Alias" and pointed the record to an old Application Load Balancer instead of the naked EC2 instance.
