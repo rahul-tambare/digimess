@@ -3,6 +3,7 @@ CREATE TABLE IF NOT EXISTS Users (
     phone VARCHAR(20) NOT NULL UNIQUE,
     name VARCHAR(255),
     email VARCHAR(255) UNIQUE,
+    password VARCHAR(255),
     isVerified BOOLEAN DEFAULT FALSE,
     role ENUM('customer', 'vendor', 'admin') DEFAULT 'customer',
     walletBalance DECIMAL(10, 2) DEFAULT 0.00,
