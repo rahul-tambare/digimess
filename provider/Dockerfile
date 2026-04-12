@@ -23,11 +23,8 @@ RUN printf 'server {\n\
     }\n\
 }\n' > /etc/nginx/conf.d/default.conf
 
-RUN mkdir -p /tmp/dist-placeholder
-
-COPY --from=builder /app/dist* /tmp/dist-placeholder/
-COPY --from=builder /app/web-build* /tmp/dist-placeholder/
-RUN cp -a /tmp/dist-placeholder/. /usr/share/nginx/html || true
+# Copy build files directly to Nginx web root folder
+COPY --from=builder /app/dist /usr/share/nginx/html
 
 EXPOSE 80
 
