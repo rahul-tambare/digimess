@@ -54,16 +54,10 @@ exports.verifyOTP = async (req, res) => {
             const uuid = require('crypto').randomUUID();
             await db.query(
                 `INSERT INTO Users (id, phone, isVerified, walletBalance, role) VALUES (?, ?, ?, ?, ?)`,
-                [uuid, phone, true, 1000.00, role] // Gift 1000 for testing
+                [uuid, phone, true, 1000.00, 'customer'] // Force 'customer' role for all new signups
             );
             const [newRows] = await db.query('SELECT * FROM Users WHERE id = ?', [uuid]);
             user = newRows[0];
-        } else {
-            // Upgrade role if logging into higher privilege app
-            if (role === 'vendor' && user.role !== 'vendor' && user.role !== 'admin') {
-                await db.query(`UPDATE Users SET role = 'vendor' WHERE id = ?`, [user.id]);
-                user.role = 'vendor';
-            }
         }
 
         // Generate JWT
