@@ -8,22 +8,16 @@ RUN --mount=type=cache,id=admin-npm,target=/root/.npm npm install
 COPY . .
 RUN npm run build
 
-# Use Nginx to serve the static files
-FROM nginx:alpine
+# Use modern Node.js 'serve' to serve static files
+FROM node:24-alpine
 
-# Configure Nginx for SPA routing
-RUN printf 'server {\n\
-    listen 80;\n\
-    location / {\n\
-        root /usr/share/nginx/html;\n\
-        index index.html;\n\
-        try_files $uri $uri/ /index.html;\n\
-    }\n\
-}\n' > /etc/nginx/conf.d/default.conf
+WORKDIR /app
+RUN npm install -g serve
 
-# Copy build files
-COPY --from=builder /app/dist /usr/share/nginx/html
+# Copy build files directly for serving
+COPY --from=builder /app/dist ./dist
 
 EXPOSE 80
 
-CMD ["nginx", "-g", "daemon off;"]
+# Serve the 'dist' folder on Port 80, with Single-Page Application routing (-s)
+CMD ["serve", "-s", "dist", "-l", "tcp://0.0.0.0:80"]

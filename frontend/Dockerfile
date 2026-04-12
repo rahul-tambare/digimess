@@ -9,27 +9,16 @@ COPY . .
 RUN npx expo install react-dom react-native-web
 RUN npx expo export --platform web
 
-# Use Nginx to serve the static files
-FROM nginx:alpine
+# Use modern Node.js 'serve' to serve static files
+FROM node:24-alpine
 
-# Configure Nginx for SPA routing
-RUN printf 'server {\n\
-    listen 80;\n\
-    location / {\n\
-        root /usr/share/nginx/html;\n\
-        index index.html;\n\
-        try_files $uri $uri/ /index.html;\n\
-    }\n\
-}\n' > /etc/nginx/conf.d/default.conf
+WORKDIR /app
+RUN npm install -g serve
 
-# Expo normally outputs to /app/dist for web exports
-# In some older expo versions it might be web-build. We will rename web-build to dist if it exists, to be safe.
-RUN mkdir -p /tmp/dist-placeholder
-
-COPY --from=builder /app/dist* /tmp/dist-placeholder/
-COPY --from=builder /app/web-build* /tmp/dist-placeholder/
-RUN cp -a /tmp/dist-placeholder/. /usr/share/nginx/html || true
+# Copy build files directly for serving
+COPY --from=builder /app/dist ./dist
 
 EXPOSE 80
 
-CMD ["nginx", "-g", "daemon off;"]
+# Serve the 'dist' folder on Port 80, with Single-Page Application routing (-s)
+CMD ["serve", "-s", "dist", "-l", "tcp://0.0.0.0:80"]
