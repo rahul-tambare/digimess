@@ -24,6 +24,8 @@ const allowedOrigins = [
   'http://www.rahultambare.click',
   'https://admin.rahultambare.click',
   'http://admin.rahultambare.click',
+  'https://provider.rahultambare.click',
+  'http://provider.rahultambare.click',
   'http://localhost:5173', // for local testing
   'http://10.128.30.26:19006', // Expo web local IP
   'http://10.128.30.26:19000', // Expo native local IP
