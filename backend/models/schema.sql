@@ -7,6 +7,9 @@ CREATE TABLE IF NOT EXISTS Users (
     isVerified BOOLEAN DEFAULT FALSE,
     role ENUM('customer', 'vendor', 'admin') DEFAULT 'customer',
     walletBalance DECIMAL(10, 2) DEFAULT 0.00,
+    isActive TINYINT(1) DEFAULT 1,
+    isDeleted TINYINT(1) DEFAULT 0,
+    deletedAt DATETIME DEFAULT NULL,
     createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
@@ -20,6 +23,11 @@ CREATE TABLE IF NOT EXISTS Messes (
     isOpen BOOLEAN DEFAULT TRUE,
     address TEXT,
     images JSON, -- Array of image URLs
+    isActive TINYINT(1) DEFAULT 1,
+    isDeleted TINYINT(1) DEFAULT 0,
+    deletedAt DATETIME DEFAULT NULL,
+    capacity INT DEFAULT NULL,
+    deliveryRadius DECIMAL(10,2) DEFAULT 5.00,
     createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (vendorId) REFERENCES Users(id) ON DELETE SET NULL
@@ -69,6 +77,8 @@ CREATE TABLE IF NOT EXISTS Orders (
     items JSON, -- Details of meals/thalis ordered
     status ENUM('pending', 'confirmed', 'preparing', 'out_for_delivery', 'delivered', 'cancelled') DEFAULT 'pending',
     orderType ENUM('on_demand', 'subscription') DEFAULT 'on_demand',
+    isDeleted TINYINT(1) DEFAULT 0,
+    deletedAt DATETIME DEFAULT NULL,
     createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (customerId) REFERENCES Users(id),
