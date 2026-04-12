@@ -55,6 +55,7 @@ CREATE TABLE IF NOT EXISTS Subscriptions (
     id VARCHAR(36) PRIMARY KEY,
     customerId VARCHAR(36) NOT NULL,
     messId VARCHAR(36), -- Can be NULL if it's a multi-mess bundle or region wide
+    allowedMesses JSON, -- Can be NULL, used for tracking which messes a bundle subscription is valid for
     type ENUM('single_mess', 'multi_mess') DEFAULT 'single_mess',
     startDate DATE NOT NULL,
     endDate DATE NOT NULL,
