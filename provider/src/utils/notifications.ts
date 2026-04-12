@@ -14,6 +14,11 @@ Notifications.setNotificationHandler({
 });
 
 export async function registerForPushNotificationsAsync() {
+  if (Platform.OS === 'web') {
+    console.log('Push notifications natively skipped on web preview');
+    return null;
+  }
+
   let token;
 
   if (Platform.OS === 'android') {
