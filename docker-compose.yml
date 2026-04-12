@@ -28,6 +28,8 @@ services:
       context: ./backend
     env_file:
       - .env
+    environment:
+      - REDIS_URL=redis://redis:6379
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.backend.rule=Host(`api.rahultambare.click`)"
