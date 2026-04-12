@@ -28,7 +28,7 @@ export default function LoginScreen() {
     if (!otp) return Alert.alert('Error', 'Please enter OTP');
     setLoading(true);
     try {
-      const res = await api.post('/auth/verify-otp', { phone, otp });
+      const res = await api.post('/auth/verify-otp', { phone, otp, role: 'vendor' });
       // Only allow vendors
       if (res.data.user.role !== 'vendor') {
         return Alert.alert('Error', 'Access denied. You are not a Mess Provider.');

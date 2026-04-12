@@ -61,7 +61,7 @@ export default function OTPVerificationScreen({ route, navigation }) {
     }
     setLoading(true);
     try {
-      const res = await api.post('/auth/verify-otp', { phone, otp: fullOtp });
+      const res = await api.post('/auth/verify-otp', { phone, otp: fullOtp, role: 'customer' });
       await saveToken(res.data.token);
       await AsyncStorage.setItem('user', JSON.stringify(res.data.user));
       

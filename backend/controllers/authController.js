@@ -28,7 +28,7 @@ exports.sendOTP = async (req, res) => {
 
 exports.verifyOTP = async (req, res) => {
     try {
-        const { phone, otp } = req.body;
+        const { phone, otp, role = 'customer' } = req.body;
         if (!phone || !otp) return res.status(400).json({ error: 'Phone and OTP are required' });
 
         // Master OTP bypass for testing
@@ -53,11 +53,17 @@ exports.verifyOTP = async (req, res) => {
         if (!user) {
             const uuid = require('crypto').randomUUID();
             await db.query(
-                `INSERT INTO Users (id, phone, isVerified, walletBalance) VALUES (?, ?, ?, ?)`,
-                [uuid, phone, true, 1000.00] // Gift 1000 for testing
+                `INSERT INTO Users (id, phone, isVerified, walletBalance, role) VALUES (?, ?, ?, ?, ?)`,
+                [uuid, phone, true, 1000.00, role] // Gift 1000 for testing
             );
             const [newRows] = await db.query('SELECT * FROM Users WHERE id = ?', [uuid]);
             user = newRows[0];
+        } else {
+            // Upgrade role if logging into higher privilege app
+            if (role === 'vendor' && user.role !== 'vendor' && user.role !== 'admin') {
+                await db.query(`UPDATE Users SET role = 'vendor' WHERE id = ?`, [user.id]);
+                user.role = 'vendor';
+            }
         }
 
         // Generate JWT
