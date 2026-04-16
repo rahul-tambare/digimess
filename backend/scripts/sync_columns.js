@@ -2,6 +2,8 @@ const db = require('../config/db');
 
 async function syncColumns() {
     const alterations = [
+        "ALTER TABLE Users ADD COLUMN gender VARCHAR(20) DEFAULT NULL",
+        "ALTER TABLE Users ADD COLUMN dateOfBirth DATE DEFAULT NULL",
         "ALTER TABLE Users ADD COLUMN isActive TINYINT(1) DEFAULT 1",
         "ALTER TABLE Users ADD COLUMN isDeleted TINYINT(1) DEFAULT 0",
         "ALTER TABLE Users ADD COLUMN deletedAt DATETIME DEFAULT NULL",
@@ -11,7 +13,9 @@ async function syncColumns() {
         "ALTER TABLE Messes ADD COLUMN capacity INT DEFAULT NULL",
         "ALTER TABLE Messes ADD COLUMN deliveryRadius DECIMAL(10,2) DEFAULT 5.00",
         "ALTER TABLE Orders ADD COLUMN isDeleted TINYINT(1) DEFAULT 0",
-        "ALTER TABLE Orders ADD COLUMN deletedAt DATETIME DEFAULT NULL"
+        "ALTER TABLE Orders ADD COLUMN deletedAt DATETIME DEFAULT NULL",
+        "ALTER TABLE BankDetails ADD COLUMN upiId VARCHAR(100) DEFAULT NULL",
+        "ALTER TABLE Messes ADD CONSTRAINT unique_vendor_mess UNIQUE (vendorId)"
     ];
 
     console.log('Starting column synchronization...');

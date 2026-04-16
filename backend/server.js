@@ -16,7 +16,9 @@ require('./config/redis');
 
 const app = express();
 
-app.use(helmet());
+// NOTE: helmet v8.1.0 is incompatible with Express 5 — it causes all requests to hang
+// when used with an error handler middleware. Disabled until helmet releases a fix.
+// app.use(helmet());
 const allowedOrigins = [
   'https://rahultambare.click',
   'http://rahultambare.click',
@@ -26,12 +28,12 @@ const allowedOrigins = [
   'http://admin.rahultambare.click',
   'https://provider.rahultambare.click',
   'http://provider.rahultambare.click',
-  'http://localhost:5173', // for local testing
-  'http://10.128.30.26:19006', // Expo web local IP
-  'http://10.128.30.26:19000', // Expo native local IP
-  'http://10.128.30.26:8081',  // Expo dev tools / new bundler
-  'http://10.128.30.26:3000',  // React local IP
-  'http://10.128.30.26:5173'   // Vite local IP
+  'http://localhost:5173', // Vite admin local
+  'http://localhost:8081', // Expo frontend local
+  'http://localhost:8082', // Expo provider local
+  'http://localhost:8083', // Expo provider local alt
+  'http://localhost:19006', // Expo web local
+  'http://localhost:3000',  // React local
 ];
 
 app.use(cors({
@@ -69,6 +71,11 @@ const addressRoutes = require('./routes/addressRoutes');
 const reviewRoutes = require('./routes/reviewRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 const invoiceRoutes = require('./routes/invoiceRoutes');
+const vendorRoutes = require('./routes/vendorRoutes');
+const providerRoutes = require('./routes/providerRoutes');
+const thaliRoutes = require('./routes/thaliRoutes');
+const favoriteRoutes = require('./routes/favoriteRoutes');
+const couponRoutes = require('./routes/couponRoutes');
 
 app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/user', userRoutes);
@@ -82,6 +89,11 @@ app.use('/api/user/addresses', addressRoutes);
 app.use('/api/orders/:id/review', reviewRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/invoices', invoiceRoutes);
+app.use('/api/vendor', vendorRoutes);
+app.use('/api/provider', providerRoutes);
+app.use('/api/thalis', thaliRoutes);
+app.use('/api/favorites', favoriteRoutes);
+app.use('/api/coupons', couponRoutes);
 
 // Health check
 app.get('/', (req, res) => res.json({ status: 'Digi Mess API is running 🍱' }));

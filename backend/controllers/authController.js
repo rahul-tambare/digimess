@@ -52,9 +52,10 @@ exports.verifyOTP = async (req, res) => {
         // If user doesn't exist, create one
         if (!user) {
             const uuid = require('crypto').randomUUID();
+            const assignedRole = ['customer', 'vendor'].includes(role) ? role : 'customer';
             await db.query(
                 `INSERT INTO Users (id, phone, isVerified, walletBalance, role) VALUES (?, ?, ?, ?, ?)`,
-                [uuid, phone, true, 1000.00, 'customer'] // Force 'customer' role for all new signups
+                [uuid, phone, true, 1000.00, assignedRole]
             );
             const [newRows] = await db.query('SELECT * FROM Users WHERE id = ?', [uuid]);
             user = newRows[0];
@@ -92,16 +93,8 @@ exports.adminLogin = async (req, res) => {
         const [rows] = await db.query('SELECT * FROM Users WHERE email = ? AND role = "admin"', [email]);
         let adminUser = rows[0];
 
-        // For first-time setup: if no admin exists, we'll create one with hashed 'admin123'
         if (!adminUser) {
-            const uuid = require('crypto').randomUUID();
-            const hashedPassword = await bcrypt.hash('admin123', 10);
-            await db.query(
-                `INSERT INTO Users (id, phone, name, email, password, role, isVerified) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-                [uuid, '0000000000', 'System Admin', email, hashedPassword, 'admin', true]
-            );
-            const [newRows] = await db.query('SELECT * FROM Users WHERE id = ?', [uuid]);
-            adminUser = newRows[0];
+            return res.status(401).json({ error: 'Invalid credentials' });
         }
 
         // Compare password if adminUser has a password field

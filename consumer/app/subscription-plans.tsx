@@ -1,0 +1,242 @@
+import React, { useState, useEffect } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Platform, ActivityIndicator, Alert } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { ArrowLeft, Check, Calendar } from 'lucide-react-native';
+import { useRouter } from 'expo-router';
+
+// In production: const plans = await api.get('/plans');
+// In production: const balance = await api.get('/wallet/balance');
+
+export default function SubscriptionPlansScreen() {
+  const router = useRouter();
+  const [selectedId, setSelectedId] = useState('3');
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [walletBalance, setWalletBalance] = useState(0);
+  const [plans, setPlans] = useState<any[]>([]);
+
+  useEffect(() => {
+    // Simulate API call
+    setTimeout(() => {
+      setWalletBalance(4250);
+      setPlans([
+        { id: '1', name: 'Weekly Thali', meals: 7, price: 699, benefits: ['7 meals (1/day)', 'Free delivery', 'Veg & Non-veg options'] },
+        { id: '2', name: 'Bi-Weekly Plan', meals: 14, price: 1249, benefits: ['14 meals (1/day)', 'Free delivery', 'Skip any day', 'Priority support'] },
+        { id: '3', name: 'Monthly Full Board', meals: 30, price: 2499, benefits: ['30 meals (1/day)', 'Free delivery', 'Weekend specials', 'Priority support', '10% wallet bonus'] },
+        { id: '4', name: 'Monthly Pro (2x)', meals: 60, price: 3999, benefits: ['60 meals (2/day)', 'Free delivery', 'All cuisine access', 'VIP support', '15% savings'] },
+      ]);
+      setLoading(false);
+    }, 500);
+  }, []);
+
+  const selected = plans.find(p => p.id === selectedId);
+
+  const handleConfirm = async () => {
+    if (!selected) return;
+
+    if (walletBalance < selected.price) {
+      const shortfall = selected.price - walletBalance;
+      Alert.alert(
+        'Insufficient Wallet Balance',
+        `You need ₹${shortfall} more to purchase this plan. Top up your wallet to continue.`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Top Up', onPress: () => router.push('/wallet-topup' as any) },
+        ]
+      );
+      return;
+    }
+
+    Alert.alert(
+      'Confirm Purchase',
+      `₹${selected.price} will be deducted from your wallet for "${selected.name}" (${selected.meals} meals).`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Confirm',
+          onPress: async () => {
+            setSubmitting(true);
+            // In production: await api.post('/user/subscriptions', { planId: selected.id, amount: selected.price, mealsCount: selected.meals })
+            setTimeout(() => {
+              setSubmitting(false);
+              router.replace('/order-success' as any);
+            }, 1500);
+          }
+        },
+      ]
+    );
+  };
+
+  if (loading) {
+    return (
+      <SafeAreaView style={[s.container, { justifyContent: 'center', alignItems: 'center' }]} edges={['top']}>
+        <ActivityIndicator size="large" color="#FF6B35" />
+      </SafeAreaView>
+    );
+  }
+
+  return (
+    <SafeAreaView style={s.container} edges={['top']}>
+      <View style={s.header}>
+        <TouchableOpacity onPress={() => router.back()} style={s.backBtn}>
+          <ArrowLeft size={22} color="#0F172A" />
+        </TouchableOpacity>
+        <Text style={s.headerTitle}>Choose a Plan</Text>
+        <View style={{ width: 40 }} />
+      </View>
+
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 20, paddingBottom: 120 }}>
+        <Text style={s.heroTitle}>Subscribe & Save</Text>
+        <Text style={s.heroSub}>Select a meal plan that suits your daily needs.</Text>
+
+        {/* Status cards */}
+        <View style={s.statusRow}>
+          <View style={[s.statusCard, { backgroundColor: '#F8FAFC' }]}>
+            <Text style={s.statusLabel}>CURRENT STATUS</Text>
+            <Text style={s.statusValue}>No Active Plan</Text>
+          </View>
+          <View style={[s.statusCard, { backgroundColor: '#FF6B35' }]}>
+            <Text style={{ fontSize: 22, marginBottom: 6 }}>💳</Text>
+            <Text style={[s.statusLabel, { color: 'rgba(255,255,255,0.7)' }]}>WALLET</Text>
+            <Text style={[s.statusValue, { color: '#FFF' }]}>₹{walletBalance.toLocaleString()}</Text>
+          </View>
+        </View>
+
+        {/* Plan Cards */}
+        {plans.map((plan) => {
+          const canAfford = walletBalance >= plan.price;
+          return (
+            <TouchableOpacity key={plan.id} onPress={() => setSelectedId(plan.id)}
+              style={[s.planCard, selectedId === plan.id && s.planCardSelected]}>
+              <View style={s.planHeader}>
+                <View style={s.planIcon}><Text style={{ fontSize: 22 }}>🍽️</Text></View>
+                <View style={{ flex: 1 }}>
+                  <Text style={s.planName}>{plan.name}</Text>
+                  <Text style={s.planMeals}>{plan.meals} meals total</Text>
+                </View>
+                <View style={{ alignItems: 'flex-end' }}>
+                  <Text style={s.planPrice}>₹{plan.price}</Text>
+                  {!canAfford && <Text style={s.insufficientTag}>Top up needed</Text>}
+                </View>
+              </View>
+            </TouchableOpacity>
+          );
+        })}
+
+        {/* Selected plan benefits */}
+        {selected && (
+          <View style={s.benefitsCard}>
+            <Text style={s.benefitsTitle}>PLAN PRIVILEGES</Text>
+            {selected.benefits.map((b: string, i: number) => (
+              <View key={i} style={s.benefitRow}>
+                <View style={s.benefitCheck}>
+                  <Check size={14} color="#10B981" />
+                </View>
+                <Text style={s.benefitText}>{b}</Text>
+              </View>
+            ))}
+          </View>
+        )}
+
+        {/* Start Date */}
+        <View style={s.datePicker}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+            <Calendar size={20} color="#FF6B35" />
+            <View>
+              <Text style={s.dateLabel}>STARTS FROM</Text>
+              <Text style={s.dateValue}>
+                {new Date(Date.now() + 86400000).toLocaleDateString('en-IN', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' })}
+              </Text>
+            </View>
+          </View>
+          <TouchableOpacity><Text style={s.changeDate}>Change</Text></TouchableOpacity>
+        </View>
+
+        {/* Wallet deduction notice */}
+        <Text style={s.terms}>
+          ₹{selected?.price || 0} will be deducted from your Digi Mess Wallet. By confirming, you agree to our Terms of Service.
+        </Text>
+      </ScrollView>
+
+      {/* Sticky Bottom */}
+      <View style={s.bottomBar}>
+        <View>
+          <Text style={s.totalLabel}>TOTAL</Text>
+          <Text style={s.totalPrice}>₹{selected?.price || 0}</Text>
+        </View>
+        <TouchableOpacity
+          style={[s.confirmBtn, submitting && { opacity: 0.6 }]}
+          onPress={handleConfirm}
+          disabled={submitting}
+        >
+          {submitting ? <ActivityIndicator color="#FFF" /> : <Text style={s.confirmBtnText}>Confirm & Pay →</Text>}
+        </TouchableOpacity>
+      </View>
+    </SafeAreaView>
+  );
+}
+
+const s = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#F8FAFC' },
+  header: {
+    flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12,
+    backgroundColor: '#FFF', borderBottomWidth: 1, borderBottomColor: '#F1F5F9',
+  },
+  backBtn: { padding: 4, marginRight: 12 },
+  headerTitle: { fontSize: 18, fontWeight: '800', color: '#0F172A', flex: 1 },
+  heroTitle: { fontSize: 28, fontWeight: '800', color: '#0F172A', marginBottom: 6, letterSpacing: -0.3 },
+  heroSub: { fontSize: 14, color: '#94A3B8', fontWeight: '500', marginBottom: 20 },
+  statusRow: { flexDirection: 'row', gap: 12, marginBottom: 24 },
+  statusCard: { flex: 1, borderRadius: 20, padding: 20, justifyContent: 'flex-end', minHeight: 120 },
+  statusLabel: { fontSize: 10, fontWeight: '800', color: '#FF6B35', letterSpacing: 1, marginBottom: 4 },
+  statusValue: { fontSize: 20, fontWeight: '800', color: '#0F172A' },
+  planCard: {
+    backgroundColor: '#FFF', borderRadius: 18, padding: 18, marginBottom: 10,
+    borderWidth: 2, borderColor: '#F1F5F9',
+  },
+  planCardSelected: { borderColor: '#FF6B35', backgroundColor: '#FFFBF7' },
+  planHeader: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+  planIcon: { width: 44, height: 44, borderRadius: 14, backgroundColor: '#F8FAFC', justifyContent: 'center', alignItems: 'center' },
+  planName: { fontSize: 16, fontWeight: '800', color: '#0F172A' },
+  planMeals: { fontSize: 12, color: '#94A3B8', fontWeight: '500', marginTop: 1 },
+  planPrice: { fontSize: 20, fontWeight: '800', color: '#0F172A' },
+  insufficientTag: { fontSize: 10, fontWeight: '700', color: '#EF4444', marginTop: 2 },
+  benefitsCard: {
+    backgroundColor: '#FFF', borderRadius: 18, padding: 20, marginTop: 10, marginBottom: 16,
+    borderWidth: 1, borderColor: '#F1F5F9',
+  },
+  benefitsTitle: { fontSize: 10, fontWeight: '800', color: '#94A3B8', letterSpacing: 1, marginBottom: 14 },
+  benefitRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 10 },
+  benefitCheck: { width: 28, height: 28, borderRadius: 14, backgroundColor: '#ECFDF5', justifyContent: 'center', alignItems: 'center' },
+  benefitText: { fontSize: 14, fontWeight: '600', color: '#0F172A' },
+  datePicker: {
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    backgroundColor: '#FFF', padding: 18, borderRadius: 16, borderWidth: 1, borderColor: '#F1F5F9', marginBottom: 16,
+  },
+  dateLabel: { fontSize: 9, fontWeight: '800', color: '#94A3B8', letterSpacing: 1, marginBottom: 2 },
+  dateValue: { fontSize: 14, fontWeight: '700', color: '#0F172A' },
+  changeDate: { color: '#FF6B35', fontWeight: '700', fontSize: 13 },
+  terms: { fontSize: 12, textAlign: 'center', color: '#94A3B8', fontWeight: '500', lineHeight: 18 },
+  bottomBar: {
+    position: 'absolute', bottom: 0, left: 0, right: 0,
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    paddingHorizontal: 24, paddingVertical: 20, paddingBottom: Platform.OS === 'ios' ? 36 : 20,
+    backgroundColor: '#FFF', borderTopWidth: 1, borderTopColor: '#F1F5F9',
+    ...Platform.select({
+      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.06, shadowRadius: 12 },
+      android: { elevation: 8 },
+      default: { boxShadow: '0 -4px 12px rgba(0,0,0,0.06)' },
+    }),
+  },
+  totalLabel: { fontSize: 10, fontWeight: '800', color: '#94A3B8', letterSpacing: 1, marginBottom: 2 },
+  totalPrice: { fontSize: 24, fontWeight: '800', color: '#0F172A' },
+  confirmBtn: {
+    backgroundColor: '#FF6B35', paddingHorizontal: 28, paddingVertical: 16, borderRadius: 16,
+    ...Platform.select({
+      ios: { shadowColor: '#FF6B35', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 },
+      android: { elevation: 4 },
+      default: { boxShadow: '0 4px 12px rgba(255,107,53,0.3)' },
+    }),
+  },
+  confirmBtnText: { color: '#FFF', fontSize: 16, fontWeight: '800' },
+});

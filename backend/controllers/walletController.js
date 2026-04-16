@@ -4,7 +4,7 @@ const db = require('../config/db');
 exports.getBalance = async (req, res) => {
   try {
     const [rows] = await db.query('SELECT walletBalance FROM Users WHERE id = ?', [req.user.id]);
-    res.json({ walletBalance: rows[0]?.walletBalance || 0 });
+    res.json({ balance: rows[0]?.walletBalance || 0 });
   } catch (e) {
     res.status(500).json({ error: 'Internal server error' });
   }

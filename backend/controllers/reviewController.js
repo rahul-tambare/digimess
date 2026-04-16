@@ -54,3 +54,22 @@ exports.getMessReviews = async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 };
+
+// GET /api/messes/provider/reviews
+exports.getProviderReviews = async (req, res) => {
+  try {
+    const [rows] = await db.query(
+      `SELECT r.*, u.name as customerName, m.name as messName
+       FROM Reviews r
+       JOIN Messes m ON r.messId = m.id
+       JOIN Users u ON r.customerId = u.id
+       WHERE m.vendorId = ?
+       ORDER BY r.createdAt DESC`,
+      [req.user.id]
+    );
+    res.json(rows);
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'Internal server error fetching provider reviews' });
+  }
+};

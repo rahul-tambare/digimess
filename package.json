@@ -1,0 +1,12 @@
+{
+  "name": "digimess-local",
+  "version": "1.0.0",
+  "description": "Local runner for digimess projects",
+  "scripts": {
+    "dev:backend": "cd backend && npm install && npm run dev",
+    "dev:admin": "cd admin && npm install && npm run dev",
+    "dev:frontend": "cd frontend && npm install && npm run web",
+    "dev:provider": "cd provider && npm install && npm run web",
+    "dev": "npx concurrently \"npm run dev:backend\" \"npm run dev:admin\" \"npm run dev:frontend\" \"npm run dev:provider\""
+  }
+}

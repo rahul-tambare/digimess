@@ -4,6 +4,8 @@ CREATE TABLE IF NOT EXISTS Users (
     name VARCHAR(255),
     email VARCHAR(255) UNIQUE,
     password VARCHAR(255),
+    gender VARCHAR(20) DEFAULT NULL,
+    dateOfBirth DATE DEFAULT NULL,
     isVerified BOOLEAN DEFAULT FALSE,
     role ENUM('customer', 'vendor', 'admin') DEFAULT 'customer',
     walletBalance DECIMAL(10, 2) DEFAULT 0.00,
@@ -19,10 +21,28 @@ CREATE TABLE IF NOT EXISTS Messes (
     vendorId VARCHAR(36),
     name VARCHAR(255) NOT NULL,
     description TEXT,
+    messType VARCHAR(50) DEFAULT NULL COMMENT 'Veg/Non-Veg/Both',
+    category VARCHAR(100) DEFAULT NULL COMMENT 'Tiffin, Thali, etc.',
+    autoConfirm BOOLEAN DEFAULT FALSE,
+    deliveryAvailable BOOLEAN DEFAULT FALSE,
+    dineIn BOOLEAN DEFAULT FALSE,
+    takeAway BOOLEAN DEFAULT FALSE,
+    lunchStartTime TIME DEFAULT NULL,
+    lunchEndTime TIME DEFAULT NULL,
+    dinnerStartTime TIME DEFAULT NULL,
+    dinnerEndTime TIME DEFAULT NULL,
+    businessStatus BOOLEAN DEFAULT TRUE,
+    cuisines VARCHAR(255) DEFAULT NULL,
+    offer1 VARCHAR(255) DEFAULT NULL,
+    offer2 VARCHAR(255) DEFAULT NULL,
+    offer3 VARCHAR(255) DEFAULT NULL,
+    deliveryCharge DECIMAL(10,2) DEFAULT 0.00,
+    invoiceFrequency VARCHAR(50) DEFAULT NULL,
+    isApproved BOOLEAN DEFAULT FALSE,
     rating FLOAT DEFAULT 0.0,
     isOpen BOOLEAN DEFAULT TRUE,
     address TEXT,
-    images JSON, -- Array of image URLs
+    images JSON,
     isActive TINYINT(1) DEFAULT 1,
     isDeleted TINYINT(1) DEFAULT 0,
     deletedAt DATETIME DEFAULT NULL,
@@ -76,8 +96,12 @@ CREATE TABLE IF NOT EXISTS Orders (
     messId VARCHAR(36) NOT NULL,
     totalAmount DECIMAL(10, 2) NOT NULL,
     items JSON, -- Details of meals/thalis ordered
-    status ENUM('pending', 'confirmed', 'preparing', 'out_for_delivery', 'delivered', 'cancelled') DEFAULT 'pending',
+    status ENUM('pending', 'accepted', 'confirmed', 'preparing', 'out_for_delivery', 'delivered', 'cancelled', 'rejected') DEFAULT 'pending',
     orderType ENUM('on_demand', 'subscription') DEFAULT 'on_demand',
+    deliveryType VARCHAR(50) DEFAULT NULL,
+    deliveryAddress TEXT DEFAULT NULL,
+    paymentMethod VARCHAR(50) DEFAULT NULL,
+    specialNote TEXT DEFAULT NULL,
     isDeleted TINYINT(1) DEFAULT 0,
     deletedAt DATETIME DEFAULT NULL,
     createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -216,6 +240,105 @@ CREATE TABLE IF NOT EXISTS PaymentSessions (
   createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   completedAt DATETIME DEFAULT NULL,
   FOREIGN KEY (userId) REFERENCES Users(id) ON DELETE CASCADE
+);
+
+-- Mess Provider Addresses (from oldcode TB_MSP_ADDRESS)
+CREATE TABLE IF NOT EXISTS MessAddresses (
+    id VARCHAR(36) PRIMARY KEY,
+    messId VARCHAR(36) NOT NULL,
+    line1 VARCHAR(255) NOT NULL,
+    line2 VARCHAR(255) DEFAULT NULL,
+    city VARCHAR(100) NOT NULL,
+    state VARCHAR(100) NOT NULL,
+    pincode VARCHAR(10) NOT NULL,
+    latitude DECIMAL(10,7) DEFAULT NULL,
+    longitude DECIMAL(10,7) DEFAULT NULL,
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (messId) REFERENCES Messes(id) ON DELETE CASCADE
+);
+
+-- Vendor Bank Details (from oldcode TB_BANKDETAILS)
+CREATE TABLE IF NOT EXISTS BankDetails (
+    id VARCHAR(36) PRIMARY KEY,
+    vendorId VARCHAR(36) NOT NULL,
+    bankName VARCHAR(255) NOT NULL,
+    accountNumber VARCHAR(50) NOT NULL,
+    accountHolderName VARCHAR(255) NOT NULL,
+    ifscCode VARCHAR(20) NOT NULL,
+    upiId VARCHAR(100) DEFAULT NULL,
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (vendorId) REFERENCES Users(id) ON DELETE CASCADE
+);
+
+-- Thali / Combo offerings per Mess
+CREATE TABLE IF NOT EXISTS Thalis (
+    id VARCHAR(36) PRIMARY KEY,
+    messId VARCHAR(36) NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    mealTime ENUM('Breakfast','Lunch','Dinner','All Day') DEFAULT 'Lunch',
+    type ENUM('Veg','Non-Veg','Jain') DEFAULT 'Veg',
+    itemsIncluded TEXT,
+    numberOfItems INT DEFAULT 0,
+    price DECIMAL(10,2) NOT NULL,
+    discountedPrice DECIMAL(10,2) DEFAULT NULL,
+    description TEXT,
+    maxQtyPerDay INT DEFAULT NULL,
+    image VARCHAR(500) DEFAULT NULL,
+    isSubscriptionThali BOOLEAN DEFAULT FALSE,
+    isAvailable BOOLEAN DEFAULT TRUE,
+    isSpecial BOOLEAN DEFAULT FALSE,
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (messId) REFERENCES Messes(id) ON DELETE CASCADE
+);
+
+-- Customer Favorite Messes
+CREATE TABLE IF NOT EXISTS Favorites (
+    id VARCHAR(36) PRIMARY KEY,
+    customerId VARCHAR(36) NOT NULL,
+    messId VARCHAR(36) NOT NULL,
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY unique_fav (customerId, messId),
+    FOREIGN KEY (customerId) REFERENCES Users(id) ON DELETE CASCADE,
+    FOREIGN KEY (messId) REFERENCES Messes(id) ON DELETE CASCADE
+);
+
+-- Discount Coupons
+CREATE TABLE IF NOT EXISTS Coupons (
+    id VARCHAR(36) PRIMARY KEY,
+    code VARCHAR(50) NOT NULL UNIQUE,
+    discountType ENUM('fixed', 'percentage') NOT NULL,
+    discountValue DECIMAL(10,2) NOT NULL,
+    minOrderAmount DECIMAL(10,2) DEFAULT 0.00,
+    maxDiscount DECIMAL(10,2) DEFAULT NULL,
+    validFrom DATE NOT NULL,
+    validTo DATE NOT NULL,
+    usageLimit INT DEFAULT NULL,
+    usedCount INT DEFAULT 0,
+    isActive BOOLEAN DEFAULT TRUE,
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Subscription Meal Skips
+CREATE TABLE IF NOT EXISTS SubscriptionSkips (
+    id VARCHAR(36) PRIMARY KEY,
+    subscriptionId VARCHAR(36) NOT NULL,
+    skipDate DATE NOT NULL,
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY unique_skip (subscriptionId, skipDate),
+    FOREIGN KEY (subscriptionId) REFERENCES Subscriptions(id) ON DELETE CASCADE
+);
+
+-- Order Status Change Timeline
+CREATE TABLE IF NOT EXISTS OrderStatusTimeline (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    orderId VARCHAR(36) NOT NULL,
+    status VARCHAR(50) NOT NULL,
+    note TEXT DEFAULT NULL,
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (orderId) REFERENCES Orders(id) ON DELETE CASCADE
 );
 
 -- Schema completed

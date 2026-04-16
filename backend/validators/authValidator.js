@@ -21,7 +21,8 @@ exports.sendOTP = Joi.object({
 
 exports.verifyOTP = Joi.object({
   phone: phoneSchema,
-  otp: otpSchema
+  otp: otpSchema,
+  role: Joi.string().valid('customer', 'vendor', 'admin').optional()
 });
 
 exports.adminLogin = Joi.object({

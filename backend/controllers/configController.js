@@ -49,3 +49,32 @@ exports.getSubscriptionPlans = async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 };
+
+// GET /api/config/charges
+exports.getCharges = async (req, res) => {
+  try {
+    const [rows] = await db.query('SELECT * FROM AdminCharges WHERE isActive = 1');
+    
+    // Convert to a convenient lookup object
+    const charges = {};
+    rows.forEach(row => {
+      charges[row.name] = {
+        type: row.type,
+        amount: parseFloat(row.amount),
+        appliesTo: row.appliesTo,
+      };
+    });
+
+    // Provide fallback defaults if no charges configured
+    res.json({
+      data: {
+        delivery: charges.delivery?.amount ?? 20,
+        platform: charges.platform?.amount ?? 2,
+        all: charges,
+      }
+    });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};

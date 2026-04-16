@@ -4,14 +4,27 @@ const db = require('../config/db');
 exports.subscribe = async (req, res) => {
   const connection = await db.getConnection();
   try {
-    const { planId, amount, messId } = req.body;
+    const { planId, messId, allowedMesses } = req.body;
     
+    if (!planId) {
+      return res.status(400).json({ error: 'planId is required' });
+    }
+
     await connection.beginTransaction();
+
+    // Look up the plan to get price and meals count
+    const [planRows] = await connection.query('SELECT * FROM SubscriptionPlans WHERE id = ? AND isActive = 1', [planId]);
+    if (planRows.length === 0) {
+      await connection.rollback();
+      return res.status(404).json({ error: 'Subscription plan not found or inactive' });
+    }
+    const plan = planRows[0];
+    const planAmount = parseFloat(plan.price);
+    const mealsCount = plan.mealsCount || 30;
 
     // 1. Check Wallet Balance
     const [userRows] = await connection.query('SELECT walletBalance FROM Users WHERE id = ? FOR UPDATE', [req.user.id]);
     const balance = parseFloat(userRows[0].walletBalance);
-    const planAmount = parseFloat(amount);
 
     if (balance < planAmount) {
       await connection.rollback();
@@ -34,8 +47,6 @@ exports.subscribe = async (req, res) => {
     const endDate = new Date(startDate);
     endDate.setMonth(endDate.getMonth() + 1); // 1 month default
 
-    const { allowedMesses } = req.body;
-
     await connection.query(
       'INSERT INTO Subscriptions (id, customerId, messId, type, startDate, endDate, mealsRemaining, allowedMesses) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
       [
@@ -45,7 +56,7 @@ exports.subscribe = async (req, res) => {
         allowedMesses ? 'multi_mess' : 'single_mess', 
         startDate, 
         endDate, 
-        req.body.mealsCount || 30,
+        mealsCount,
         allowedMesses ? JSON.stringify(allowedMesses) : null
       ]
     );
@@ -133,5 +144,73 @@ exports.resumeSubscription = async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Server error resuming subscription' });
+  }
+};
+
+// GET /api/user/provider/subscriptions
+exports.getProviderSubscriptions = async (req, res) => {
+  try {
+    const providerId = req.user.id;
+    const [rows] = await db.query(
+      `SELECT s.*, 
+              u.name AS customerName, u.phone AS customerPhone,
+              m.name AS messName 
+       FROM Subscriptions s
+       JOIN Users u ON s.customerId = u.id
+       JOIN Messes m ON s.messId = m.id
+       WHERE m.vendorId = ?
+       ORDER BY s.createdAt DESC`,
+      [providerId]
+    );
+    res.json(rows);
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+// POST /api/user/subscriptions/:id/skip — skip a meal date
+exports.skipDate = async (req, res) => {
+  try {
+    const subId = req.params.id;
+    const { date } = req.body;
+
+    if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      return res.status(400).json({ error: 'Valid date in YYYY-MM-DD format is required' });
+    }
+
+    // Validate ownership
+    const [sub] = await db.query(
+      'SELECT * FROM Subscriptions WHERE id = ? AND customerId = ? AND isActive = 1',
+      [subId, req.user.id]
+    );
+    if (sub.length === 0) return res.status(403).json({ error: 'Subscription not found or inactive' });
+
+    // Check date is within subscription period
+    const skipDate = new Date(date);
+    const startDate = new Date(sub[0].startDate);
+    const endDate = new Date(sub[0].endDate);
+    if (skipDate < startDate || skipDate > endDate) {
+      return res.status(400).json({ error: 'Skip date must be within subscription period' });
+    }
+
+    // Insert skip (unique constraint will prevent duplicates)
+    try {
+      const skipId = require('crypto').randomUUID();
+      await db.query(
+        'INSERT INTO SubscriptionSkips (id, subscriptionId, skipDate) VALUES (?, ?, ?)',
+        [skipId, subId, date]
+      );
+    } catch (e) {
+      if (e.code === 'ER_DUP_ENTRY') {
+        return res.json({ message: 'This date is already skipped' });
+      }
+      throw e;
+    }
+
+    res.json({ message: `Meal skipped for ${date}` });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'Internal server error' });
   }
 };

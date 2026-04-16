@@ -6,7 +6,7 @@ const isProductionDomain = typeof window !== 'undefined' && window.location.host
 
 const BASE_URL = (!__DEV__ || isProductionDomain)
   ? 'https://api.rahultambare.click/api'
-  : 'http://10.128.30.26:5000/api'; // Local dev backend
+  : 'http://localhost:5000/api'; // Local dev backend
 
 const api = axios.create({
   baseURL: BASE_URL,

@@ -1,0 +1,25 @@
+version: "3.8"
+
+services:
+  mysql:
+    image: mysql:8.0
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: Rahul@123
+      MYSQL_DATABASE: digimess
+    ports:
+      - "127.0.0.1:3306:3306"
+    volumes:
+      - mysql_data_fresh:/var/lib/mysql
+
+  redis:
+    image: redis:7-alpine
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+volumes:
+  mysql_data_fresh:
+  redis_data:

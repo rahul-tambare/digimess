@@ -4,48 +4,67 @@ const db = require('../config/db');
 exports.placeOrder = async (req, res) => {
   const connection = await db.getConnection();
   try {
-    const { messId, totalAmount, orderType, items } = req.body;
+    const { messId, totalAmount, orderType, items, deliveryType, address, paymentMethod, specialNote } = req.body;
     
+    if (!messId) {
+      return res.status(400).json({ error: 'messId is required' });
+    }
+
     await connection.beginTransaction();
 
-    // 1. Check for Active Subscription first
-    // We prioritize specific-mess subscriptions (messId matches) over bundles/universal ones
-    const [subRows] = await connection.query(
-      `SELECT id, mealsRemaining FROM Subscriptions 
-       WHERE customerId = ? 
-         AND isActive = 1 
-         AND mealsRemaining > 0 
-         AND (
-           messId = ? 
-           OR (messId IS NULL AND JSON_CONTAINS(allowedMesses, JSON_QUOTE(?)))
-           OR (messId IS NULL AND allowedMesses IS NULL)
-         )
-       ORDER BY messId DESC FOR UPDATE`,
-      [req.user.id, messId, messId]
+    // Verify the requested mess is open and approved
+    const [messCheckRows] = await connection.query(
+      'SELECT isOpen, isApproved, isActive, businessStatus FROM Messes WHERE id = ? AND isDeleted = 0',
+      [messId]
     );
+    if (messCheckRows.length === 0 || !messCheckRows[0].isOpen || !messCheckRows[0].isApproved) {
+      await connection.rollback();
+      return res.status(400).json({ error: 'This mess is currently closed, unavailable, or unapproved.' });
+    }
 
+    // Calculate amount from items if totalAmount not provided
+    let amount = totalAmount ? parseFloat(totalAmount) : 0;
+    const parsedItems = Array.isArray(items) ? items : [];
+    if (!amount && parsedItems.length > 0) {
+      amount = parsedItems.reduce((sum, item) => sum + ((item.price || 0) * (item.quantity || item.qty || 1)), 0);
+    }
+
+    // 1. Check for Active Subscription first (only for subscription payment)
     let isSubscriptionOrder = false;
-    let amount = parseFloat(totalAmount);
-
-    if (subRows.length > 0) {
-      // Use subscription meal
-      isSubscriptionOrder = true;
-      amount = 0; // No cost for this order
-      const subId = subRows[0].id;
-      
-      // Deduct 1 meal
-      await connection.query(
-        'UPDATE Subscriptions SET mealsRemaining = mealsRemaining - 1 WHERE id = ?',
-        [subId]
+    if (paymentMethod === 'subscription') {
+      const [subRows] = await connection.query(
+        `SELECT id, mealsRemaining FROM Subscriptions 
+         WHERE customerId = ? 
+           AND isActive = 1 
+           AND mealsRemaining > 0 
+           AND (
+             messId = ? 
+             OR (messId IS NULL AND JSON_CONTAINS(allowedMesses, JSON_QUOTE(?)))
+             OR (messId IS NULL AND allowedMesses IS NULL)
+           )
+         ORDER BY messId DESC FOR UPDATE`,
+        [req.user.id, messId, messId]
       );
+
+      if (subRows.length > 0) {
+        isSubscriptionOrder = true;
+        amount = 0;
+        await connection.query(
+          'UPDATE Subscriptions SET mealsRemaining = mealsRemaining - 1 WHERE id = ?',
+          [subRows[0].id]
+        );
+      } else {
+        await connection.rollback();
+        return res.status(400).json({ error: 'No active subscription found for this mess' });
+      }
     } else {
-      // 2. Fallback: Check Wallet Balance
+      // 2. Wallet payment — check balance
       const [userRows] = await connection.query('SELECT walletBalance FROM Users WHERE id = ? FOR UPDATE', [req.user.id]);
       const balance = parseFloat(userRows[0].walletBalance);
 
       if (balance < amount) {
         await connection.rollback();
-        return res.status(400).json({ error: 'Insufficient wallet balance or no active subscription', shortfall: amount - balance });
+        return res.status(400).json({ error: 'Insufficient wallet balance', shortfall: amount - balance });
       }
 
       // 3. Deduct Wallet
@@ -53,33 +72,38 @@ exports.placeOrder = async (req, res) => {
 
       // 4. Log Wallet Transaction
       const txId = require('crypto').randomUUID();
-      const description = `Order placed${messId ? ' at mess' : ''}`;
       await connection.query(
         'INSERT INTO WalletTransactions (id, userId, amount, type, description) VALUES (?, ?, ?, ?, ?)',
-        [txId, req.user.id, amount, 'debit', description]
+        [txId, req.user.id, amount, 'debit', `Order placed at mess`]
       );
     }
 
-    // Ensure valid messId for the order
-    let finalMessId = messId;
-    if (!finalMessId || finalMessId === 'default-mess-id') {
-      const [messes] = await connection.query('SELECT id FROM Messes LIMIT 1');
-      if (messes.length > 0) {
-        finalMessId = messes[0].id;
-      }
-    }
-
-    // 5. Create Order
+    // 5. Create Order with all fields
     const orderId = require('crypto').randomUUID();
     await connection.query(
-      'INSERT INTO Orders (id, customerId, messId, totalAmount, orderType, items) VALUES (?, ?, ?, ?, ?, ?)',
-      [orderId, req.user.id, finalMessId, amount, isSubscriptionOrder ? 'subscription' : (orderType || 'on_demand'), JSON.stringify(items || [])]
+      `INSERT INTO Orders (id, customerId, messId, totalAmount, orderType, items, deliveryType, address, paymentMethod, specialNote)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        orderId, req.user.id, messId, amount,
+        isSubscriptionOrder ? 'subscription' : (orderType || 'on_demand'),
+        JSON.stringify(parsedItems),
+        deliveryType || null,
+        address || null,
+        paymentMethod || 'wallet',
+        specialNote || null
+      ]
+    );
+
+    // 6. Record initial status in timeline
+    await connection.query(
+      'INSERT INTO OrderStatusTimeline (orderId, status, note) VALUES (?, ?, ?)',
+      [orderId, 'pending', 'Order placed']
     );
 
     await connection.commit();
     res.status(201).json({ 
       message: isSubscriptionOrder ? 'Order placed using subscription' : 'Order placed successfully', 
-      orderId,
+      id: orderId,
       usedSubscription: isSubscriptionOrder
     });
   } catch (e) {
@@ -94,15 +118,87 @@ exports.placeOrder = async (req, res) => {
 // GET /api/orders — get customer's orders
 exports.getMyOrders = async (req, res) => {
   try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const offset = (page - 1) * limit;
+
     const [rows] = await db.query(
       `SELECT o.*, m.name AS messName, m.images AS messImages
        FROM Orders o
        JOIN Messes m ON o.messId = m.id
        WHERE o.customerId = ? AND o.isDeleted = 0
-       ORDER BY o.createdAt DESC`,
-      [req.user.id]
+       ORDER BY o.createdAt DESC
+       LIMIT ? OFFSET ?`,
+      [req.user.id, limit, offset]
     );
     res.json(rows);
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+// GET /api/orders/:id — get single order for consumer
+exports.getOrderById = async (req, res) => {
+  try {
+    const [rows] = await db.query(
+      `SELECT o.*, m.name AS messName, m.images AS messImages
+       FROM Orders o
+       JOIN Messes m ON o.messId = m.id
+       WHERE o.id = ? AND o.customerId = ? AND o.isDeleted = 0`,
+      [req.params.id, req.user.id]
+    );
+    if (rows.length === 0) return res.status(404).json({ error: 'Order not found' });
+
+    const order = rows[0];
+    order.items = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
+
+    // Fetch status timeline
+    const [timeline] = await db.query(
+      'SELECT status, note, createdAt FROM OrderStatusTimeline WHERE orderId = ? ORDER BY createdAt ASC',
+      [order.id]
+    );
+    order.statusTimeline = timeline;
+
+    res.json(order);
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+// POST /api/orders/:id/reorder — re-place a previous order
+exports.reorder = async (req, res) => {
+  try {
+    // Find the original order
+    const [original] = await db.query(
+      'SELECT messId, items, deliveryType, address, totalAmount FROM Orders WHERE id = ? AND customerId = ? AND isDeleted = 0',
+      [req.params.id, req.user.id]
+    );
+    if (original.length === 0) return res.status(404).json({ error: 'Original order not found' });
+
+    const oldOrder = original[0];
+
+    // Verify mess is still open
+    const [messCheck] = await db.query(
+      'SELECT isOpen, isApproved FROM Messes WHERE id = ? AND isDeleted = 0',
+      [oldOrder.messId]
+    );
+    if (messCheck.length === 0 || !messCheck[0].isOpen || !messCheck[0].isApproved) {
+      return res.status(400).json({ error: 'This mess is currently unavailable' });
+    }
+
+    // Delegate to placeOrder logic by injecting body
+    req.body = {
+      messId: oldOrder.messId,
+      totalAmount: oldOrder.totalAmount,
+      items: typeof oldOrder.items === 'string' ? JSON.parse(oldOrder.items) : oldOrder.items,
+      deliveryType: oldOrder.deliveryType,
+      address: oldOrder.address,
+      paymentMethod: 'wallet',
+    };
+
+    return exports.placeOrder(req, res);
   } catch (e) {
     console.error(e);
     res.status(500).json({ error: 'Internal server error' });
@@ -136,7 +232,6 @@ exports.getKitchenForecast = async (req, res) => {
     const providerId = req.user.id;
     const today = new Date().toISOString().split('T')[0];
 
-    // 1. Calculate Active Subscriptions for today (not paused)
     const [subscriptions] = await db.query(
       `SELECT COUNT(s.id) as totalActiveSubs 
        FROM Subscriptions s
@@ -150,14 +245,23 @@ exports.getKitchenForecast = async (req, res) => {
       [providerId, today, today, today, today]
     );
 
-    // 2. Calculate Today's On-Demand Orders
     const [orders] = await db.query(
       `SELECT COUNT(o.id) as totalPendingOrders
        FROM Orders o
        JOIN Messes m ON o.messId = m.id
        WHERE m.vendorId = ? 
-         AND o.status IN ('pending', 'confirmed', 'preparing')
+         AND o.status IN ('pending', 'accepted', 'confirmed', 'preparing')
          AND DATE(o.createdAt) = ?`,
+      [providerId, today]
+    );
+
+    const [earnings] = await db.query(
+      `SELECT SUM(o.totalAmount) as todayEarnings
+       FROM Orders o
+       JOIN Messes m ON o.messId = m.id
+       WHERE m.vendorId = ? 
+         AND DATE(o.createdAt) = ? 
+         AND o.status NOT IN ('cancelled', 'rejected')`,
       [providerId, today]
     );
 
@@ -166,7 +270,8 @@ exports.getKitchenForecast = async (req, res) => {
       data: {
         activeSubscriptionsToday: subscriptions[0].totalActiveSubs,
         pendingOnDemandOrders: orders[0].totalPendingOrders,
-        totalMealsToPrepare: subscriptions[0].totalActiveSubs + orders[0].totalPendingOrders
+        totalMealsToPrepare: subscriptions[0].totalActiveSubs + orders[0].totalPendingOrders,
+        todayEarnings: earnings[0].todayEarnings || 0
       }
     });
 
@@ -179,8 +284,13 @@ exports.getKitchenForecast = async (req, res) => {
 // PATCH /api/orders/:id/status — update status (vendor/admin)
 exports.updateOrderStatus = async (req, res) => {
   try {
-    const { status } = req.body;
+    const { status, note } = req.body;
     const orderId = req.params.id;
+
+    const validStatuses = ['pending', 'accepted', 'confirmed', 'preparing', 'out_for_delivery', 'delivered', 'cancelled', 'rejected'];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ error: `Invalid status. Must be one of: ${validStatuses.join(', ')}` });
+    }
 
     // Verify ownership if role is vendor
     if (req.user && req.user.role === 'vendor') {
@@ -194,12 +304,22 @@ exports.updateOrderStatus = async (req, res) => {
 
       await db.query('UPDATE Orders SET status = ? WHERE id = ?', [status, orderId]);
       
+      // Record timeline
+      await db.query(
+        'INSERT INTO OrderStatusTimeline (orderId, status, note) VALUES (?, ?, ?)',
+        [orderId, status, note || null]
+      );
+
       // Send Push Notification securely
       const customerId = orderCheck[0].customerId;
       const { sendPushNotification } = require('./notificationController');
       await sendPushNotification(customerId, 'Order Update', `Your order #${orderId.slice(0,6)} is now ${status}.`, { orderId, status });
     } else {
       await db.query('UPDATE Orders SET status = ? WHERE id = ?', [status, orderId]);
+      await db.query(
+        'INSERT INTO OrderStatusTimeline (orderId, status, note) VALUES (?, ?, ?)',
+        [orderId, status, note || null]
+      );
     }
 
     res.json({ message: 'Order status updated' });
