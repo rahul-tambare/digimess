@@ -33,9 +33,21 @@ export default function MenuScreen() {
   const [thaliPrice, setThaliPrice] = useState('');
   const [thaliDiscountPrice, setThaliDiscountPrice] = useState('');
 
+  // Item form state
+  const [itemName, setItemName] = useState('');
+  const [itemPrice, setItemPrice] = useState('');
+  const [itemCategory, setItemCategory] = useState('General');
+  const [itemIsVeg, setItemIsVeg] = useState(true);
+  const [itemDescription, setItemDescription] = useState('');
+
   const resetThaliForm = () => {
     setThaliName(''); setThaliMealTime('Lunch'); setThaliType('Veg');
     setThaliItems(''); setThaliPrice(''); setThaliDiscountPrice('');
+  };
+
+  const resetItemForm = () => {
+    setItemName(''); setItemPrice(''); setItemCategory('General');
+    setItemIsVeg(true); setItemDescription('');
   };
 
   const fetchData = async () => {
@@ -82,12 +94,37 @@ export default function MenuScreen() {
 
   const handleDeleteThali = async (id: string) => {
     try {
-      await thaliApi.deleteThali(id);
+      if (activeTab === 'thalis') {
+        await thaliApi.deleteThali(id);
+      } else {
+        await menuApi.deleteMenuItem(id);
+      }
       fetchData();
     } catch (e: any) {
       Alert.alert('Error', e.message);
     }
     setDeleteId(null);
+  };
+
+  const handleAddItem = async () => {
+    if (!itemName.trim() || !itemPrice.trim() || !messId) return;
+    try {
+      await menuApi.addMenuItem({
+        messId,
+        itemName: itemName,
+        price: parseFloat(itemPrice),
+        isVeg: itemIsVeg,
+        category: itemCategory,
+        // itemDescription is updated in controller to handle this if passed, 
+        // but current menuApi.addMenuItem type only has these fields. 
+        // I'll stick to the type for now.
+      });
+      resetItemForm();
+      setShowAddThali(false);
+      fetchData();
+    } catch (e: any) {
+      Alert.alert('Error', e.message);
+    }
   };
 
   const handleToggleAvailability = async (id: string) => {
@@ -172,7 +209,7 @@ export default function MenuScreen() {
                 onToggleSpecial={() => handleToggleSpecial(thali.id)}
               />
             )) : (
-              <EmptyState emoji="🍽️" title="No thalis yet" description="Add your first thali to start receiving orders" actionLabel="+ Add Thali" onAction={() => setShowAddThali(true)} />
+              <EmptyState emoji="🍽️" title="No thalis yet" description="Add your first thali to start receiving orders" actionLabel="+ Add Thali" onAction={() => { setActiveTab('thalis'); setShowAddThali(true); }} />
             )}
           </>
         ) : (
@@ -188,18 +225,23 @@ export default function MenuScreen() {
                 </View>
                 <View style={styles.menuItemRight}>
                   <Text style={styles.menuItemPrice}>₹{item.price}</Text>
-                  <Pressable
-                    style={[styles.availBadge, item.isAvailable ? styles.availOn : styles.availOff]}
-                    onPress={() => handleToggleMenuItem(item)}
-                  >
-                    <Text style={[styles.availText, item.isAvailable ? styles.availTextOn : styles.availTextOff]}>
-                      {item.isAvailable ? 'Available' : 'Off'}
-                    </Text>
-                  </Pressable>
+                  <View style={{ flexDirection: 'row', gap: Spacing.sm, alignItems: 'center' }}>
+                    <Pressable
+                      style={[styles.availBadge, item.isAvailable ? styles.availOn : styles.availOff]}
+                      onPress={() => handleToggleMenuItem(item)}
+                    >
+                      <Text style={[styles.availText, item.isAvailable ? styles.availTextOn : styles.availTextOff]}>
+                        {item.isAvailable ? 'On' : 'Off'}
+                      </Text>
+                    </Pressable>
+                    <Pressable style={styles.deleteMiniBtn} onPress={() => setDeleteId(item.id)}>
+                      <Text style={{ fontSize: 12 }}>🗑️</Text>
+                    </Pressable>
+                  </View>
                 </View>
               </View>
             )) : (
-              <EmptyState emoji="📋" title="No menu items" description="Add individual items to complement your thalis" />
+              <EmptyState emoji="📋" title="No menu items" description="Add individual items to complement your thalis" actionLabel="+ Add Item" onAction={() => { setActiveTab('items'); setShowAddThali(true); }} />
             )}
           </>
         )}
@@ -210,41 +252,69 @@ export default function MenuScreen() {
         <Text style={styles.fabText}>+</Text>
       </Pressable>
 
-      {/* Add Thali Sheet */}
-      <BottomSheet visible={showAddThali} title="Add New Thali" onClose={() => { setShowAddThali(false); resetThaliForm(); }}>
-        <FormField label="Thali Name" required placeholder="e.g. Special Rajasthani Thali" value={thaliName} onChangeText={setThaliName} />
-        
-        <Text style={styles.fieldLabel}>Meal Time</Text>
-        <View style={styles.chipRow}>
-          {(['Breakfast', 'Lunch', 'Dinner', 'All Day'] as const).map(t => (
-            <Pressable key={t} style={[styles.chip, thaliMealTime === t && styles.chipActive]} onPress={() => setThaliMealTime(t)}>
-              <Text style={[styles.chipText, thaliMealTime === t && styles.chipTextActive]}>{t}</Text>
+      {/* Add Sheet */}
+      <BottomSheet 
+        visible={showAddThali} 
+        title={activeTab === 'thalis' ? "Add New Thali" : "Add New Item"} 
+        onClose={() => { setShowAddThali(false); resetThaliForm(); resetItemForm(); }}
+      >
+        {activeTab === 'thalis' ? (
+          <>
+            <FormField label="Thali Name" required placeholder="e.g. Special Rajasthani Thali" value={thaliName} onChangeText={setThaliName} />
+            
+            <Text style={styles.fieldLabel}>Meal Time</Text>
+            <View style={styles.chipRow}>
+              {(['Breakfast', 'Lunch', 'Dinner', 'All Day'] as const).map(t => (
+                <Pressable key={t} style={[styles.chip, thaliMealTime === t && styles.chipActive]} onPress={() => setThaliMealTime(t)}>
+                  <Text style={[styles.chipText, thaliMealTime === t && styles.chipTextActive]}>{t}</Text>
+                </Pressable>
+              ))}
+            </View>
+
+            <Text style={styles.fieldLabel}>Type</Text>
+            <View style={styles.chipRow}>
+              {(['Veg', 'Non-Veg', 'Jain'] as const).map(t => (
+                <Pressable key={t} style={[styles.chip, thaliType === t && styles.chipActive]} onPress={() => setThaliType(t)}>
+                  <Text style={[styles.chipText, thaliType === t && styles.chipTextActive]}>{t}</Text>
+                </Pressable>
+              ))}
+            </View>
+
+            <FormField label="Items Included" required placeholder="3 Roti, 1 Sabzi, Dal, Rice..." value={thaliItems} onChangeText={setThaliItems} multiline style={{ height: 80, textAlignVertical: 'top', paddingTop: 14 }} />
+            <FormField label="Price (₹)" required placeholder="e.g. 120" value={thaliPrice} onChangeText={setThaliPrice} keyboardType="number-pad" />
+            <FormField label="Discounted Price (₹)" placeholder="Optional" value={thaliDiscountPrice} onChangeText={setThaliDiscountPrice} keyboardType="number-pad" />
+
+            <Pressable style={styles.saveBtn} onPress={handleAddThali}>
+              <Text style={styles.saveBtnText}>Save Thali</Text>
             </Pressable>
-          ))}
-        </View>
+          </>
+        ) : (
+          <>
+            <FormField label="Item Name" required placeholder="e.g. Extra Butter Roti" value={itemName} onChangeText={setItemName} />
+            
+            <Text style={styles.fieldLabel}>Dietary Type</Text>
+            <View style={styles.chipRow}>
+              {([true, false] as const).map(v => (
+                <Pressable key={v ? 'Veg' : 'Non-Veg'} style={[styles.chip, itemIsVeg === v && styles.chipActive]} onPress={() => setItemIsVeg(v)}>
+                  <Text style={[styles.chipText, itemIsVeg === v && styles.chipTextActive]}>{v ? 'Veg' : 'Non-Veg'}</Text>
+                </Pressable>
+              ))}
+            </View>
 
-        <Text style={styles.fieldLabel}>Type</Text>
-        <View style={styles.chipRow}>
-          {(['Veg', 'Non-Veg', 'Jain'] as const).map(t => (
-            <Pressable key={t} style={[styles.chip, thaliType === t && styles.chipActive]} onPress={() => setThaliType(t)}>
-              <Text style={[styles.chipText, thaliType === t && styles.chipTextActive]}>{t}</Text>
+            <FormField label="Category" placeholder="e.g. Breads, Sides, Drinks" value={itemCategory} onChangeText={setItemCategory} />
+            <FormField label="Price (₹)" required placeholder="e.g. 20" value={itemPrice} onChangeText={setItemPrice} keyboardType="number-pad" />
+
+            <Pressable style={styles.saveBtn} onPress={handleAddItem}>
+              <Text style={styles.saveBtnText}>Save Item</Text>
             </Pressable>
-          ))}
-        </View>
-
-        <FormField label="Items Included" required placeholder="3 Roti, 1 Sabzi, Dal, Rice..." value={thaliItems} onChangeText={setThaliItems} multiline style={{ height: 80, textAlignVertical: 'top', paddingTop: 14 }} />
-        <FormField label="Price (₹)" required placeholder="e.g. 120" value={thaliPrice} onChangeText={setThaliPrice} keyboardType="number-pad" />
-        <FormField label="Discounted Price (₹)" placeholder="Optional" value={thaliDiscountPrice} onChangeText={setThaliDiscountPrice} keyboardType="number-pad" />
-
-        <Pressable style={styles.saveBtn} onPress={handleAddThali}>
-          <Text style={styles.saveBtnText}>Save Thali</Text>
-        </Pressable>
+          </>
+        )}
       </BottomSheet>
 
       {/* Delete confirm */}
       <ConfirmModal
         visible={!!deleteId}
-        title="Delete Thali?"
+        title={activeTab === 'thalis' ? "Delete Thali?" : "Delete Item?"}
         message="This action cannot be undone. Are you sure?"
         variant="danger"
         confirmLabel="Delete"
@@ -294,6 +364,11 @@ const styles = StyleSheet.create({
   availText: { fontSize: FontSizes.xs, fontWeight: FontWeights.bold },
   availTextOn: { color: Colors.success },
   availTextOff: { color: Colors.error },
+  deleteMiniBtn: {
+    padding: Spacing.xs,
+    backgroundColor: Colors.errorBg,
+    borderRadius: BorderRadius.xs,
+  },
   fab: {
     position: 'absolute', bottom: 100, right: 24, width: 60, height: 60,
     borderRadius: 30, backgroundColor: Colors.primary, justifyContent: 'center',

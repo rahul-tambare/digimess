@@ -31,6 +31,7 @@ export default function FormField({ label, error, required, hint, style, ...prop
         ]}
         placeholderTextColor={Colors.textTertiary}
         {...props}
+        value={props.value ?? ''}
       />
       {error && <Text style={styles.errorText}>{error}</Text>}
     </View>

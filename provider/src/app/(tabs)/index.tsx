@@ -22,6 +22,8 @@ export default function DashboardScreen() {
   const [refreshing, setRefreshing] = useState(false);
 
   const fetchDashboard = async () => {
+    if (!useAuthStore.getState().isAuthenticated) return;
+
     try {
       const res = await providerApi.getDashboard();
       setData(res);

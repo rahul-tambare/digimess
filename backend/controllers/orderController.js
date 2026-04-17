@@ -1,6 +1,6 @@
 const db = require('../config/db');
 
-// POST /api/orders — place an order (deducts from wallet)
+// POST /api/orders — place an order (supports wallet, upi, card, cod, subscription)
 exports.placeOrder = async (req, res) => {
   const connection = await db.getConnection();
   try {
@@ -29,9 +29,12 @@ exports.placeOrder = async (req, res) => {
       amount = parsedItems.reduce((sum, item) => sum + ((item.price || 0) * (item.quantity || item.qty || 1)), 0);
     }
 
-    // 1. Check for Active Subscription first (only for subscription payment)
     let isSubscriptionOrder = false;
+    let paymentStatus = 'pending'; // default
+    let transactionDescription = `Order placed via ${paymentMethod === 'cod' ? 'Cash' : paymentMethod?.toUpperCase() || 'Wallet'}`;
+
     if (paymentMethod === 'subscription') {
+      // ── Subscription payment ──
       const [subRows] = await connection.query(
         `SELECT id, mealsRemaining FROM Subscriptions 
          WHERE customerId = ? 
@@ -49,6 +52,8 @@ exports.placeOrder = async (req, res) => {
       if (subRows.length > 0) {
         isSubscriptionOrder = true;
         amount = 0;
+        paymentStatus = 'paid';
+        transactionDescription = 'Order placed via Subscription';
         await connection.query(
           'UPDATE Subscriptions SET mealsRemaining = mealsRemaining - 1 WHERE id = ?',
           [subRows[0].id]
@@ -57,8 +62,8 @@ exports.placeOrder = async (req, res) => {
         await connection.rollback();
         return res.status(400).json({ error: 'No active subscription found for this mess' });
       }
-    } else {
-      // 2. Wallet payment — check balance
+    } else if (paymentMethod === 'wallet') {
+      // ── Wallet payment — check balance and deduct ──
       const [userRows] = await connection.query('SELECT walletBalance FROM Users WHERE id = ? FOR UPDATE', [req.user.id]);
       const balance = parseFloat(userRows[0].walletBalance);
 
@@ -67,18 +72,29 @@ exports.placeOrder = async (req, res) => {
         return res.status(400).json({ error: 'Insufficient wallet balance', shortfall: amount - balance });
       }
 
-      // 3. Deduct Wallet
       await connection.query('UPDATE Users SET walletBalance = walletBalance - ? WHERE id = ?', [amount, req.user.id]);
-
-      // 4. Log Wallet Transaction
-      const txId = require('crypto').randomUUID();
-      await connection.query(
-        'INSERT INTO WalletTransactions (id, userId, amount, type, description) VALUES (?, ?, ?, ?, ?)',
-        [txId, req.user.id, amount, 'debit', `Order placed at mess`]
-      );
+      paymentStatus = 'paid';
+    } else if (paymentMethod === 'upi' || paymentMethod === 'card') {
+      // ── UPI / Card — no wallet deduction (simulated as paid) ──
+      paymentStatus = 'paid';
+    } else if (paymentMethod === 'cod') {
+      // ── Cash on Delivery — payment collected later ──
+      paymentStatus = 'pending';
+    } else {
+      // ── Unknown method — treat like COD (no wallet deduction) ──
+      paymentStatus = 'pending';
     }
 
-    // 5. Create Order with all fields
+    // Record Transaction regardless of payment method
+    if (!isSubscriptionOrder || amount > 0) {
+       const txId = require('crypto').randomUUID();
+       await connection.query(
+         'INSERT INTO WalletTransactions (id, userId, amount, type, description) VALUES (?, ?, ?, ?, ?)',
+         [txId, req.user.id, amount, 'debit', transactionDescription]
+       );
+    }
+
+    // Create Order with all fields
     const orderId = require('crypto').randomUUID();
     await connection.query(
       `INSERT INTO Orders (id, customerId, messId, totalAmount, orderType, items, deliveryType, address, paymentMethod, specialNote)
@@ -94,7 +110,7 @@ exports.placeOrder = async (req, res) => {
       ]
     );
 
-    // 6. Record initial status in timeline
+    // Record initial status in timeline
     await connection.query(
       'INSERT INTO OrderStatusTimeline (orderId, status, note) VALUES (?, ?, ?)',
       [orderId, 'pending', 'Order placed']
@@ -104,6 +120,7 @@ exports.placeOrder = async (req, res) => {
     res.status(201).json({ 
       message: isSubscriptionOrder ? 'Order placed using subscription' : 'Order placed successfully', 
       id: orderId,
+      paymentStatus,
       usedSubscription: isSubscriptionOrder
     });
   } catch (e) {
@@ -121,15 +138,27 @@ exports.getMyOrders = async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 20;
     const offset = (page - 1) * limit;
+    const filter = req.query.filter || 'All';
+
+    let condition = 'o.customerId = ? AND o.isDeleted = 0';
+    let queryParams = [req.user.id];
+
+    if (filter === 'Subscriptions') {
+      condition += ` AND o.orderType = 'subscription'`;
+    } else if (filter === 'Delivered') {
+      condition += ` AND o.status = 'delivered'`;
+    } else if (filter === 'Cancelled') {
+      condition += ` AND o.status IN ('cancelled', 'rejected')`;
+    }
 
     const [rows] = await db.query(
       `SELECT o.*, m.name AS messName, m.images AS messImages
        FROM Orders o
        JOIN Messes m ON o.messId = m.id
-       WHERE o.customerId = ? AND o.isDeleted = 0
+       WHERE ${condition}
        ORDER BY o.createdAt DESC
        LIMIT ? OFFSET ?`,
-      [req.user.id, limit, offset]
+      [...queryParams, limit, offset]
     );
     res.json(rows);
   } catch (e) {
@@ -172,7 +201,7 @@ exports.reorder = async (req, res) => {
   try {
     // Find the original order
     const [original] = await db.query(
-      'SELECT messId, items, deliveryType, address, totalAmount FROM Orders WHERE id = ? AND customerId = ? AND isDeleted = 0',
+      'SELECT messId, items, deliveryType, address, totalAmount, paymentMethod FROM Orders WHERE id = ? AND customerId = ? AND isDeleted = 0',
       [req.params.id, req.user.id]
     );
     if (original.length === 0) return res.status(404).json({ error: 'Original order not found' });
@@ -195,7 +224,7 @@ exports.reorder = async (req, res) => {
       items: typeof oldOrder.items === 'string' ? JSON.parse(oldOrder.items) : oldOrder.items,
       deliveryType: oldOrder.deliveryType,
       address: oldOrder.address,
-      paymentMethod: 'wallet',
+      paymentMethod: oldOrder.paymentMethod || 'wallet',
     };
 
     return exports.placeOrder(req, res);

@@ -3,35 +3,24 @@ import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Platform, Activit
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft, Plus, ArrowUpRight, ArrowDownLeft, TrendingUp, Wallet as WalletIcon } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
-
-// In production: import api from '@/services/api';
-// const res = await api.get('/wallet/balance');
-// const txns = await api.get('/wallet/transactions');
+import { useWalletStore } from '@/stores/dataStore';
 
 export default function WalletScreen() {
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
-  const [balance, setBalance] = useState(0);
-  const [transactions, setTransactions] = useState<any[]>([]);
+  
+  const balance = useWalletStore(state => state.balance);
+  const transactions = useWalletStore(state => state.transactions);
+  const loading = useWalletStore(state => state.loading);
+  const fetchBalance = useWalletStore(state => state.fetchBalance);
+  const fetchTransactions = useWalletStore(state => state.fetchTransactions);
 
   useEffect(() => {
-    // Simulate API call — replace with real API
-    setTimeout(() => {
-      setBalance(4250);
-      setTransactions([
-        { id: '1', type: 'credit', amount: 500, description: 'Wallet Top-Up', createdAt: '2026-04-13T10:00:00Z' },
-        { id: '2', type: 'debit', amount: 120, description: 'Order at Sunita\'s Home Kitchen', createdAt: '2026-04-12T13:30:00Z' },
-        { id: '3', type: 'debit', amount: 2499, description: 'Subscription purchased', createdAt: '2026-04-10T09:00:00Z' },
-        { id: '4', type: 'credit', amount: 1000, description: 'Wallet Top-Up', createdAt: '2026-04-09T11:00:00Z' },
-        { id: '5', type: 'debit', amount: 140, description: 'Order at Annapurna Mess', createdAt: '2026-04-08T13:00:00Z' },
-        { id: '6', type: 'credit', amount: 5000, description: 'Wallet Top-Up', createdAt: '2026-04-05T16:00:00Z' },
-      ]);
-      setLoading(false);
-    }, 600);
+    fetchBalance();
+    fetchTransactions(1);
   }, []);
 
-  const totalSpent = transactions.filter(t => t.type === 'debit').reduce((s, t) => s + t.amount, 0);
-  const totalTopup = transactions.filter(t => t.type === 'credit').reduce((s, t) => s + t.amount, 0);
+  const totalSpent = transactions.filter(t => t.type === 'debit').reduce((s, t) => s + Number(t.amount), 0);
+  const totalTopup = transactions.filter(t => t.type === 'credit').reduce((s, t) => s + Number(t.amount), 0);
 
   if (loading) {
     return (
@@ -97,7 +86,7 @@ export default function WalletScreen() {
                 <Text style={s.txnDate}>{new Date(txn.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</Text>
               </View>
               <Text style={[s.txnAmount, { color: txn.type === 'credit' ? '#10B981' : '#EF4444' }]}>
-                {txn.type === 'credit' ? '+' : '-'}₹{txn.amount}
+                {txn.type === 'credit' ? '+' : '-'}₹{Number(txn.amount).toLocaleString()}
               </Text>
             </View>
           ))}

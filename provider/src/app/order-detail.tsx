@@ -2,9 +2,9 @@
 // Order Detail Screen
 // ==========================================
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable, Platform, Linking, ActivityIndicator } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { Colors, Spacing, FontSizes, FontWeights, BorderRadius, Shadows } from '../constants/theme';
 import { providerApi, orderApi } from '../services/api';
 import StatusBadge from '../components/ui/StatusBadge';
@@ -17,33 +17,41 @@ export default function OrderDetailScreen() {
   const [order, setOrder] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchOrder = async () => {
-      try {
-        const res = await providerApi.getOrderDetail(id || '');
-        // Parse items if string
-        if (typeof res.items === 'string') res.items = JSON.parse(res.items);
-        setOrder(res);
-      } catch (e) {
-        console.error('Order detail error:', e);
-      } finally {
-        setLoading(false);
-      }
-    };
-    if (id) fetchOrder();
-  }, [id]);
+  // Polling logic with useFocusEffect so it stops when navigating away, and stops when order is terminal
+  useFocusEffect(
+    useCallback(() => {
+      let interval: NodeJS.Timeout;
+      
+      const fetchOrder = async () => {
+        if (!id) return;
+        try {
+          const res = await providerApi.getOrderDetail(id as string);
+          if (typeof res.items === 'string') res.items = JSON.parse(res.items);
+          setOrder(res);
+          setLoading(false);
+          
+          if (['delivered', 'cancelled', 'rejected'].includes(res.status)) {
+            if (interval) clearInterval(interval);
+          }
+        } catch (e) {
+          console.error('Order detail error:', e);
+          setLoading(false);
+        }
+      };
+
+      fetchOrder();
+      interval = setInterval(fetchOrder, 3000);
+      
+      return () => {
+        if (interval) clearInterval(interval);
+      };
+    }, [id])
+  );
 
   const handleAction = async (status: OrderStatus) => {
-    const statusMap: Record<string, string> = {
-      'accepted': 'confirmed',
-      'rejected': 'cancelled',
-      'preparing': 'preparing',
-      'out_for_delivery': 'out_for_delivery',
-      'delivered': 'delivered',
-    };
     try {
-      await orderApi.updateOrderStatus(order.id, statusMap[status] || status);
-      setOrder({ ...order, status: statusMap[status] || status });
+      await orderApi.updateOrderStatus(order.id, status);
+      setOrder({ ...order, status });
     } catch (e) {
       console.error('Status update error:', e);
     }
@@ -84,12 +92,29 @@ export default function OrderDetailScreen() {
               <Text style={styles.callBtnText}>📞 Call</Text>
             </Pressable>
           </View>
-          {order.address && (
+          {(order.address || order.deliveryAddress) && (
             <View style={styles.addressBox}>
               <Text style={styles.addressLabel}>📍 Delivery Address</Text>
-              <Text style={styles.addressText}>{order.address}</Text>
+              <Text style={styles.addressText}>{order.address || order.deliveryAddress}</Text>
             </View>
           )}
+          {/* Payment & Delivery Badges */}
+          <View style={{ flexDirection: 'row', gap: 8, marginTop: 12 }}>
+            {order.paymentMethod && (
+              <View style={{ backgroundColor: '#F0F9FF', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 }}>
+                <Text style={{ fontSize: 11, fontWeight: '700', color: '#0369A1' }}>
+                  💳 {order.paymentMethod.toUpperCase()}
+                </Text>
+              </View>
+            )}
+            {order.deliveryType && (
+              <View style={{ backgroundColor: '#FFF7ED', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 }}>
+                <Text style={{ fontSize: 11, fontWeight: '700', color: '#C2410C' }}>
+                  {order.deliveryType === 'delivery' ? '🚚 Delivery' : '🏃 Pickup'}
+                </Text>
+              </View>
+            )}
+          </View>
         </View>
 
         {/* Items */}
@@ -156,7 +181,7 @@ export default function OrderDetailScreen() {
             </Pressable>
           </View>
         )}
-        {(order.status === 'confirmed') && (
+        {(order.status === 'accepted' || order.status === 'confirmed') && (
           <Pressable style={[styles.fullBtn, { backgroundColor: Colors.statusPreparing }]} onPress={() => handleAction('preparing')}>
             <Text style={styles.fullBtnText}>👨‍🍳 Start Preparing</Text>
           </Pressable>

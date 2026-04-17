@@ -1,10 +1,12 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 
 export default function OrderSuccessScreen() {
   const router = useRouter();
+  const { orderId } = useLocalSearchParams<{ orderId?: string }>();
+  const shortId = orderId ? `#${orderId.slice(0, 8).toUpperCase()}` : '#ORDER';
 
   return (
     <SafeAreaView style={s.container} edges={['top', 'bottom']}>
@@ -27,11 +29,11 @@ export default function OrderSuccessScreen() {
           <View style={s.orderCardHeader}>
             <View>
               <Text style={s.metaLabel}>ORDER ID</Text>
-              <Text style={s.metaValue}>#ORD-8912</Text>
+              <Text style={s.metaValue}>{shortId}</Text>
             </View>
             <View style={{ alignItems: 'flex-end' }}>
-              <Text style={[s.metaLabel, { color: '#10B981' }]}>ESTIMATED DELIVERY</Text>
-              <Text style={s.metaValue}>Today, 12:30 PM</Text>
+              <Text style={[s.metaLabel, { color: '#10B981' }]}>STATUS</Text>
+              <Text style={s.metaValue}>Confirmed ✓</Text>
             </View>
           </View>
 
@@ -53,11 +55,8 @@ export default function OrderSuccessScreen() {
         </View>
 
         {/* Actions */}
-        <TouchableOpacity style={s.trackBtn} onPress={() => router.push('/order/order001')}>
+        <TouchableOpacity style={s.trackBtn} onPress={() => router.push(orderId ? `/order/${orderId}` : '/(tabs)/orders')}>
           <Text style={s.trackBtnText}>🗺️ Track Order</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={s.rateBtn} onPress={() => router.push('/rating')}>
-          <Text style={s.rateBtnText}>⭐ Rate Your Order</Text>
         </TouchableOpacity>
         <TouchableOpacity style={s.homeBtn} onPress={() => router.replace('/(tabs)')}>
           <Text style={s.homeBtnText}>← Back to Home</Text>
@@ -121,11 +120,6 @@ const s = StyleSheet.create({
     }),
   },
   trackBtnText: { color: '#FFF', fontSize: 16, fontWeight: '800' },
-  rateBtn: {
-    width: '100%', paddingVertical: 16, borderRadius: 16, alignItems: 'center', marginBottom: 12,
-    backgroundColor: '#FFF', borderWidth: 1.5, borderColor: '#F1F5F9',
-  },
-  rateBtnText: { color: '#FF6B35', fontSize: 16, fontWeight: '800' },
   homeBtn: { width: '100%', paddingVertical: 16, borderRadius: 16, alignItems: 'center', backgroundColor: '#F1F5F9' },
   homeBtnText: { color: '#475569', fontSize: 16, fontWeight: '800' },
 });

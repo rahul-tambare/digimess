@@ -3,27 +3,107 @@ const db = require('../config/db');
 // GET /api/messes  — list all open messes with optional search
 exports.getAllMesses = async (req, res) => {
   try {
-    const search = req.query.search ? `%${req.query.search}%` : '%';
-    const { userLat, userLng } = req.query;
+    const { userLat, userLng, search, type, diet, delivery, distance, price, mealTime, page = 1, limit = 10 } = req.query;
+    const offset = (Math.max(1, parseInt(page)) - 1) * parseInt(limit);
+    const parsedLimit = parseInt(limit);
 
     let selectClause = `SELECT m.*, ma.line1, ma.line2, ma.city, ma.state, ma.pincode, ma.latitude, ma.longitude`;
     let orderClause = `ORDER BY m.rating DESC`;
+    
+    const queryParams = [];
+
+    // Base WHERE
+    let whereClause = `WHERE m.isOpen = 1 AND m.isApproved = 1 AND m.isActive = 1 AND m.businessStatus = 1 AND m.isDeleted = 0`;
+
+    if (search) {
+      whereClause += ` AND (m.name LIKE ? OR m.description LIKE ? OR m.cuisines LIKE ? OR m.category LIKE ? OR ma.city LIKE ?)`;
+      const searchParam = `%${search}%`;
+      queryParams.push(searchParam, searchParam, searchParam, searchParam, searchParam);
+    }
+
+    if (type) {
+      if (type.toLowerCase() === 'veg only' || type.toLowerCase() === 'veg') {
+        whereClause += ` AND m.messType = 'Veg'`;
+      } else if (type.toLowerCase() === 'non-veg') {
+        whereClause += ` AND m.messType = 'Non-Veg'`;
+      } else if (type.toLowerCase() === 'both') {
+        whereClause += ` AND m.messType = 'Both'`;
+      }
+    }
+
+    if (delivery) {
+      if (delivery === 'Home Delivery') {
+        whereClause += ` AND m.deliveryAvailable = 1`;
+      } else if (delivery === 'Self Pickup') {
+        whereClause += ` AND m.takeAway = 1`;
+      } else if (delivery === 'Dine-in') {
+        whereClause += ` AND m.dineIn = 1`;
+      }
+    }
+
+    if (diet) {
+      whereClause += ` AND m.cuisines LIKE ?`;
+      queryParams.push(`%${diet}%`);
+    }
+
+    if (price) {
+      if (price === 'Under ₹100') {
+        whereClause += ` AND EXISTS (SELECT 1 FROM Thalis t WHERE t.messId = m.id AND t.price < 100)`;
+      } else if (price === '₹100 - ₹200') {
+        whereClause += ` AND EXISTS (SELECT 1 FROM Thalis t WHERE t.messId = m.id AND t.price BETWEEN 100 AND 200)`;
+      } else if (price === '₹200+') {
+        whereClause += ` AND EXISTS (SELECT 1 FROM Thalis t WHERE t.messId = m.id AND t.price > 200)`;
+      }
+    }
+
+    if (mealTime) {
+      if (mealTime === 'breakfast') {
+        whereClause += ` AND (m.category LIKE '%Breakfast%' OR m.cuisines LIKE '%Breakfast%' OR m.messType = 'Veg' OR EXISTS (SELECT 1 FROM Thalis t WHERE t.messId = m.id AND t.mealTime = 'Breakfast'))`;
+      } else if (mealTime === 'lunch') {
+        whereClause += ` AND (m.lunchStartTime IS NOT NULL OR m.category LIKE '%Thali%' OR EXISTS (SELECT 1 FROM Thalis t WHERE t.messId = m.id AND (t.mealTime = 'Lunch' OR t.mealTime = 'All Day')))`;
+      } else if (mealTime === 'dinner') {
+        whereClause += ` AND (m.dinnerStartTime IS NOT NULL OR m.category LIKE '%Thali%' OR EXISTS (SELECT 1 FROM Thalis t WHERE t.messId = m.id AND (t.mealTime = 'Dinner' OR t.mealTime = 'All Day')))`;
+      }
+    }
+
+    let havingClause = ``;
 
     if (userLat && userLng) {
       const lat = parseFloat(userLat);
       const lng = parseFloat(userLng);
-      selectClause += `, (6371 * acos(cos(radians(${lat})) * cos(radians(ma.latitude)) * cos(radians(ma.longitude) - radians(${lng})) + sin(radians(${lat})) * sin(radians(ma.latitude)))) AS distanceKm`;
+      selectClause += `, (CASE 
+          WHEN ma.latitude IS NOT NULL AND ma.latitude != 0 
+          THEN (6371 * acos(cos(radians(${lat})) * cos(radians(ma.latitude)) * cos(radians(ma.longitude) - radians(${lng})) + sin(radians(${lat})) * sin(radians(ma.latitude)))) 
+          ELSE NULL 
+        END) AS distanceKm`;
+      
       orderClause = `ORDER BY distanceKm ASC, m.rating DESC`;
+
+      if (distance) {
+        let maxDist = 5; // default
+        if (distance.includes('1 km')) maxDist = 1;
+        if (distance.includes('2 km')) maxDist = 2;
+        if (distance.includes('5 km')) maxDist = 5;
+        
+        havingClause = `HAVING distanceKm <= ? OR distanceKm IS NULL`;
+        queryParams.push(maxDist);
+      }
     }
 
-    const [rows] = await db.query(
-      `${selectClause}
-       FROM Messes m LEFT JOIN MessAddresses ma ON m.id = ma.messId
-       WHERE m.isOpen = 1 AND m.isApproved = 1 AND m.isActive = 1 AND m.businessStatus = 1 AND m.isDeleted = 0
-       AND (m.name LIKE ? OR m.description LIKE ? OR ma.city LIKE ?)
-       ${orderClause}`,
-      [search, search, search]
-    );
+    const finalQuery = `
+      ${selectClause}
+      FROM Messes m LEFT JOIN MessAddresses ma ON m.id = ma.messId
+      ${whereClause}
+      ${havingClause}
+      ${orderClause}
+      LIMIT ? OFFSET ?
+    `;
+
+    queryParams.push(parsedLimit, offset);
+
+    const [rows] = await db.query(finalQuery, queryParams);
+    
+    // Send array, length tells client if there's more.
     res.json(rows);
   } catch (e) {
     console.error(e);
@@ -40,7 +120,11 @@ exports.getMessById = async (req, res) => {
     if (userLat && userLng) {
       const lat = parseFloat(userLat);
       const lng = parseFloat(userLng);
-      selectClause += `, (6371 * acos(cos(radians(${lat})) * cos(radians(ma.latitude)) * cos(radians(ma.longitude) - radians(${lng})) + sin(radians(${lat})) * sin(radians(ma.latitude)))) AS distanceKm`;
+      selectClause += `, (CASE 
+          WHEN ma.latitude IS NOT NULL AND ma.latitude != 0 
+          THEN (6371 * acos(cos(radians(${lat})) * cos(radians(ma.latitude)) * cos(radians(ma.longitude) - radians(${lng})) + sin(radians(${lat})) * sin(radians(ma.latitude)))) 
+          ELSE NULL 
+        END) AS distanceKm`;
     }
 
     const [mess] = await db.query(
@@ -90,7 +174,7 @@ exports.registerMess = async (req, res) => {
         cuisines, offer1, offer2, offer3,
         deliveryCharge, invoiceFrequency, capacity, deliveryRadius,
         images, businessStatus, isApproved, isOpen
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, TRUE, FALSE, FALSE)`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, TRUE, TRUE, TRUE)`,
       [
         messId, req.user.id, name, description, messType, category,
         autoConfirm || false, deliveryAvailable || false, dineIn || false, takeAway || false,

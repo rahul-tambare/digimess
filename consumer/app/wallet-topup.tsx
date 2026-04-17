@@ -3,11 +3,31 @@ import { View, Text, TouchableOpacity, TextInput, StyleSheet, Platform } from 'r
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft, X } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
+import { walletApi } from '@/services/api';
+import { useWalletStore } from '@/stores/dataStore';
+import { Alert, ActivityIndicator } from 'react-native';
 
 export default function WalletTopUpScreen() {
   const router = useRouter();
   const [amount, setAmount] = useState('');
   const [selectedMethod, setSelectedMethod] = useState('upi');
+  const [loading, setLoading] = useState(false);
+
+  const handlePay = async () => {
+    if (!amount || isNaN(Number(amount))) return;
+    setLoading(true);
+    try {
+      await walletApi.initiateTopUp(Number(amount), selectedMethod);
+      await useWalletStore.getState().fetchBalance();
+      await useWalletStore.getState().fetchTransactions(1);
+      Alert.alert('Success', `₹${amount} added securely to your wallet!`);
+      router.back();
+    } catch (e: any) {
+      Alert.alert('Error', e.message || 'Top up failed');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const quickAmounts = ['500', '1000', '2000'];
   const methods = [
@@ -62,9 +82,13 @@ export default function WalletTopUpScreen() {
       </View>
 
       <View style={s.footer}>
-        <TouchableOpacity style={[s.payBtn, !amount && { opacity: 0.5 }]}
-          onPress={() => router.back()} disabled={!amount}>
-          <Text style={s.payBtnText}>Proceed to Pay →</Text>
+        <TouchableOpacity style={[s.payBtn, (!amount || loading) && { opacity: 0.5 }]}
+          onPress={handlePay} disabled={!amount || loading}>
+          {loading ? (
+            <ActivityIndicator size="small" color="#FFF" />
+          ) : (
+            <Text style={s.payBtnText}>Proceed to Pay →</Text>
+          )}
         </TouchableOpacity>
         <Text style={s.secureText}>🔒 SECURE 256-BIT ENCRYPTED TRANSACTION</Text>
       </View>

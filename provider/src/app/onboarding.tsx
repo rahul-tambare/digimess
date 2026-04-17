@@ -57,6 +57,7 @@ export default function OnboardingScreen() {
   const [thaliType, setThaliType] = useState('Veg');
   const [thaliItems, setThaliItems] = useState('');
   const [thaliPrice, setThaliPrice] = useState('');
+  const [confirmAccNum, setConfirmAccNum] = useState('');
 
   const validate = (): boolean => {
     const e: Record<string, string> = {};
@@ -70,6 +71,7 @@ export default function OnboardingScreen() {
     if (s === 3 && !/^\d{6}$/.test(data.address.pincode || '')) e.pincode = 'Valid 6-digit pincode required';
     if (s === 8 && !data.bankDetails.accountHolderName?.trim()) e.holderName = 'Required';
     if (s === 8 && !data.bankDetails.accountNumber?.trim()) e.accNum = 'Required';
+    if (s === 8 && data.bankDetails.accountNumber !== confirmAccNum) e.confirmAccNum = 'Account numbers do not match';
     if (s === 8 && !data.bankDetails.ifscCode?.trim()) e.ifsc = 'Required';
     setErrors(e);
     return Object.keys(e).length === 0;
@@ -122,6 +124,8 @@ export default function OnboardingScreen() {
           city: data.address.city || '',
           state: data.address.state || '',
           pincode: data.address.pincode || '',
+          latitude: data.address.latitude,
+          longitude: data.address.longitude,
         });
         messId = messRes.id;
       } catch (messErr: any) {
@@ -147,7 +151,21 @@ export default function OnboardingScreen() {
             upiId: data.bankDetails.upiId,
           });
         } catch (bankErr: any) {
-          console.warn('Bank details skipped:', bankErr.message);
+          if (bankErr.message?.includes('already exist') || bankErr.message?.includes('Use PUT')) {
+            try {
+              await vendorApi.updateBankDetails({
+                bankName: data.bankDetails.bankName || 'N/A',
+                accountNumber: data.bankDetails.accountNumber,
+                accountHolderName: data.bankDetails.accountHolderName || '',
+                ifscCode: data.bankDetails.ifscCode || '',
+                upiId: data.bankDetails.upiId,
+              });
+            } catch (updateErr: any) {
+              console.warn('Bank details update skipped:', updateErr.message);
+            }
+          } else {
+            console.warn('Bank details skipped:', bankErr.message);
+          }
         }
       }
 
@@ -169,9 +187,11 @@ export default function OnboardingScreen() {
         }
       }
 
-      resetOnboarding();
       Alert.alert('🎉 Success!', 'Your mess has been registered successfully!', [
-        { text: 'Go to Dashboard', onPress: () => router.replace('/(tabs)') }
+        { text: 'Go to Dashboard', onPress: () => {
+            resetOnboarding();
+            router.replace('/(tabs)');
+        } }
       ]);
     } catch (e: any) {
       console.error('Onboarding submit error:', e);
@@ -455,7 +475,7 @@ export default function OnboardingScreen() {
             </View>
             <FormField label="Account Holder Name" required placeholder="e.g. Sunita Sharma" value={data.bankDetails.accountHolderName || ''} onChangeText={v => updateBankDetails({ accountHolderName: v })} error={errors.holderName} />
             <FormField label="Bank Account Number" required placeholder="e.g. 1234567890" value={data.bankDetails.accountNumber || ''} onChangeText={v => updateBankDetails({ accountNumber: v })} keyboardType="number-pad" error={errors.accNum} secureTextEntry />
-            <FormField label="Confirm Account Number" required placeholder="Re-enter account number" keyboardType="number-pad" />
+            <FormField label="Confirm Account Number" required placeholder="Re-enter account number" value={confirmAccNum} onChangeText={setConfirmAccNum} keyboardType="number-pad" error={errors.confirmAccNum} secureTextEntry />
             <FormField label="IFSC Code" required placeholder="e.g. SBIN0001234" value={data.bankDetails.ifscCode || ''} onChangeText={v => updateBankDetails({ ifscCode: v.toUpperCase() })} autoCapitalize="characters" error={errors.ifsc} />
             <FormField label="UPI ID" placeholder="e.g. sunita@upi (recommended)" hint="Optional" value={data.bankDetails.upiId || ''} onChangeText={v => updateBankDetails({ upiId: v })} />
           </>

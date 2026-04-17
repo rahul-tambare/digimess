@@ -8,7 +8,7 @@ import * as Location from 'expo-location';
 let MapContainer: any, TileLayer: any, Marker: any, useMapEvents: any;
 if (Platform.OS === 'web' && typeof window !== 'undefined') {
   const RL = require('react-leaflet');
-  require('leaflet/dist/leaflet.css');
+
   MapContainer = RL.MapContainer;
   TileLayer = RL.TileLayer;
   Marker = RL.Marker;
@@ -28,7 +28,7 @@ interface Props {
   initialLocation?: LocationData;
 }
 
-const DEFAULT_CENTER = { lat: 19.0760, lng: 72.8777 }; // Mumbai default
+const DEFAULT_CENTER = { lat: 18.4410, lng: 73.8115 }; // Dhayari, Pune default
 
 export function LocationPickerModal({ visible, onClose, onSelect, initialLocation }: Props) {
   const [position, setPosition] = useState<{lat: number, lng: number}>(

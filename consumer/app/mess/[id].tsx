@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { View, Text, Image, ScrollView, TouchableOpacity, Share, StyleSheet, Platform, ActivityIndicator } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ArrowLeft, Share2, Heart, Star, MapPin, Clock, Info } from 'lucide-react-native';
 import { useDataStore, useCartStore } from '@/stores/dataStore';
 import { ThaliCard } from '@/components/ThaliCard';
@@ -10,12 +10,18 @@ import { CartSummaryBar } from '@/components/CartSummaryBar';
 export default function MessDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
+  const insets = useSafeAreaInsets();
   const mess = useDataStore(state => state.messes.find(m => m.id === id));
   const thalis = useDataStore(state => state.thalis);
+  const items = useDataStore(state => state.items);
+  const reviews = useDataStore(state => state.reviews);
+  const favorites = useDataStore(state => state.favorites);
+  const toggleFavorite = useDataStore(state => state.toggleFavorite);
+  const isFavorite = favorites.includes(id);
   const fetchMessDetail = useDataStore(state => state.fetchMessDetail);
   const fetchThalis = useDataStore(state => state.fetchThalis);
   const allThalis = useMemo(() => thalis.filter(t => t.messId === id), [thalis, id]);
-  const [activeTab, setActiveTab] = useState<'Thalis' | 'Reviews' | 'Info'>('Thalis');
+  const [activeTab, setActiveTab] = useState<'Thalis' | 'Items' | 'Reviews' | 'Info'>('Thalis');
   const [activeMealTime, setActiveMealTime] = useState('All');
   const [loadingDetail, setLoadingDetail] = useState(false);
   const cartItems = useCartStore(state => state.items);
@@ -41,7 +47,7 @@ export default function MessDetailScreen() {
     try { await Share.share({ message: `Check out ${mess.name} on MessWala!` }); } catch (e) {}
   };
 
-  const tabs = ['Thalis', 'Reviews', 'Info'] as const;
+  const tabs = ['Thalis', 'Items', 'Reviews', 'Info'] as const;
   const mealTimes = ['All', 'Breakfast', 'Lunch', 'Dinner'];
 
   return (
@@ -50,19 +56,19 @@ export default function MessDetailScreen() {
         {/* Cover */}
         <View style={s.cover}>
           <Image source={{ uri: mess.coverImage }} style={s.coverImage} resizeMode="cover" />
-          <SafeAreaView edges={['top']} style={s.coverControls}>
+          <View style={[s.coverControls, { paddingTop: Math.max(insets.top, 16) }]} pointerEvents="box-none">
             <TouchableOpacity onPress={() => router.back()} style={s.iconBtn}>
               <ArrowLeft size={22} color="#FFF" />
             </TouchableOpacity>
-            <View style={s.coverRight}>
+            <View style={s.coverRight} pointerEvents="box-none">
               <TouchableOpacity onPress={handleShare} style={s.iconBtn}>
                 <Share2 size={18} color="#FFF" />
               </TouchableOpacity>
-              <TouchableOpacity style={s.iconBtn}>
-                <Heart size={18} color="#FFF" />
+              <TouchableOpacity onPress={() => toggleFavorite(id)} style={s.iconBtn}>
+                <Heart size={18} color={isFavorite ? "#EF4444" : "#FFF"} fill={isFavorite ? "#EF4444" : "transparent"} />
               </TouchableOpacity>
             </View>
-          </SafeAreaView>
+          </View>
         </View>
 
         {/* Info Panel */}
@@ -138,10 +144,70 @@ export default function MessDetailScreen() {
               })}
             </>
           )}
+          {activeTab === 'Items' && (
+            <>
+              {items.length > 0 ? items.map(item => {
+                const qty = cartItems.find(i => i.thaliId === item.id)?.qty || 0;
+                return (
+                  <ThaliCard 
+                    key={item.id} 
+                    id={item.id}
+                    name={item.name}
+                    mealTime="All Day"
+                    type={item.isVeg ? 'veg' : 'non-veg'}
+                    items={item.description}
+                    price={item.price}
+                    image={item.image}
+                    available={item.available}
+                    quantity={qty}
+                    onAdd={() => addToCart(mess.id, mess.name, { thaliId: item.id, name: item.name, price: item.price, qty: 1 })}
+                    onIncrement={() => incrementQuantity(item.id)}
+                    onDecrement={() => decrementQuantity(item.id)}
+                  />
+                );
+              }) : (
+                <View style={s.emptyTab}>
+                  <Text style={{ fontSize: 40 }}>📋</Text>
+                  <Text style={s.emptyText}>No individual items available</Text>
+                </View>
+              )}
+            </>
+          )}
           {activeTab === 'Reviews' && (
-            <View style={s.emptyTab}>
-              <Text style={{ fontSize: 40 }}>⭐</Text>
-              <Text style={s.emptyText}>Reviews coming soon</Text>
+            <View>
+              {reviews && reviews.length > 0 ? (
+                reviews.map(review => (
+                  <View key={review.id} style={s.reviewCard}>
+                    <View style={s.reviewHeader}>
+                      <View style={s.reviewAuthor}>
+                        <View style={s.reviewAvatar}>
+                          <Text style={s.reviewAvatarText}>{(review.userName || 'U')[0].toUpperCase()}</Text>
+                        </View>
+                        <View>
+                          <Text style={s.reviewName}>{review.userName || 'Anonymous User'}</Text>
+                          <Text style={s.reviewDate}>{new Date(review.createdAt).toLocaleDateString()}</Text>
+                        </View>
+                      </View>
+                      <View style={s.reviewRating}>
+                        <Star size={12} color="#FFF" fill="#FFF" />
+                        <Text style={s.reviewRatingText}>{review.rating}</Text>
+                      </View>
+                    </View>
+                    {review.reviewText ? <Text style={s.reviewText}>{review.reviewText}</Text> : null}
+                    {(review.foodQuality || review.deliveryTime) && (
+                      <View style={s.reviewTags}>
+                        {review.foodQuality && <Text style={s.reviewTag}>{review.foodQuality}</Text>}
+                        {review.deliveryTime && <Text style={s.reviewTag}>{review.deliveryTime}</Text>}
+                      </View>
+                    )}
+                  </View>
+                ))
+              ) : (
+                <View style={s.emptyTab}>
+                  <Text style={{ fontSize: 40 }}>⭐</Text>
+                  <Text style={s.emptyText}>No reviews yet</Text>
+                </View>
+              )}
             </View>
           )}
           {activeTab === 'Info' && (
@@ -164,7 +230,7 @@ const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F8FAFC' },
   cover: { height: 240, backgroundColor: '#1E293B', position: 'relative' },
   coverImage: { width: '100%', height: '100%', opacity: 0.8 },
-  coverControls: { position: 'absolute', top: 0, left: 0, right: 0, flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 8 },
+  coverControls: { position: 'absolute', top: 0, left: 0, right: 0, flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 16, zIndex: 10, elevation: 10 },
   coverRight: { flexDirection: 'row', gap: 10 },
   iconBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(0,0,0,0.3)', justifyContent: 'center', alignItems: 'center' },
   infoPanel: {
@@ -217,4 +283,40 @@ const s = StyleSheet.create({
   subBannerSub: { fontSize: 11, color: '#047857', fontWeight: '500', marginTop: 2 },
   subBannerBtn: { backgroundColor: '#059669', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 16, marginLeft: 10 },
   subBannerBtnText: { color: '#FFF', fontWeight: '700', fontSize: 11 },
+  reviewCard: {
+    backgroundColor: '#FFF', padding: 16, borderRadius: 14, marginBottom: 12, borderWidth: 1, borderColor: '#CECECE'
+  },
+  reviewHeader: {
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10
+  },
+  reviewAuthor: {
+    flexDirection: 'row', alignItems: 'center'
+  },
+  reviewAvatar: {
+    width: 36, height: 36, borderRadius: 18, backgroundColor: '#E2E8F0', justifyContent: 'center', alignItems: 'center', marginRight: 12
+  },
+  reviewAvatarText: {
+    fontSize: 16, fontWeight: '700', color: '#64748B'
+  },
+  reviewName: {
+    fontSize: 14, fontWeight: '700', color: '#0F172A'
+  },
+  reviewDate: {
+    fontSize: 11, color: '#94A3B8', marginTop: 2
+  },
+  reviewRating: {
+    flexDirection: 'row', alignItems: 'center', backgroundColor: '#22C55E', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6, gap: 4
+  },
+  reviewRatingText: {
+    color: '#FFF', fontSize: 12, fontWeight: '700'
+  },
+  reviewText: {
+    fontSize: 13, color: '#475569', lineHeight: 20
+  },
+  reviewTags: {
+    flexDirection: 'row', gap: 8, marginTop: 10
+  },
+  reviewTag: {
+    fontSize: 11, color: '#64748B', backgroundColor: '#F8FAFC', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, overflow: 'hidden'
+  },
 });

@@ -8,7 +8,7 @@ import { MessCard } from '@/components/MessCard';
 
 export default function SearchScreen() {
   const router = useRouter();
-  const messes = useDataStore(state => state.messes);
+  const messes = useDataStore(state => state.searchResults);
   const loading = useDataStore(state => state.loading);
   const searchMesses = useDataStore(state => state.searchMesses);
   const fetchMesses = useDataStore(state => state.fetchMesses);

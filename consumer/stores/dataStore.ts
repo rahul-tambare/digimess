@@ -5,9 +5,9 @@
 // Cart store remains client-side (no backend cart).
 
 import { create } from 'zustand';
-import { messApi, thaliApi, orderApi, walletApi, subscriptionApi, userApi, favoriteApi } from '../services/api';
+import { messApi, thaliApi, menuApi, orderApi, walletApi, subscriptionApi, userApi, favoriteApi, reviewApi } from '../services/api';
 import { useAuthStore } from '../services/authStore';
-import { adaptMess, adaptThali } from './messAdapter';
+import { adaptMess, adaptThali, adaptItem, AdaptedItem } from './messAdapter';
 
 // Re-export auth store so existing imports still work
 export { useAuthStore as useUserStore } from '../services/authStore';
@@ -48,36 +48,66 @@ interface Thali {
   rating: number;
 }
 
+export interface Review {
+  id: string;
+  orderId: string;
+  customerId: string;
+  messId: string;
+  rating: number;
+  reviewText: string;
+  foodQuality: string | null;
+  deliveryTime: string | null;
+  createdAt: string;
+  userName: string | null;
+}
+
 interface DataState {
   messes: Mess[];
   thalis: Thali[];
+  items: AdaptedItem[];
+  reviews: Review[];
+  searchResults: Mess[];
+  favorites: string[];
   currentMess: any | null;
   loading: boolean;
   error: string | null;
+  hasMore: boolean;
 
-  fetchMesses: (params?: any) => Promise<void>;
+  fetchMesses: (params?: any, page?: number) => Promise<void>;
   fetchThalis: (messId: string) => Promise<void>;
   searchMesses: (query: string) => Promise<void>;
   fetchMessDetail: (messId: string) => Promise<void>;
+  fetchFavorites: () => Promise<void>;
+  toggleFavorite: (messId: string) => Promise<void>;
 }
 
-export const useDataStore = create<DataState>((set) => ({
+export const useDataStore = create<DataState>((set, get) => ({
   messes: [],
   thalis: [],
+  items: [],
+  reviews: [],
+  searchResults: [],
+  favorites: [],
   currentMess: null,
   loading: false,
   error: null,
+  hasMore: true,
 
-  fetchMesses: async (params) => {
-    set({ loading: true, error: null });
+  fetchMesses: async (params = {}, page = 1) => {
+    if (page === 1) set({ loading: true, error: null, hasMore: true });
     try {
       const location = useAuthStore.getState().user?.location;
-      const combinedParams = location ? { ...params, lat: location.lat, lng: location.lng } : params;
+      const combinedParams = location ? { ...params, lat: location.lat, lng: location.lng, page, limit: 10 } : { ...params, page, limit: 10 };
       const res = await messApi.listMesses(combinedParams);
       // Backend may return { messes: [...] } or just [...]
       const raw = Array.isArray(res) ? res : (res.messes || res.data || []);
-      const messes = raw.map(adaptMess);
-      set({ messes, loading: false });
+      const newMesses = raw.map(adaptMess);
+      
+      set((state) => ({ 
+        messes: page === 1 ? newMesses : [...state.messes, ...newMesses], 
+        loading: false,
+        hasMore: newMesses.length === 10
+      }));
     } catch (err: any) {
       console.error('fetchMesses error:', err);
       set({ error: err.message, loading: false });
@@ -102,7 +132,7 @@ export const useDataStore = create<DataState>((set) => ({
       const res = await messApi.searchMesses(query, location?.lat, location?.lng);
       const raw = Array.isArray(res) ? res : (res.messes || res.data || []);
       const messes = raw.map(adaptMess);
-      set({ messes, loading: false });
+      set({ searchResults: messes, loading: false });
     } catch (err: any) {
       set({ error: err.message, loading: false });
     }
@@ -122,9 +152,57 @@ export const useDataStore = create<DataState>((set) => ({
       });
       const thaliRes = await thaliApi.getMessThalis(messId);
       const rawThalis = Array.isArray(thaliRes) ? thaliRes : (thaliRes.thalis || thaliRes.data || []);
-      set({ thalis: rawThalis.map(adaptThali) });
+      
+      const itemRes = await menuApi.getMessMenu(messId);
+      const rawItems = Array.isArray(itemRes) ? itemRes : (itemRes.items || itemRes.data || []);
+      
+      let rawReviews: Review[] = [];
+      try {
+        const reviewRes = await reviewApi.getMessReviews(messId);
+        rawReviews = Array.isArray(reviewRes) ? reviewRes : (reviewRes.reviews || reviewRes.data || []);
+      } catch (err: any) {
+        console.error('fetchMessReviews error:', err);
+      }
+      
+      set({ 
+        thalis: rawThalis.map(adaptThali),
+        items: rawItems.map(adaptItem),
+        reviews: rawReviews
+      });
     } catch (err: any) {
       console.error('fetchMessDetail error:', err);
+    }
+  },
+
+  fetchFavorites: async () => {
+    try {
+      const res: any = await favoriteApi.getFavorites();
+      const raw = Array.isArray(res) ? res : (res.favorites || res.data || []);
+      // Extract mess IDs from favorites list
+      const favIds = raw.map((f: any) => f.messId || f.id || f);
+      set({ favorites: favIds });
+    } catch (err) {
+      console.error('fetchFavorites error:', err);
+    }
+  },
+
+  toggleFavorite: async (messId: string) => {
+    const { favorites } = get();
+    const isFav = favorites.includes(messId);
+    
+    // Optimistic UI update
+    set({ favorites: isFav ? favorites.filter(id => id !== messId) : [...favorites, messId] });
+    
+    try {
+      if (isFav) {
+        await favoriteApi.removeFavorite(messId);
+      } else {
+        await favoriteApi.addFavorite(messId);
+      }
+    } catch (err) {
+      // Revert on error
+      console.error('toggleFavorite error:', err);
+      set({ favorites });
     }
   },
 }));
@@ -227,23 +305,30 @@ interface OrderState {
   orders: any[];
   currentOrder: any | null;
   loading: boolean;
+  hasMoreOrders: boolean;
 
-  fetchOrders: () => Promise<void>;
+  fetchOrders: (filter?: string, page?: number) => Promise<void>;
   fetchOrderDetail: (orderId: string) => Promise<void>;
   placeOrder: (data: any) => Promise<string>;
+  reorder: (orderId: string) => Promise<string>;
 }
 
 export const useOrderStore = create<OrderState>((set) => ({
   orders: [],
   currentOrder: null,
   loading: false,
+  hasMoreOrders: true,
 
-  fetchOrders: async () => {
-    set({ loading: true });
+  fetchOrders: async (filter = 'All', page = 1) => {
+    if (page === 1) set({ loading: true, hasMoreOrders: true });
     try {
-      const res = await orderApi.getMyOrders();
-      const orders = Array.isArray(res) ? res : (res.orders || res.data || []);
-      set({ orders, loading: false });
+      const res = await orderApi.getMyOrders({ filter, page, limit: 10 });
+      const newOrders = Array.isArray(res) ? res : (res.orders || res.data || []);
+      set((state) => ({
+        orders: page === 1 ? newOrders : [...state.orders, ...newOrders],
+        loading: false,
+        hasMoreOrders: newOrders.length === 10
+      }));
     } catch (err: any) {
       console.error('fetchOrders error:', err);
       set({ loading: false });
@@ -263,19 +348,30 @@ export const useOrderStore = create<OrderState>((set) => ({
     // Gather logic
     const cartState = useCartStore.getState();
     const items = cartState.items.map(i => ({ thaliId: i.thaliId, name: i.name, quantity: i.qty, price: i.price, ...i.customisation }));
-    const totalAmount = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    const itemTotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    // Use totalAmountOverride (includes delivery + platform fees) if provided
+    const totalAmount = data.totalAmountOverride != null ? data.totalAmountOverride : itemTotal;
     
+    const { totalAmountOverride, ...restData } = data;
     const payload = {
       messId: cartState.messId,
       items,
       totalAmount,
       deliveryType: cartState.deliveryType,
       deliverySlot: cartState.deliverySlot,
-      ...data,
+      ...restData,
     };
     
     const res = await orderApi.placeOrder(payload);
     // Refresh local wallet state
+    if (data.paymentMethod === 'wallet') {
+      useWalletStore.getState().fetchBalance();
+    }
+    return res.id;
+  },
+
+  reorder: async (orderId: string) => {
+    const res = await orderApi.reorder(orderId);
     useWalletStore.getState().fetchBalance();
     return res.id;
   },

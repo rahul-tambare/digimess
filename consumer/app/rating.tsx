@@ -1,18 +1,100 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, Platform } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, Platform, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft, Star } from 'lucide-react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
+import { reviewApi } from '@/services/api';
 
 export default function RatingScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams();
+  const orderId = (params.id as string) || '';
+  const messName = (params.messName as string) || 'Your Order';
+
   const [rating, setRating] = useState(0);
   const [review, setReview] = useState('');
   const tags = ['Tasty', 'Fresh', 'Generous portions', 'Good packaging', 'On time', 'Hygienic'];
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [submitting, setSubmitting] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!orderId) {
+      setLoading(false);
+      return;
+    }
+    
+    reviewApi.getOrderReview(orderId)
+      .then(res => {
+        setRating(res.rating || 0);
+        
+        let text = res.reviewText || '';
+        if (text.startsWith('Tags: ')) {
+          const match = text.match(/^Tags:\s*([^.]+)\.\s*(.*)/);
+          if (match) {
+             const parsedTags = match[1].split(',').map((s: string) => s.trim());
+             setSelectedTags(parsedTags);
+             setReview(match[2]);
+          } else {
+             // could be just tags without text
+             const pureMatch = text.match(/^Tags:\s*(.*)/);
+             if (pureMatch) {
+                const parsedTags = pureMatch[1].split(',').map((s: string) => s.trim());
+                setSelectedTags(parsedTags);
+                setReview('');
+             }
+          }
+        } else {
+          setReview(text);
+        }
+        
+        setIsEditing(true);
+      })
+      .catch(e => {
+        // Not found, new review
+        setIsEditing(false);
+      })
+      .finally(() => setLoading(false));
+  }, [orderId]);
 
   const toggleTag = (tag: string) => {
     setSelectedTags(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]);
+  };
+
+  const handleSubmit = async () => {
+    if (!orderId) {
+      alert("Order ID is missing.");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      let combinedReview = review;
+      if (selectedTags.length > 0) {
+        const tagText = `Tags: ${selectedTags.join(', ')}`;
+        combinedReview = combinedReview ? `${tagText}. ${combinedReview}` : tagText;
+      }
+      
+      if (isEditing) {
+        await reviewApi.updateReview(orderId, {
+          rating,
+          reviewText: combinedReview
+        });
+        alert("Review updated successfully!");
+      } else {
+        await reviewApi.submitReview(orderId, {
+          rating,
+          reviewText: combinedReview
+        });
+        alert("Thank you for your feedback!");
+      }
+      router.replace('/(tabs)/orders');
+    } catch (e: any) {
+      console.error(e);
+      alert(e.message || "Error submitting review. Please try again later");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -27,9 +109,16 @@ export default function RatingScreen() {
 
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 24 }} keyboardShouldPersistTaps="handled">
         <Text style={s.title}>How was the food?</Text>
-        <Text style={s.subtitle}>Sunita's Home Kitchen • MW1042</Text>
+        <Text style={s.subtitle}>{messName}</Text>
 
-        <View style={s.starsRow}>
+        {loading ? (
+          <View style={{ marginTop: 40, alignItems: 'center' }}>
+            <ActivityIndicator size="large" color="#FF6B35" />
+            <Text style={{ marginTop: 12, color: '#94A3B8' }}>Loading existing review...</Text>
+          </View>
+        ) : (
+          <>
+            <View style={s.starsRow}>
           {[1, 2, 3, 4, 5].map((star) => (
             <TouchableOpacity key={star} onPress={() => setRating(star)}>
               <Star size={44} color={star <= rating ? "#EAB308" : "#E2E8F0"} fill={star <= rating ? "#EAB308" : "transparent"} />
@@ -63,9 +152,15 @@ export default function RatingScreen() {
               onChangeText={setReview}
             />
 
-            <TouchableOpacity style={s.submitBtn} onPress={() => router.replace('/(tabs)/orders')}>
-              <Text style={s.submitBtnText}>Submit Review</Text>
+            <TouchableOpacity 
+              style={[s.submitBtn, submitting && { opacity: 0.7 }]} 
+              onPress={handleSubmit}
+              disabled={submitting}
+            >
+              <Text style={s.submitBtnText}>{submitting ? 'Submitting...' : (isEditing ? 'Update Review' : 'Submit Review')}</Text>
             </TouchableOpacity>
+          </>
+        )}
           </>
         )}
       </ScrollView>

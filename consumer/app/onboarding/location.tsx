@@ -1,5 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
+import * as Location from 'expo-location';
+import { LocationPickerModal } from '@/components/LocationPickerModal';
 import { useRouter } from 'expo-router';
 import { MapPin, Navigation } from 'lucide-react-native';
 import { useUserStore } from '@/stores/dataStore';
@@ -9,8 +11,10 @@ export default function LocationScreen() {
   const router = useRouter();
   const updateUser = useUserStore(state => state.updateUser);
 
-  const handleAllowLocation = async () => {
-    const loc = { lat: 18.5204, lng: 73.8567, area: "Shivaji Nagar, Pune" };
+  const [modalVisible, setModalVisible] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const saveLocationAndProceed = async (loc: { lat: number, lng: number, area: string }) => {
     try {
       await userApi.updateProfile({ locationLat: loc.lat, locationLng: loc.lng, locationArea: loc.area });
     } catch (err) {
@@ -20,15 +24,36 @@ export default function LocationScreen() {
     router.replace('/(tabs)');
   };
 
-  const handleEnterManually = async () => {
-    const loc = { lat: 18.5204, lng: 73.8567, area: "Shivaji Nagar, Pune" };
+  const handleAllowLocation = async () => {
+    setLoading(true);
     try {
-      await userApi.updateProfile({ locationLat: loc.lat, locationLng: loc.lng, locationArea: loc.area });
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        alert('Permission to access location was denied');
+        setLoading(false);
+        return;
+      }
+      const locData = await Location.getCurrentPositionAsync({});
+      const lat = locData.coords.latitude;
+      const lng = locData.coords.longitude;
+      
+      const res = await Location.reverseGeocodeAsync({ latitude: lat, longitude: lng });
+      let area = "Unknown Area";
+      if (res && res.length > 0) {
+        area = [res[0].subregion, res[0].city, res[0].region].filter(Boolean).join(', ') || 'Selected Area';
+      }
+      
+      await saveLocationAndProceed({ lat, lng, area });
     } catch (err) {
-      console.log('Location API save failed, saving locally:', err);
+      console.error(err);
+      alert('Could not fetch location.');
+    } finally {
+      setLoading(false);
     }
-    updateUser({ location: loc });
-    router.replace('/(tabs)');
+  };
+
+  const handleEnterManually = () => {
+    setModalVisible(true);
   };
 
   return (
@@ -42,14 +67,27 @@ export default function LocationScreen() {
 
       <View style={{ flex: 1 }} />
 
-      <TouchableOpacity style={s.primaryBtn} onPress={handleAllowLocation} activeOpacity={0.8}>
-        <Navigation size={20} color="#FFF" />
-        <Text style={s.primaryBtnText}>Allow Location Access</Text>
+      <TouchableOpacity style={s.primaryBtn} onPress={handleAllowLocation} activeOpacity={0.8} disabled={loading}>
+        {loading ? <Text style={s.primaryBtnText}>Locating...</Text> : (
+          <>
+            <Navigation size={20} color="#FFF" />
+            <Text style={s.primaryBtnText}>Allow Location Access</Text>
+          </>
+        )}
       </TouchableOpacity>
 
       <TouchableOpacity style={s.secondaryBtn} onPress={handleEnterManually} activeOpacity={0.7}>
         <Text style={s.secondaryBtnText}>Enter Location Manually</Text>
       </TouchableOpacity>
+
+      <LocationPickerModal
+        visible={modalVisible}
+        onClose={() => setModalVisible(false)}
+        onSelect={(loc) => {
+          setModalVisible(false);
+          saveLocationAndProceed(loc);
+        }}
+      />
     </View>
   );
 }

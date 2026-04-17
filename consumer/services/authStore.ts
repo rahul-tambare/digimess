@@ -6,6 +6,7 @@
 import { create } from 'zustand';
 import { Platform } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
+import { userApi } from './api';
 
 interface User {
   id: string;
@@ -25,14 +26,18 @@ interface AuthState {
   user: User | null;
   phone: string;
   token: string | null;
+  hasHydrated: boolean;
 
   setPhone: (phone: string) => void;
   login: (token: string, user: User) => void;
   loginAsNewUser: (phone: string) => void;
   setUser: (user: User) => void;
   updateUser: (data: Partial<User>) => void;
+  fetchProfile: () => Promise<void>;
   logout: () => void;
   hydrate: () => void;
+  hasSeenSplash: boolean;
+  setHasSeenSplash: () => void;
 }
 
 // Persistence helpers for web (localStorage)
@@ -87,6 +92,10 @@ export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   phone: '',
   token: null,
+  hasHydrated: false,
+  hasSeenSplash: false,
+
+  setHasSeenSplash: () => set({ hasSeenSplash: true }),
 
   setPhone: (phone) => set({ phone }),
 
@@ -122,6 +131,20 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({ user: updatedUser });
   },
 
+  fetchProfile: async () => {
+    try {
+      const data = await userApi.getProfile();
+      const state = useAuthStore.getState();
+      if (state.user && data) {
+        const merged = { ...state.user, ...data };
+        set({ user: merged });
+        if (state.token) saveAuth(state.token, merged);
+      }
+    } catch (err) {
+      console.error('fetchProfile error:', err);
+    }
+  },
+
   logout: () => {
     saveAuth(null, null);
     set({
@@ -142,7 +165,10 @@ export const useAuthStore = create<AuthState>((set) => ({
         isNewUser: false,
         user,
         token,
+        hasHydrated: true,
       });
+    } else {
+      set({ hasHydrated: true, isAuthenticated: false });
     }
   },
 }));

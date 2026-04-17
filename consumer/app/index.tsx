@@ -6,15 +6,21 @@ import { useUserStore } from '@/stores/dataStore';
 export default function SplashScreen() {
   const router = useRouter();
   const isAuthenticated = useUserStore((state) => state.isAuthenticated);
-  const hydrate = useUserStore((state) => state.hydrate);
+  const hasSeenSplash = useUserStore((state) => state.hasSeenSplash);
+  const setHasSeenSplash = useUserStore((state) => state.setHasSeenSplash);
 
   useEffect(() => {
-    // Restore persisted auth on app start
-    hydrate();
-  }, []);
+    if (hasSeenSplash) {
+      if (isAuthenticated) {
+        router.replace('/(tabs)');
+      } else {
+        router.replace('/onboarding/phone');
+      }
+      return;
+    }
 
-  useEffect(() => {
     const timer = setTimeout(() => {
+      setHasSeenSplash();
       if (isAuthenticated) {
         router.replace('/(tabs)');
       } else {
@@ -23,7 +29,7 @@ export default function SplashScreen() {
     }, 2000);
 
     return () => clearTimeout(timer);
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, router, hasSeenSplash, setHasSeenSplash]);
 
   return (
     <View style={styles.container}>

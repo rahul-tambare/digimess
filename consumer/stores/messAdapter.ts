@@ -47,6 +47,18 @@ export interface AdaptedThali {
   rating: number;
 }
 
+export interface AdaptedItem {
+  id: string;
+  messId: string;
+  name: string;
+  description: string;
+  price: number;
+  isVeg: boolean;
+  available: boolean;
+  category: string;
+  image: string;
+}
+
 /**
  * Adapt a backend Mess row → frontend Mess interface
  */
@@ -76,7 +88,9 @@ export function adaptMess(raw: any): AdaptedMess {
     coverImage: images[0] || `https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&h=400&fit=crop`,
     rating: raw.rating || 0,
     reviewCount: raw.reviewCount || 0,
-    distanceKm: raw.distanceKm !== undefined ? parseFloat(Number(raw.distanceKm).toFixed(1)) : parseFloat((Math.random() * 4 + 0.5).toFixed(1)),
+    distanceKm: (raw.distanceKm !== undefined && raw.distanceKm !== null && raw.distanceKm > 0 && raw.distanceKm < 1000) 
+      ? parseFloat(Number(raw.distanceKm).toFixed(1)) 
+      : parseFloat((Math.random() * 4 + 0.5).toFixed(1)),
     deliveryTimeMin: raw.deliveryTimeMin || Math.floor(Math.random() * 20 + 20),
     priceRange: raw.priceRange || { min: 60, max: 150 },
     tags: tags.length > 0 ? tags : ['Home Food'],
@@ -115,5 +129,31 @@ export function adaptThali(raw: any): AdaptedThali {
     available: raw.isAvailable !== undefined ? Boolean(raw.isAvailable) : true,
     isSpecial: Boolean(raw.isSpecial),
     rating: raw.rating || 4.0,
+  };
+}
+
+/**
+ * Adapt a backend Menu item row → frontend Item interface
+ */
+export function adaptItem(raw: any): AdaptedItem {
+  let images: string[] = [];
+  if (raw.images) {
+    if (typeof raw.images === 'string') {
+      try { images = JSON.parse(raw.images); } catch { images = []; }
+    } else if (Array.isArray(raw.images)) {
+      images = raw.images;
+    }
+  }
+
+  return {
+    id: raw.id,
+    messId: raw.messId,
+    name: raw.itemName || raw.name || 'Menu Item',
+    description: raw.itemDescription || raw.description || '',
+    price: parseFloat(raw.price) || 0,
+    isVeg: raw.isVeg !== undefined ? Boolean(raw.isVeg) : true,
+    available: raw.isAvailable !== undefined ? Boolean(raw.isAvailable) : true,
+    category: raw.category || 'General',
+    image: images[0] || `https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&h=300&fit=crop`,
   };
 }

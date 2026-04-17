@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -30,10 +30,11 @@ export default function ProfileSetupScreen() {
     setSaving(true);
     try {
       await userApi.updateProfile({ name: data.name, email: data.email || undefined });
-    } catch (err) {
-      console.log('Profile API update failed, saving locally:', err);
+    } catch (err: any) {
+      console.error('Profile API update failed:', err);
+      Alert.alert('Update Failed', err?.message || 'Could not save profile. Your data will be saved locally.');
     }
-    updateUser({ name: data.name });
+    updateUser({ name: data.name, email: data.email || undefined });
     setSaving(false);
     router.replace('/onboarding/location');
   };

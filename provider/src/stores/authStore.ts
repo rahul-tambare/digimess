@@ -26,6 +26,8 @@ interface AuthState {
   loginAsNewUser: (phone: string) => void;
   logout: () => void;
   hydrate: () => void;
+  hasSeenSplash: boolean;
+  setHasSeenSplash: () => void;
 }
 
 // Persistence helpers — web uses localStorage, native uses SecureStore
@@ -80,6 +82,9 @@ export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   phone: '',
   token: null,
+  hasSeenSplash: false,
+
+  setHasSeenSplash: () => set({ hasSeenSplash: true }),
 
   setPhone: (phone) => set({ phone }),
 

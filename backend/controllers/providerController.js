@@ -205,6 +205,11 @@ exports.updateProfile = async (req, res) => {
     res.json({ message: 'Profile updated', user: updated[0] });
   } catch (e) {
     console.error('Profile update error:', e);
+    
+    if (e.code === 'ER_DUP_ENTRY' && e.message.includes('email')) {
+      return res.status(400).json({ error: 'This email is already in use by another account.' });
+    }
+
     res.status(500).json({ error: 'Internal server error' });
   }
 };

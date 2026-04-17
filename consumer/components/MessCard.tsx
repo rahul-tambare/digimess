@@ -16,11 +16,14 @@ export interface MessCardProps {
   isOpen: boolean;
   hasSubscription: boolean;
   onPress: () => void;
+  isFavorite?: boolean;
+  onFavoritePress?: () => void;
 }
 
 export function MessCard({
   name, type, coverImage, rating, reviewCount, distanceKm,
   deliveryTimeMin, priceRange, tags, isOpen, hasSubscription, onPress,
+  isFavorite, onFavoritePress
 }: MessCardProps) {
   return (
     <TouchableOpacity onPress={onPress} activeOpacity={0.9} style={styles.card}>
@@ -28,8 +31,8 @@ export function MessCard({
       <View style={styles.imageWrap}>
         <Image source={{ uri: coverImage }} style={styles.image} resizeMode="cover" />
         
-        <TouchableOpacity style={styles.heartBtn}>
-          <Heart size={18} color="#666" />
+        <TouchableOpacity style={styles.heartBtn} onPress={onFavoritePress}>
+          <Heart size={18} color={isFavorite ? "#EF4444" : "#666"} fill={isFavorite ? "#EF4444" : "transparent"} />
         </TouchableOpacity>
 
         {hasSubscription && (

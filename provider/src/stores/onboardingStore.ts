@@ -146,8 +146,19 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => ({
       const { data } = get();
       // 1. Submit Bank Details
       if (data.bankDetails && data.bankDetails.accountNumber) {
-        // @ts-ignore
-        await vendorApi.createBankDetails(data.bankDetails).catch(() => {});
+        try {
+          // @ts-ignore
+          await vendorApi.createBankDetails(data.bankDetails);
+        } catch (bankErr: any) {
+          if (bankErr.message?.includes('already exist') || bankErr.message?.includes('Use PUT')) {
+            try {
+              // @ts-ignore
+              await vendorApi.updateBankDetails(data.bankDetails);
+            } catch (updateErr: any) {
+              console.warn('Fallback updateBankDetails failed', updateErr);
+            }
+          }
+        }
       }
       
       // 2. Submit Mess Data

@@ -10,15 +10,37 @@ export interface FilterBottomSheetProps {
 }
 
 export function FilterBottomSheet({ visible, onClose, onApply, onClear }: FilterBottomSheetProps) {
-  const FilterSection = ({ title, options }: { title: string; options: string[] }) => (
+  const [selected, setSelected] = React.useState<Record<string, string>>({});
+
+  const handleSelect = (category: string, option: string) => {
+    setSelected(prev => ({
+      ...prev,
+      [category]: prev[category] === option ? undefined : option, // toggle logic
+    } as any));
+  };
+
+  const handleClear = () => {
+    setSelected({});
+    onClear();
+  };
+
+  const FilterSection = ({ title, options, category }: { title: string; options: string[], category: string }) => (
     <View style={s.section}>
       <Text style={s.sectionTitle}>{title}</Text>
       <View style={s.chipGrid}>
-        {options.map((opt, i) => (
-          <TouchableOpacity key={i} style={s.chip} activeOpacity={0.7}>
-            <Text style={s.chipText}>{opt}</Text>
-          </TouchableOpacity>
-        ))}
+        {options.map((opt, i) => {
+          const isActive = selected[category] === opt;
+          return (
+            <TouchableOpacity 
+              key={i} 
+              style={[s.chip, isActive && s.chipActive]} 
+              activeOpacity={0.7}
+              onPress={() => handleSelect(category, opt)}
+            >
+              <Text style={[s.chipText, isActive && s.chipTextActive]}>{opt}</Text>
+            </TouchableOpacity>
+          );
+        })}
       </View>
     </View>
   );
@@ -36,18 +58,18 @@ export function FilterBottomSheet({ visible, onClose, onApply, onClear }: Filter
           </View>
 
           <ScrollView showsVerticalScrollIndicator={false}>
-            <FilterSection title="Mess Type" options={['Veg Only', 'Non-Veg', 'Both']} />
-            <FilterSection title="Price per Thali" options={['Under ₹100', '₹100 - ₹200', '₹200+']} />
-            <FilterSection title="Dietary Options" options={['Jain', 'Sattvic', 'High Protein', 'Diabetic-friendly']} />
-            <FilterSection title="Distance" options={['Within 1 km', 'Within 2 km', 'Within 5 km']} />
-            <FilterSection title="Delivery Options" options={['Home Delivery', 'Self Pickup', 'Dine-in']} />
+            <FilterSection title="Mess Type" category="type" options={['Veg Only', 'Non-Veg', 'Both']} />
+            <FilterSection title="Price per Thali" category="price" options={['Under ₹100', '₹100 - ₹200', '₹200+']} />
+            <FilterSection title="Dietary Options" category="diet" options={['Jain', 'Sattvic', 'High Protein', 'Diabetic-friendly']} />
+            <FilterSection title="Distance" category="distance" options={['Within 1 km', 'Within 2 km', 'Within 5 km']} />
+            <FilterSection title="Delivery Options" category="delivery" options={['Home Delivery', 'Self Pickup', 'Dine-in']} />
           </ScrollView>
 
           <View style={s.actionRow}>
-            <TouchableOpacity style={s.clearBtn} onPress={onClear}>
+            <TouchableOpacity style={s.clearBtn} onPress={handleClear}>
               <Text style={s.clearBtnText}>Clear All</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={s.applyBtn} onPress={() => onApply({})}>
+            <TouchableOpacity style={s.applyBtn} onPress={() => onApply(selected)}>
               <Text style={s.applyBtnText}>Apply</Text>
             </TouchableOpacity>
           </View>
@@ -76,7 +98,11 @@ const s = StyleSheet.create({
     paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20,
     backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: '#E2E8F0',
   },
+  chipActive: {
+    backgroundColor: '#FF6B35', borderColor: '#FF6B35',
+  },
   chipText: { fontSize: 13, fontWeight: '600', color: '#475569' },
+  chipTextActive: { color: '#FFF' },
   actionRow: {
     flexDirection: 'row', paddingTop: 16, marginTop: 8,
     borderTopWidth: 1, borderTopColor: '#F1F5F9', gap: 12,

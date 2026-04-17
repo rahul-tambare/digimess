@@ -74,14 +74,19 @@ export const userApi = {
 // ---- Mess Discovery ----
 
 export const messApi = {
-  listMesses: (params?: { lat?: number; lng?: number; mealTime?: string; type?: string; search?: string; sort?: string }) => {
+  listMesses: (params?: { lat?: number; lng?: number; mealTime?: string; type?: string; search?: string; sort?: string; page?: number; limit?: number; diet?: string; delivery?: string; distance?: string; price?: string }) => {
     const apiParams: Record<string, string> = {};
     if (params?.lat) apiParams.userLat = String(params.lat);
     if (params?.lng) apiParams.userLng = String(params.lng);
     if (params?.mealTime) apiParams.mealTime = params.mealTime;
     if (params?.type) apiParams.type = params.type;
     if (params?.search) apiParams.search = params.search;
-    if (params?.sort) apiParams.sort = params.sort;
+    if (params?.diet) apiParams.diet = params.diet;
+    if (params?.delivery) apiParams.delivery = params.delivery;
+    if (params?.distance) apiParams.distance = params.distance;
+    if (params?.price) apiParams.price = params.price;
+    if (params?.page) apiParams.page = String(params.page);
+    if (params?.limit) apiParams.limit = String(params.limit);
 
     const qs = new URLSearchParams(apiParams).toString();
     return apiFetch(`/messes${qs ? `?${qs}` : ''}`);
@@ -111,6 +116,13 @@ export const thaliApi = {
     apiFetch(`/thalis/mess/${messId}`),
 };
 
+// ---- Menus ----
+
+export const menuApi = {
+  getMessMenu: (messId: string) =>
+    apiFetch(`/menus/mess/${messId}`),
+};
+
 // ---- Orders ----
 
 export const orderApi = {
@@ -127,8 +139,10 @@ export const orderApi = {
   }) =>
     apiFetch<{ id: string; message: string }>('/orders', { method: 'POST', body: JSON.stringify(data) }),
 
-  getMyOrders: () =>
-    apiFetch('/orders'),
+  getMyOrders: (params?: { filter?: string; page?: number; limit?: number }) => {
+    const qs = new URLSearchParams(params as any).toString();
+    return apiFetch(`/orders${qs ? `?${qs}` : ''}`);
+  },
 
   getOrderDetail: (orderId: string) =>
     apiFetch(`/orders/${orderId}`),
@@ -180,6 +194,15 @@ export const subscriptionApi = {
 export const reviewApi = {
   submitReview: (orderId: string, data: { rating: number; reviewText?: string; tags?: string[] }) =>
     apiFetch(`/orders/${orderId}/review`, { method: 'POST', body: JSON.stringify(data) }),
+
+  getOrderReview: (orderId: string) =>
+    apiFetch(`/orders/${orderId}/review`, { method: 'GET' }),
+
+  updateReview: (orderId: string, data: { rating: number; reviewText?: string; tags?: string[] }) =>
+    apiFetch(`/orders/${orderId}/review`, { method: 'PUT', body: JSON.stringify(data) }),
+
+  getMessReviews: (messId: string) =>
+    apiFetch(`/messes/${messId}/reviews`),
 };
 
 // ---- Addresses ----
@@ -188,7 +211,7 @@ export const addressApi = {
   getAddresses: () =>
     apiFetch('/user/addresses'),
 
-  addAddress: (data: { label: string; addressLine: string; area?: string; city: string; pincode: string; isDefault?: boolean }) =>
+  addAddress: (data: { label: string; addressLine: string; area?: string; city: string; pincode: string; isDefault?: boolean; latitude?: number; longitude?: number }) =>
     apiFetch('/user/addresses', { method: 'POST', body: JSON.stringify(data) }),
 
   updateAddress: (id: string, data: any) =>

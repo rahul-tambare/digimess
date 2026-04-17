@@ -61,9 +61,9 @@ export default function CheckoutScreen() {
 
     if (selectedPayment === 'subscription') {
       try {
-        await useOrderStore.getState().placeOrder({ paymentMethod: 'subscription', address: address ? `${address.line1}, ${address.area}` : '' });
+        const orderId = await useOrderStore.getState().placeOrder({ paymentMethod: 'subscription', address: address ? `${address.line1}, ${address.area}` : '', totalAmountOverride: 0 });
         clearCart();
-        router.replace('/order-success');
+        router.replace({ pathname: '/order-success', params: { orderId } });
       } catch (e: any) {
         Alert.alert('Error', e.message || 'Failed to place order via subscription.');
       } finally {
@@ -88,9 +88,9 @@ export default function CheckoutScreen() {
     }
 
     try {
-      await useOrderStore.getState().placeOrder({ paymentMethod: selectedPayment, address: address ? `${address.line1}, ${address.area}` : '' });
+      const orderId = await useOrderStore.getState().placeOrder({ paymentMethod: selectedPayment, address: address ? `${address.line1}, ${address.area}` : '', totalAmountOverride: grandTotal });
       clearCart();
-      router.replace('/order-success');
+      router.replace({ pathname: '/order-success', params: { orderId } });
     } catch (e: any) {
         Alert.alert('Error', e.message || 'Failed to place order.');
     } finally {

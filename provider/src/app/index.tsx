@@ -13,8 +13,8 @@ type AuthStep = 'splash' | 'phone' | 'otp';
 
 export default function AuthScreen() {
   const router = useRouter();
-  const { login, loginAsNewUser, isAuthenticated, token, hydrate } = useAuthStore();
-  const [step, setStep] = useState<AuthStep>('splash');
+  const { login, loginAsNewUser, isAuthenticated, token, hydrate, hasSeenSplash, setHasSeenSplash } = useAuthStore();
+  const [step, setStep] = useState<AuthStep>(hasSeenSplash ? 'phone' : 'splash');
   const [phone, setPhone] = useState('');
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [loading, setLoading] = useState(false);
@@ -51,10 +51,15 @@ export default function AuthScreen() {
   // Splash auto-transition
   useEffect(() => {
     if (isAuthenticated && token) return; // Skip splash if already authed
+    if (hasSeenSplash) return; // Skip splash on logout
+    
     Animated.timing(fadeAnim, { toValue: 1, duration: 800, useNativeDriver: true }).start();
-    const timer = setTimeout(() => setStep('phone'), 2500);
+    const timer = setTimeout(() => {
+      setStep('phone');
+      setHasSeenSplash();
+    }, 2500);
     return () => clearTimeout(timer);
-  }, [isAuthenticated, token]);
+  }, [isAuthenticated, token, hasSeenSplash]);
 
   // Resend timer
   useEffect(() => {

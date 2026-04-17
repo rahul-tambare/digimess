@@ -1,13 +1,23 @@
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { useEffect } from 'react';
 import 'react-native-reanimated';
 import '../global.css';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useUserStore } from '@/stores/dataStore';
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
+  const hydrate = useUserStore(state => state.hydrate);
+  const hasHydrated = useUserStore(state => state.hasHydrated);
+
+  useEffect(() => {
+    hydrate();
+  }, [hydrate]);
+
+  if (!hasHydrated) return null;
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>

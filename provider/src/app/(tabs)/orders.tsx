@@ -49,6 +49,13 @@ export default function OrdersScreen() {
     useCallback(() => {
       setLoading(true);
       fetchOrders();
+      
+      // Poll every 3s for live updates
+      const interval = setInterval(() => {
+        fetchOrders();
+      }, 3000);
+      
+      return () => clearInterval(interval);
     }, [])
   );
 
