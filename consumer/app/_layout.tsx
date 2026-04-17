@@ -39,6 +39,13 @@ export default function RootLayout() {
         <Stack.Screen name="subscription-plans" />
         <Stack.Screen name="order-success" />
         <Stack.Screen name="faq" />
+        <Stack.Screen name="edit-profile" />
+        <Stack.Screen name="manage-addresses" />
+        <Stack.Screen name="favourites" />
+        <Stack.Screen name="payment-methods" />
+        <Stack.Screen name="notifications-settings" />
+        <Stack.Screen name="dietary-preferences" />
+        <Stack.Screen name="app-settings" />
       </Stack>
       <StatusBar style="auto" />
     </ThemeProvider>

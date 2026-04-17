@@ -425,26 +425,40 @@ export const useWalletStore = create<WalletState>((set) => ({
 interface SubscriptionState {
   plans: any[];
   subscriptions: any[];
+  skippedDates: Record<string, string[]>;
   loading: boolean;
 
   fetchPlans: () => Promise<void>;
   fetchSubscriptions: () => Promise<void>;
-  purchasePlan: (planId: string, messId?: string) => Promise<void>;
+  purchasePlan: (planId: string, messId?: string, startDate?: string) => Promise<void>;
   pauseSubscription: (subId: string) => Promise<void>;
   resumeSubscription: (subId: string) => Promise<void>;
   skipDate: (subId: string, date: string) => Promise<void>;
+  cancelSubscription: (subId: string) => Promise<number>;
+  fetchSkippedDates: (subId: string) => Promise<void>;
 }
 
 export const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
   plans: [],
   subscriptions: [],
+  skippedDates: {},
   loading: false,
 
   fetchPlans: async () => {
     set({ loading: true });
     try {
       const res = await subscriptionApi.getPlans();
-      const plans = Array.isArray(res) ? res : (res.plans || res.data || []);
+      // Backend returns { categoryName: [...plans] } grouped format
+      // Flatten into a single array for the UI
+      let plans: any[] = [];
+      if (Array.isArray(res)) {
+        plans = res;
+      } else if (res && typeof res === 'object') {
+        // Grouped by category — flatten
+        Object.values(res).forEach((group: any) => {
+          if (Array.isArray(group)) plans.push(...group);
+        });
+      }
       set({ plans, loading: false });
     } catch (err: any) {
       console.error('fetchPlans error:', err);
@@ -464,10 +478,11 @@ export const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
     }
   },
 
-  purchasePlan: async (planId, messId) => {
-    await subscriptionApi.purchasePlan({ planId, messId });
-    // Refresh subscriptions after purchase
+  purchasePlan: async (planId, messId, startDate) => {
+    await subscriptionApi.purchasePlan({ planId, messId, startDate });
+    // Refresh subscriptions + wallet after purchase
     get().fetchSubscriptions();
+    useWalletStore.getState().fetchBalance();
   },
 
   pauseSubscription: async (subId) => {
@@ -482,5 +497,22 @@ export const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
 
   skipDate: async (subId, date) => {
     await subscriptionApi.skipDate(subId, date);
+    get().fetchSubscriptions();
+  },
+
+  cancelSubscription: async (subId) => {
+    const res = await subscriptionApi.cancelSubscription(subId);
+    get().fetchSubscriptions();
+    useWalletStore.getState().fetchBalance();
+    return res.refundAmount;
+  },
+
+  fetchSkippedDates: async (subId) => {
+    try {
+      const dates = await subscriptionApi.getSkippedDates(subId);
+      set((state) => ({ skippedDates: { ...state.skippedDates, [subId]: dates } }));
+    } catch (err: any) {
+      console.error('fetchSkippedDates error:', err);
+    }
   },
 }));

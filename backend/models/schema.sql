@@ -75,6 +75,7 @@ CREATE TABLE IF NOT EXISTS Subscriptions (
     id VARCHAR(36) PRIMARY KEY,
     customerId VARCHAR(36) NOT NULL,
     messId VARCHAR(36), -- Can be NULL if it's a multi-mess bundle or region wide
+    planId VARCHAR(36) DEFAULT NULL, -- Which SubscriptionPlan was purchased
     allowedMesses JSON, -- Can be NULL, used for tracking which messes a bundle subscription is valid for
     type ENUM('single_mess', 'multi_mess') DEFAULT 'single_mess',
     startDate DATE NOT NULL,
@@ -82,11 +83,13 @@ CREATE TABLE IF NOT EXISTS Subscriptions (
     pauseStartDate DATE DEFAULT NULL,
     pauseEndDate DATE DEFAULT NULL,
     mealsRemaining INT NOT NULL DEFAULT 0,
+    totalMeals INT NOT NULL DEFAULT 0, -- Original total for refund calculation
     isActive BOOLEAN DEFAULT TRUE,
     createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (customerId) REFERENCES Users(id) ON DELETE CASCADE,
-    FOREIGN KEY (messId) REFERENCES Messes(id) ON DELETE SET NULL
+    FOREIGN KEY (messId) REFERENCES Messes(id) ON DELETE SET NULL,
+    FOREIGN KEY (planId) REFERENCES SubscriptionPlans(id) ON DELETE SET NULL
 );
 
 -- Orders

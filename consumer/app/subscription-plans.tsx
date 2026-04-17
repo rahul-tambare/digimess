@@ -3,77 +3,121 @@ import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Platform, Activit
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft, Check, Calendar } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
-
-// In production: const plans = await api.get('/plans');
-// In production: const balance = await api.get('/wallet/balance');
+import { useSubscriptionStore, useWalletStore } from '@/stores/dataStore';
 
 export default function SubscriptionPlansScreen() {
   const router = useRouter();
-  const [selectedId, setSelectedId] = useState('3');
-  const [loading, setLoading] = useState(true);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [walletBalance, setWalletBalance] = useState(0);
-  const [plans, setPlans] = useState<any[]>([]);
+
+  const plans = useSubscriptionStore(s => s.plans);
+  const subscriptions = useSubscriptionStore(s => s.subscriptions);
+  const loading = useSubscriptionStore(s => s.loading);
+  const fetchPlans = useSubscriptionStore(s => s.fetchPlans);
+  const fetchSubscriptions = useSubscriptionStore(s => s.fetchSubscriptions);
+  const purchasePlan = useSubscriptionStore(s => s.purchasePlan);
+
+  const walletBalance = useWalletStore(s => s.balance);
+  const fetchBalance = useWalletStore(s => s.fetchBalance);
 
   useEffect(() => {
-    // Simulate API call
-    setTimeout(() => {
-      setWalletBalance(4250);
-      setPlans([
-        { id: '1', name: 'Weekly Thali', meals: 7, price: 699, benefits: ['7 meals (1/day)', 'Free delivery', 'Veg & Non-veg options'] },
-        { id: '2', name: 'Bi-Weekly Plan', meals: 14, price: 1249, benefits: ['14 meals (1/day)', 'Free delivery', 'Skip any day', 'Priority support'] },
-        { id: '3', name: 'Monthly Full Board', meals: 30, price: 2499, benefits: ['30 meals (1/day)', 'Free delivery', 'Weekend specials', 'Priority support', '10% wallet bonus'] },
-        { id: '4', name: 'Monthly Pro (2x)', meals: 60, price: 3999, benefits: ['60 meals (2/day)', 'Free delivery', 'All cuisine access', 'VIP support', '15% savings'] },
-      ]);
-      setLoading(false);
-    }, 500);
+    fetchPlans();
+    fetchBalance();
+    fetchSubscriptions();
   }, []);
 
-  const selected = plans.find(p => p.id === selectedId);
+  // Auto-select most popular plan on load
+  useEffect(() => {
+    if (plans.length > 0 && !selectedId) {
+      // Default to the 30-meal plan, or the third one, or the first
+      const popular = plans.find(p => p.mealsCount === 30) || plans[2] || plans[0];
+      setSelectedId(popular?.id);
+    }
+  }, [plans]);
+
+  const selected = plans.find((p: any) => p.id === selectedId);
+  const activeSubs = subscriptions.filter((s: any) => s.isActive && new Date(s.endDate) >= new Date());
+  const activeSubCount = activeSubs.length;
 
   const handleConfirm = async () => {
     if (!selected) return;
 
     if (walletBalance < selected.price) {
       const shortfall = selected.price - walletBalance;
-      Alert.alert(
-        'Insufficient Wallet Balance',
-        `You need ₹${shortfall} more to purchase this plan. Top up your wallet to continue.`,
-        [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Top Up', onPress: () => router.push('/wallet-topup' as any) },
-        ]
-      );
+      if (Platform.OS === 'web') {
+        const goTopUp = window.confirm(
+          `Insufficient Wallet Balance\n\nYou need ₹${shortfall} more to purchase this plan. Top up your wallet to continue.\n\nPress OK to top up.`
+        );
+        if (goTopUp) router.push('/wallet-topup' as any);
+      } else {
+        Alert.alert(
+          'Insufficient Wallet Balance',
+          `You need ₹${shortfall} more to purchase this plan. Top up your wallet to continue.`,
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Top Up', onPress: () => router.push('/wallet-topup' as any) },
+          ]
+        );
+      }
       return;
     }
 
-    Alert.alert(
-      'Confirm Purchase',
-      `₹${selected.price} will be deducted from your wallet for "${selected.name}" (${selected.meals} meals).`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Confirm',
-          onPress: async () => {
-            setSubmitting(true);
-            // In production: await api.post('/user/subscriptions', { planId: selected.id, amount: selected.price, mealsCount: selected.meals })
-            setTimeout(() => {
-              setSubmitting(false);
-              router.replace('/order-success' as any);
-            }, 1500);
-          }
-        },
-      ]
-    );
+    const doPurchase = async () => {
+      setSubmitting(true);
+      try {
+        await purchasePlan(selected.id);
+        if (Platform.OS === 'web') {
+          window.alert('Success! 🎉\n\nYour subscription is now active.');
+          router.replace('/subscriptions' as any);
+        } else {
+          Alert.alert('Success! 🎉', 'Your subscription is now active.', [
+            { text: 'View Subscriptions', onPress: () => router.replace('/subscriptions' as any) },
+          ]);
+        }
+      } catch (err: any) {
+        if (Platform.OS === 'web') {
+          window.alert(`Error: ${err.message || 'Failed to purchase plan'}`);
+        } else {
+          Alert.alert('Error', err.message || 'Failed to purchase plan');
+        }
+      } finally {
+        setSubmitting(false);
+      }
+    };
+
+    if (Platform.OS === 'web') {
+      const confirmed = window.confirm(
+        `Confirm Purchase\n\n₹${selected.price} will be deducted from your wallet for "${selected.name}" (${selected.mealsCount} meals).`
+      );
+      if (confirmed) await doPurchase();
+    } else {
+      Alert.alert(
+        'Confirm Purchase',
+        `₹${selected.price} will be deducted from your wallet for "${selected.name}" (${selected.mealsCount} meals).`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Confirm', onPress: doPurchase },
+        ]
+      );
+    }
   };
 
-  if (loading) {
+  if (loading && plans.length === 0) {
     return (
       <SafeAreaView style={[s.container, { justifyContent: 'center', alignItems: 'center' }]} edges={['top']}>
         <ActivityIndicator size="large" color="#FF6B35" />
       </SafeAreaView>
     );
   }
+
+  // Parse benefits for display
+  const getBenefits = (plan: any): string[] => {
+    if (Array.isArray(plan.benefits)) return plan.benefits;
+    if (typeof plan.benefits === 'string') {
+      try { return JSON.parse(plan.benefits); } catch { return []; }
+    }
+    return [];
+  };
 
   return (
     <SafeAreaView style={s.container} edges={['top']}>
@@ -93,7 +137,9 @@ export default function SubscriptionPlansScreen() {
         <View style={s.statusRow}>
           <View style={[s.statusCard, { backgroundColor: '#F8FAFC' }]}>
             <Text style={s.statusLabel}>CURRENT STATUS</Text>
-            <Text style={s.statusValue}>No Active Plan</Text>
+            <Text style={s.statusValue}>
+              {activeSubCount > 0 ? `${activeSubCount} Active Plan${activeSubCount > 1 ? 's' : ''}` : 'No Active Plan'}
+            </Text>
           </View>
           <View style={[s.statusCard, { backgroundColor: '#FF6B35' }]}>
             <Text style={{ fontSize: 22, marginBottom: 6 }}>💳</Text>
@@ -103,8 +149,8 @@ export default function SubscriptionPlansScreen() {
         </View>
 
         {/* Plan Cards */}
-        {plans.map((plan) => {
-          const canAfford = walletBalance >= plan.price;
+        {plans.map((plan: any) => {
+          const canAfford = walletBalance >= parseFloat(plan.price);
           return (
             <TouchableOpacity key={plan.id} onPress={() => setSelectedId(plan.id)}
               style={[s.planCard, selectedId === plan.id && s.planCardSelected]}>
@@ -112,7 +158,7 @@ export default function SubscriptionPlansScreen() {
                 <View style={s.planIcon}><Text style={{ fontSize: 22 }}>🍽️</Text></View>
                 <View style={{ flex: 1 }}>
                   <Text style={s.planName}>{plan.name}</Text>
-                  <Text style={s.planMeals}>{plan.meals} meals total</Text>
+                  <Text style={s.planMeals}>{plan.mealsCount} meals total</Text>
                 </View>
                 <View style={{ alignItems: 'flex-end' }}>
                   <Text style={s.planPrice}>₹{plan.price}</Text>
@@ -123,11 +169,18 @@ export default function SubscriptionPlansScreen() {
           );
         })}
 
+        {plans.length === 0 && !loading && (
+          <View style={{ alignItems: 'center', marginTop: 40 }}>
+            <Text style={{ fontSize: 40, marginBottom: 12 }}>📭</Text>
+            <Text style={{ fontSize: 16, fontWeight: '700', color: '#64748B' }}>No plans available right now</Text>
+          </View>
+        )}
+
         {/* Selected plan benefits */}
         {selected && (
           <View style={s.benefitsCard}>
             <Text style={s.benefitsTitle}>PLAN PRIVILEGES</Text>
-            {selected.benefits.map((b: string, i: number) => (
+            {getBenefits(selected).map((b: string, i: number) => (
               <View key={i} style={s.benefitRow}>
                 <View style={s.benefitCheck}>
                   <Check size={14} color="#10B981" />
@@ -149,7 +202,6 @@ export default function SubscriptionPlansScreen() {
               </Text>
             </View>
           </View>
-          <TouchableOpacity><Text style={s.changeDate}>Change</Text></TouchableOpacity>
         </View>
 
         {/* Wallet deduction notice */}
@@ -167,7 +219,7 @@ export default function SubscriptionPlansScreen() {
         <TouchableOpacity
           style={[s.confirmBtn, submitting && { opacity: 0.6 }]}
           onPress={handleConfirm}
-          disabled={submitting}
+          disabled={submitting || !selected}
         >
           {submitting ? <ActivityIndicator color="#FFF" /> : <Text style={s.confirmBtnText}>Confirm & Pay →</Text>}
         </TouchableOpacity>
@@ -215,7 +267,6 @@ const s = StyleSheet.create({
   },
   dateLabel: { fontSize: 9, fontWeight: '800', color: '#94A3B8', letterSpacing: 1, marginBottom: 2 },
   dateValue: { fontSize: 14, fontWeight: '700', color: '#0F172A' },
-  changeDate: { color: '#FF6B35', fontWeight: '700', fontSize: 13 },
   terms: { fontSize: 12, textAlign: 'center', color: '#94A3B8', fontWeight: '500', lineHeight: 18 },
   bottomBar: {
     position: 'absolute', bottom: 0, left: 0, right: 0,

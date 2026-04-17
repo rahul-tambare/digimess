@@ -1,33 +1,24 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Platform, ActivityIndicator, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ArrowLeft, Pause, Play, SkipForward } from 'lucide-react-native';
+import { ArrowLeft, Pause, Play, SkipForward, XCircle } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
-
-// In production: import api from '@/services/api';
+import { useSubscriptionStore } from '@/stores/dataStore';
 
 export default function SubscriptionsScreen() {
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
-  const [subs, setSubs] = useState<any[]>([]);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+
+  const subs = useSubscriptionStore(s => s.subscriptions);
+  const loading = useSubscriptionStore(s => s.loading);
+  const fetchSubscriptions = useSubscriptionStore(s => s.fetchSubscriptions);
+  const pauseSubscription = useSubscriptionStore(s => s.pauseSubscription);
+  const resumeSubscription = useSubscriptionStore(s => s.resumeSubscription);
+  const skipDate = useSubscriptionStore(s => s.skipDate);
+  const cancelSubscription = useSubscriptionStore(s => s.cancelSubscription);
 
   useEffect(() => {
-    // Simulate: const res = await api.get('/user/subscriptions');
-    setTimeout(() => {
-      setSubs([
-        {
-          id: 'sub001', messId: 'mess001', messName: "Sunita's Home Kitchen",
-          type: 'single_mess', startDate: '2026-04-01', endDate: '2026-05-01',
-          mealsRemaining: 18, isActive: true, pauseStartDate: null, pauseEndDate: null,
-        },
-        {
-          id: 'sub002', messId: null, messName: null,
-          type: 'multi_mess', startDate: '2026-03-01', endDate: '2026-03-31',
-          mealsRemaining: 0, isActive: false, pauseStartDate: null, pauseEndDate: null,
-        },
-      ]);
-      setLoading(false);
-    }, 600);
+    fetchSubscriptions();
   }, []);
 
   const handlePause = (subId: string) => {
@@ -38,30 +29,87 @@ export default function SubscriptionsScreen() {
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Pause', style: 'destructive',
-          onPress: () => {
-            // In production: await api.post(`/user/subscriptions/${subId}/pause`, { pauseStartDate: today, pauseEndDate: null })
-            setSubs(prev => prev.map(s => s.id === subId ? { ...s, pauseStartDate: new Date().toISOString() } : s));
+          onPress: async () => {
+            setActionLoading(subId);
+            try {
+              await pauseSubscription(subId);
+            } catch (err: any) {
+              Alert.alert('Error', err.message || 'Failed to pause subscription');
+            } finally {
+              setActionLoading(null);
+            }
           }
         },
       ]
     );
   };
 
-  const handleResume = (subId: string) => {
-    // In production: await api.post(`/user/subscriptions/${subId}/resume`)
-    setSubs(prev => prev.map(s => s.id === subId ? { ...s, pauseStartDate: null, pauseEndDate: null } : s));
+  const handleResume = async (subId: string) => {
+    setActionLoading(subId);
+    try {
+      await resumeSubscription(subId);
+    } catch (err: any) {
+      Alert.alert('Error', err.message || 'Failed to resume subscription');
+    } finally {
+      setActionLoading(null);
+    }
   };
 
   const handleSkipTomorrow = (subId: string) => {
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
-    Alert.alert('Skip Tomorrow', `Your meal for ${tomorrow.toLocaleDateString('en-IN', { weekday: 'long', month: 'short', day: 'numeric' })} will be skipped. No meal will be deducted.`, [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Skip', onPress: () => { /* In production: api.post(`/subscriptions/${subId}/skip`, { date: tomorrow }) */ } },
-    ]);
+    const dateStr = tomorrow.toISOString().split('T')[0];
+    Alert.alert(
+      'Skip Tomorrow',
+      `Your meal for ${tomorrow.toLocaleDateString('en-IN', { weekday: 'long', month: 'short', day: 'numeric' })} will be skipped. No meal will be deducted.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Skip',
+          onPress: async () => {
+            setActionLoading(subId);
+            try {
+              await skipDate(subId, dateStr);
+              Alert.alert('Done', `Meal skipped for ${tomorrow.toLocaleDateString('en-IN', { weekday: 'long', month: 'short', day: 'numeric' })}`);
+            } catch (err: any) {
+              Alert.alert('Error', err.message || 'Failed to skip date');
+            } finally {
+              setActionLoading(null);
+            }
+          }
+        },
+      ]
+    );
   };
 
-  if (loading) {
+  const handleCancel = (subId: string) => {
+    Alert.alert(
+      'Cancel Subscription',
+      'Your remaining meals will be refunded to your wallet on a pro-rated basis. This cannot be undone.',
+      [
+        { text: 'Keep Plan', style: 'cancel' },
+        {
+          text: 'Cancel Plan', style: 'destructive',
+          onPress: async () => {
+            setActionLoading(subId);
+            try {
+              const refund = await cancelSubscription(subId);
+              Alert.alert(
+                'Subscription Cancelled',
+                refund > 0 ? `₹${refund} has been refunded to your wallet.` : 'Your subscription has been cancelled.'
+              );
+            } catch (err: any) {
+              Alert.alert('Error', err.message || 'Failed to cancel subscription');
+            } finally {
+              setActionLoading(null);
+            }
+          }
+        },
+      ]
+    );
+  };
+
+  if (loading && subs.length === 0) {
     return (
       <SafeAreaView style={[s.container, { justifyContent: 'center', alignItems: 'center' }]} edges={['top']}>
         <ActivityIndicator size="large" color="#FF6B35" />
@@ -93,9 +141,10 @@ export default function SubscriptionsScreen() {
           </View>
         ) : (
           <>
-            {subs.map((sub) => {
+            {subs.map((sub: any) => {
               const isActive = sub.isActive && new Date(sub.endDate) >= new Date();
               const isPaused = isActive && sub.pauseStartDate != null;
+              const isLoading = actionLoading === sub.id;
 
               return (
                 <View key={sub.id} style={[s.card, isActive && s.cardActive]}>
@@ -103,7 +152,7 @@ export default function SubscriptionsScreen() {
                     <View style={s.iconWrap}><Text style={{ fontSize: 24 }}>🥘</Text></View>
                     <View style={{ flex: 1 }}>
                       <Text style={s.planName}>
-                        {sub.type === 'multi_mess' ? 'Digi Mess Pro Pass' : sub.messName || 'Single Mess Plan'}
+                        {sub.planName || (sub.type === 'multi_mess' ? 'Digi Mess Pro Pass' : sub.messName || 'Meal Plan')}
                       </Text>
                       <Text style={s.dates}>
                         {new Date(sub.startDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })} to{' '}
@@ -128,7 +177,11 @@ export default function SubscriptionsScreen() {
                   {/* Actions for active subs */}
                   {isActive && (
                     <View style={s.actionsRow}>
-                      {isPaused ? (
+                      {isLoading ? (
+                        <View style={[s.actionBtn, { justifyContent: 'center' }]}>
+                          <ActivityIndicator size="small" color="#FF6B35" />
+                        </View>
+                      ) : isPaused ? (
                         <TouchableOpacity style={[s.actionBtn, { backgroundColor: '#ECFDF5', borderColor: '#A7F3D0' }]} onPress={() => handleResume(sub.id)}>
                           <Play size={14} color="#10B981" />
                           <Text style={[s.actionBtnText, { color: '#10B981' }]}>Resume</Text>
@@ -146,6 +199,14 @@ export default function SubscriptionsScreen() {
                         </>
                       )}
                     </View>
+                  )}
+
+                  {/* Cancel button for active subs */}
+                  {isActive && !isLoading && (
+                    <TouchableOpacity style={s.cancelRow} onPress={() => handleCancel(sub.id)}>
+                      <XCircle size={14} color="#94A3B8" />
+                      <Text style={s.cancelText}>Cancel Subscription</Text>
+                    </TouchableOpacity>
                   )}
 
                   {/* Renew for expired */}
@@ -205,6 +266,11 @@ const s = StyleSheet.create({
     backgroundColor: 'rgba(255,107,53,0.04)',
   },
   actionBtnText: { fontSize: 13, fontWeight: '700', color: '#FF6B35' },
+  cancelRow: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    gap: 6, marginTop: 12, paddingVertical: 8,
+  },
+  cancelText: { fontSize: 12, fontWeight: '600', color: '#94A3B8' },
   renewBtn: { paddingVertical: 14, borderRadius: 14, borderWidth: 1.5, borderColor: '#E2E8F0', alignItems: 'center' },
   renewBtnText: { fontSize: 14, fontWeight: '700', color: '#64748B' },
   browseBtn: {

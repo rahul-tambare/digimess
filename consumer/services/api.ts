@@ -180,13 +180,22 @@ export const subscriptionApi = {
     apiFetch('/user/subscriptions', { method: 'POST', body: JSON.stringify(data) }),
 
   pauseSubscription: (subId: string) =>
-    apiFetch(`/user/subscriptions/${subId}/pause`, { method: 'POST' }),
+    apiFetch(`/user/subscriptions/${subId}/pause`, {
+      method: 'POST',
+      body: JSON.stringify({ pauseStartDate: new Date().toISOString().split('T')[0] }),
+    }),
 
   resumeSubscription: (subId: string) =>
     apiFetch(`/user/subscriptions/${subId}/resume`, { method: 'POST' }),
 
   skipDate: (subId: string, date: string) =>
     apiFetch(`/user/subscriptions/${subId}/skip`, { method: 'POST', body: JSON.stringify({ date }) }),
+
+  cancelSubscription: (subId: string) =>
+    apiFetch<{ message: string; refundAmount: number }>(`/user/subscriptions/${subId}/cancel`, { method: 'POST' }),
+
+  getSkippedDates: (subId: string) =>
+    apiFetch<string[]>(`/user/subscriptions/${subId}/skips`),
 };
 
 // ---- Reviews ----
