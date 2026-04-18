@@ -98,6 +98,11 @@ exports.adminLogin = async (req, res) => {
         }
 
         // Compare password if adminUser has a password field
+        if (!adminUser.password || typeof adminUser.password !== 'string') {
+            console.error(`Admin user ${email} has no password set in database.`);
+            return res.status(401).json({ error: 'Invalid credentials' });
+        }
+
         const isMatch = await bcrypt.compare(password, adminUser.password);
         if (!isMatch) {
             return res.status(401).json({ error: 'Invalid credentials' });
