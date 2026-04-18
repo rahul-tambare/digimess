@@ -20,4 +20,8 @@ router.patch('/mess/toggle', auth, requireRole('vendor'), providerController.tog
 // Single order detail
 router.get('/orders/:id', auth, requireRole('vendor'), providerController.getOrderDetail);
 
+// Business Stats
+router.get('/stats', auth, requireRole('vendor'), providerController.getBusinessStats);
+
+
 module.exports = router;

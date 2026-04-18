@@ -89,6 +89,9 @@ export const providerApi = {
 
   getOrderDetail: (orderId: string) =>
     apiFetch(`/provider/orders/${orderId}`),
+
+  getStats: () =>
+    apiFetch('/provider/stats'),
 };
 
 // ---- Mess ----

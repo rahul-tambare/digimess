@@ -264,3 +264,131 @@ exports.getOrderDetail = async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 };
+
+// =============================================
+// GET /api/provider/stats — Business Stats
+// =============================================
+exports.getBusinessStats = async (req, res) => {
+  try {
+    const vendorId = req.user.id;
+
+    const [messes] = await db.query(
+      'SELECT id, name, rating FROM Messes WHERE vendorId = ? AND isDeleted = 0 LIMIT 1',
+      [vendorId]
+    );
+    if (messes.length === 0) return res.json({ hasMess: false });
+    const mess = messes[0];
+    const messId = mess.id;
+
+    // ── Orders by status ─────────────────────────────────────────────────
+    const [statusRows] = await db.query(
+      `SELECT status, COUNT(*) as count FROM Orders WHERE messId = ? AND isDeleted = 0 GROUP BY status`,
+      [messId]
+    );
+    const statusMap = {};
+    statusRows.forEach(r => { statusMap[r.status] = Number(r.count); });
+
+    const totalOrders = statusRows.reduce((s, r) => s + Number(r.count), 0);
+    const completedOrders = statusMap['delivered'] || 0;
+    const cancelledOrders = statusMap['cancelled'] || 0;
+    const completionRate = totalOrders > 0 ? ((completedOrders / totalOrders) * 100).toFixed(1) : '0.0';
+
+    // ── Earnings summary ─────────────────────────────────────────────────
+    const [[lifetimeRow]] = await db.query(
+      `SELECT COALESCE(SUM(totalAmount), 0) as total, COUNT(*) as count
+       FROM Orders WHERE messId = ? AND status NOT IN ('cancelled') AND isDeleted = 0`,
+      [messId]
+    );
+    const [[monthRow]] = await db.query(
+      `SELECT COALESCE(SUM(totalAmount), 0) as total
+       FROM Orders WHERE messId = ? AND status NOT IN ('cancelled') AND isDeleted = 0
+       AND YEAR(createdAt) = YEAR(CURDATE()) AND MONTH(createdAt) = MONTH(CURDATE())`,
+      [messId]
+    );
+    const [[weekRow]] = await db.query(
+      `SELECT COALESCE(SUM(totalAmount), 0) as total
+       FROM Orders WHERE messId = ? AND status NOT IN ('cancelled') AND isDeleted = 0
+       AND YEARWEEK(createdAt, 1) = YEARWEEK(CURDATE(), 1)`,
+      [messId]
+    );
+
+    const lifetimeEarnings = parseFloat(lifetimeRow.total);
+    const lifetimeCount = Number(lifetimeRow.count);
+    const avgOrderValue = lifetimeCount > 0 ? (lifetimeEarnings / lifetimeCount) : 0;
+
+    // ── Daily breakdown last 14 days ─────────────────────────────────────
+    const [dailyRows] = await db.query(
+      `SELECT DATE(createdAt) as date, DAYNAME(createdAt) as day,
+              COALESCE(SUM(totalAmount), 0) as amount, COUNT(*) as orders
+       FROM Orders WHERE messId = ? AND status NOT IN ('cancelled') AND isDeleted = 0
+         AND createdAt >= DATE_SUB(CURDATE(), INTERVAL 14 DAY)
+       GROUP BY DATE(createdAt), DAYNAME(createdAt)
+       ORDER BY date ASC`,
+      [messId]
+    );
+
+    // ── Rating breakdown ─────────────────────────────────────────────────
+    const [ratingRows] = await db.query(
+      `SELECT rating, COUNT(*) as count FROM Reviews WHERE messId = ? GROUP BY rating ORDER BY rating DESC`,
+      [messId]
+    );
+    const totalReviews = ratingRows.reduce((s, r) => s + Number(r.count), 0);
+    const ratingBreakdown = [5, 4, 3, 2, 1].map(star => {
+      const row = ratingRows.find(r => Number(r.rating) === star);
+      const count = row ? Number(row.count) : 0;
+      return { star, count, pct: totalReviews > 0 ? Math.round(count / totalReviews * 100) : 0 };
+    });
+
+    // ── Recent reviews ───────────────────────────────────────────────────
+    const [recentReviews] = await db.query(
+      `SELECT r.rating, r.reviewText, r.createdAt, u.name as customerName
+       FROM Reviews r JOIN Users u ON r.customerId = u.id
+       WHERE r.messId = ? ORDER BY r.createdAt DESC LIMIT 5`,
+      [messId]
+    );
+
+    // ── Top 5 customers by order count ───────────────────────────────────
+    const [topCustomers] = await db.query(
+      `SELECT u.name, COUNT(o.id) as orderCount, COALESCE(SUM(o.totalAmount), 0) as totalSpent
+       FROM Orders o JOIN Users u ON o.customerId = u.id
+       WHERE o.messId = ? AND o.isDeleted = 0 AND o.status NOT IN ('cancelled')
+       GROUP BY o.customerId, u.name ORDER BY orderCount DESC LIMIT 5`,
+      [messId]
+    );
+
+    res.json({
+      hasMess: true,
+      mess: { id: mess.id, name: mess.name, rating: mess.rating },
+      orders: {
+        total: totalOrders,
+        completed: completedOrders,
+        cancelled: cancelledOrders,
+        pending: (statusMap['pending'] || 0) + (statusMap['confirmed'] || 0) + (statusMap['preparing'] || 0),
+        completionRate: parseFloat(completionRate),
+        statusBreakdown: statusMap,
+      },
+      earnings: {
+        lifetime: lifetimeEarnings,
+        thisMonth: parseFloat(monthRow.total),
+        thisWeek: parseFloat(weekRow.total),
+        avgOrderValue,
+      },
+      reviews: {
+        total: totalReviews,
+        avgRating: parseFloat(mess.rating) || 0,
+        breakdown: ratingBreakdown,
+        recent: recentReviews,
+      },
+      topCustomers: topCustomers.map(c => ({
+        name: c.name,
+        orderCount: Number(c.orderCount),
+        totalSpent: parseFloat(c.totalSpent),
+      })),
+      dailyBreakdown: dailyRows,
+    });
+  } catch (e) {
+    console.error('Business stats error:', e);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+

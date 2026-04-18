@@ -315,7 +315,7 @@ export default function ProfileScreen() {
           subtitle: bankDetails ? `A/C ****${bankDetails.accountNumber?.slice(-4)}` : 'Not set',
           onPress: openBank,
         },
-        { icon: '📊', label: 'Business Stats', subtitle: mess ? `${mess.rating || 0}★ rating` : 'N/A', onPress: () => {} },
+        { icon: '📊', label: 'Business Stats', subtitle: mess ? `${mess.rating || 0}★ rating` : 'N/A', onPress: () => router.push('/business-stats') },
       ],
     },
     {
