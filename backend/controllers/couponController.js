@@ -51,3 +51,56 @@ exports.validateCoupon = async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 };
+
+// ── Admin CRUD ──
+
+exports.getAllCoupons = async (req, res) => {
+  try {
+    const [rows] = await db.query('SELECT * FROM Coupons ORDER BY createdAt DESC');
+    res.json(rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error retrieving coupons' });
+  }
+};
+
+exports.createCoupon = async (req, res) => {
+  const { code, discountType, discountValue, minOrderAmount, maxDiscount, validFrom, validTo, usageLimit } = req.body;
+  try {
+    const uuid = require('crypto').randomUUID();
+    await db.query(
+      'INSERT INTO Coupons (id, code, discountType, discountValue, minOrderAmount, maxDiscount, validFrom, validTo, usageLimit) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [uuid, code, discountType, discountValue, minOrderAmount || 0, maxDiscount || null, validFrom, validTo, usageLimit || null]
+    );
+    res.status(201).json({ id: uuid, message: 'Coupon created successfully' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error creating coupon' });
+  }
+};
+
+exports.updateCoupon = async (req, res) => {
+  const { id } = req.params;
+  const { code, discountType, discountValue, minOrderAmount, maxDiscount, validFrom, validTo, usageLimit, isActive } = req.body;
+  try {
+    await db.query(
+      'UPDATE Coupons SET code = ?, discountType = ?, discountValue = ?, minOrderAmount = ?, maxDiscount = ?, validFrom = ?, validTo = ?, usageLimit = ?, isActive = ? WHERE id = ?',
+      [code, discountType, discountValue, minOrderAmount, maxDiscount || null, validFrom, validTo, usageLimit || null, isActive, id]
+    );
+    res.json({ message: 'Coupon updated successfully' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error updating coupon' });
+  }
+};
+
+exports.deleteCoupon = async (req, res) => {
+  const { id } = req.params;
+  try {
+    await db.query('DELETE FROM Coupons WHERE id = ?', [id]);
+    res.json({ message: 'Coupon deleted successfully' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error deleting coupon' });
+  }
+};

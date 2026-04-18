@@ -117,8 +117,8 @@ exports.getSubscriptions = async (req, res) => {
     const [rows] = await db.query(`
       SELECT s.*, u.name as customerName, u.phone as customerPhone, sp.name as planName 
       FROM Subscriptions s
-      JOIN Users u ON s.userId = u.id
-      JOIN SubscriptionPlans sp ON s.planId = sp.id
+      JOIN Users u ON s.customerId = u.id
+      LEFT JOIN SubscriptionPlans sp ON s.planId = sp.id
       ORDER BY s.startDate DESC
     `);
     res.json(rows);
@@ -128,4 +128,80 @@ exports.getSubscriptions = async (req, res) => {
   }
 };
 
+exports.approveMess = async (req, res) => {
+  const { id } = req.params;
+  const { isApproved } = req.body;
+  try {
+    await db.query('UPDATE Messes SET isApproved = ? WHERE id = ?', [isApproved ? 1 : 0, id]);
+    res.json({ message: `Mess ${isApproved ? 'approved' : 'unapproved'} successfully` });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error updating mess approval' });
+  }
+};
 
+exports.toggleMessStatus = async (req, res) => {
+  const { id } = req.params;
+  const { isActive } = req.body;
+  try {
+    await db.query('UPDATE Messes SET isActive = ? WHERE id = ?', [isActive ? 1 : 0, id]);
+    res.json({ message: `Mess ${isActive ? 'activated' : 'deactivated'} successfully` });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error toggling mess status' });
+  }
+};
+
+exports.getRevenue = async (req, res) => {
+  try {
+    // Total revenue
+    const [[totalRow]] = await db.query("SELECT COALESCE(SUM(amount), 0) as total FROM WalletTransactions WHERE type = 'credit'");
+    
+    // This month revenue
+    const [[monthRow]] = await db.query("SELECT COALESCE(SUM(amount), 0) as total FROM WalletTransactions WHERE type = 'credit' AND MONTH(createdAt) = MONTH(CURDATE()) AND YEAR(createdAt) = YEAR(CURDATE())");
+
+    // Monthly trend (last 7 months)
+    const [monthlyTrend] = await db.query(`
+      SELECT DATE_FORMAT(createdAt, '%b') as label, COALESCE(SUM(amount), 0) as value
+      FROM WalletTransactions WHERE type = 'credit'
+      GROUP BY YEAR(createdAt), MONTH(createdAt), DATE_FORMAT(createdAt, '%b')
+      ORDER BY YEAR(createdAt) DESC, MONTH(createdAt) DESC
+      LIMIT 7
+    `);
+
+    // Revenue breakdown by description categories
+    const [breakdown] = await db.query(`
+      SELECT 
+        CASE
+          WHEN description LIKE '%order%' OR description LIKE '%Order%' THEN 'Order Payments'
+          WHEN description LIKE '%subscription%' OR description LIKE '%Subscription%' THEN 'Subscription Plans'
+          WHEN description LIKE '%recharge%' OR description LIKE '%Recharge%' OR description LIKE '%top%' THEN 'Wallet Recharges'
+          WHEN description LIKE '%delivery%' OR description LIKE '%Delivery%' THEN 'Delivery Charges'
+          ELSE 'Other'
+        END as category,
+        COALESCE(SUM(amount), 0) as total
+      FROM WalletTransactions WHERE type = 'credit'
+      GROUP BY category
+    `);
+
+    // Recent transactions
+    const [transactions] = await db.query(`
+      SELECT wt.id, wt.amount, wt.type, wt.description, wt.createdAt as date, u.name as user
+      FROM WalletTransactions wt
+      JOIN Users u ON wt.userId = u.id
+      ORDER BY wt.createdAt DESC
+      LIMIT 20
+    `);
+
+    res.json({
+      totalRevenue: parseFloat(totalRow.total),
+      monthRevenue: parseFloat(monthRow.total),
+      monthlyTrend: monthlyTrend.reverse(),
+      breakdown,
+      transactions,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error retrieving revenue data' });
+  }
+};
