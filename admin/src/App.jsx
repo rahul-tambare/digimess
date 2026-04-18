@@ -9,6 +9,8 @@ import Orders from './pages/Orders';
 import Subscriptions from './pages/Subscriptions';
 import Revenue from './pages/Revenue';
 import Settings from './pages/Settings';
+import AdminUsers from './pages/AdminUsers';
+import Roles from './pages/Roles';
 
 function ProtectedRoute({ children }) {
   const { isAuthenticated, loading } = useAuth();
@@ -31,6 +33,8 @@ function AppRoutes() {
         <Route path="/subscriptions" element={<Subscriptions />} />
         <Route path="/revenue" element={<Revenue />} />
         <Route path="/settings" element={<Settings />} />
+        <Route path="/admin-users" element={<AdminUsers />} />
+        <Route path="/roles" element={<Roles />} />
       </Route>
     </Routes>
   );

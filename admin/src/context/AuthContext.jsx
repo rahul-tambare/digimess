@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 
 const AuthContext = createContext(null);
 
@@ -32,8 +32,31 @@ export function AuthProvider({ children }) {
     setUser(null);
   };
 
+  /**
+   * Check if current admin has a specific permission.
+   * Super admins always return true.
+   */
+  const hasPermission = useCallback((slug) => {
+    if (!user) return false;
+    if (user.isSuperAdmin) return true;
+    return user.permissions?.includes(slug) ?? false;
+  }, [user]);
+
+  /**
+   * Check if current admin has ANY of the given permissions.
+   */
+  const hasAnyPermission = useCallback((...slugs) => {
+    if (!user) return false;
+    if (user.isSuperAdmin) return true;
+    return slugs.some(s => user.permissions?.includes(s));
+  }, [user]);
+
   return (
-    <AuthContext.Provider value={{ user, token, login, logout, loading, isAuthenticated: !!token }}>
+    <AuthContext.Provider value={{
+      user, token, login, logout, loading,
+      isAuthenticated: !!token,
+      hasPermission, hasAnyPermission,
+    }}>
       {children}
     </AuthContext.Provider>
   );

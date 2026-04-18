@@ -1,5 +1,7 @@
 const db = require('../config/db');
 const crypto = require('crypto');
+const paymentService = require('../services/paymentService');
+const { logAudit } = require('../services/auditService');
 
 // POST /api/orders — place an order (supports wallet, upi, card, cod, subscription)
 exports.placeOrder = async (req, res) => {
@@ -127,8 +129,71 @@ exports.placeOrder = async (req, res) => {
 
       await connection.query('UPDATE Users SET walletBalance = walletBalance - ? WHERE id = ?', [amount, req.user.id]);
       paymentStatus = 'paid';
+    } else if (paymentMethod === 'razorpay') {
+      // ── Razorpay payment — create Razorpay order for client-side checkout ──
+      try {
+        const sessionId = crypto.randomUUID();
+        const razorpayOrder = await paymentService.createRazorpayOrder(
+          amount,
+          sessionId,
+          { userId: req.user.id, type: 'order', messId }
+        );
+
+        // Save payment session
+        await connection.query(
+          `INSERT INTO PaymentSessions (id, userId, amount, type, status, gatewayOrderId, referenceId, referenceType)
+           VALUES (?, ?, ?, 'order', 'pending', ?, ?, 'ORDER')`,
+          [sessionId, req.user.id, amount, razorpayOrder.razorpayOrderId, null] // referenceId will be set after order creation
+        );
+
+        // Create order first (status pending, will be completed after payment verification)
+        const orderId = crypto.randomUUID();
+        await connection.query(
+          `INSERT INTO Orders (id, customerId, messId, totalAmount, orderType, items, deliveryType, deliveryAddress, paymentMethod, specialNote, subscriptionId, status)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'razorpay', ?, ?, 'pending')`,
+          [
+            orderId, req.user.id, messId, amount,
+            orderType || 'on_demand',
+            JSON.stringify(parsedItems),
+            deliveryType || null,
+            address || null,
+            specialNote || null,
+            null
+          ]
+        );
+
+        // Update payment session with the order reference
+        await connection.query(
+          'UPDATE PaymentSessions SET referenceId = ? WHERE id = ?',
+          [orderId, sessionId]
+        );
+
+        // Record initial status in timeline
+        await connection.query(
+          'INSERT INTO OrderStatusTimeline (orderId, status, note) VALUES (?, ?, ?)',
+          [orderId, 'pending', 'Order placed — awaiting Razorpay payment']
+        );
+
+        await connection.commit();
+        return res.status(201).json({
+          message: 'Order created — complete payment via Razorpay',
+          id: orderId,
+          paymentStatus: 'awaiting_payment',
+          razorpay: {
+            sessionId,
+            orderId: razorpayOrder.razorpayOrderId,
+            amount: razorpayOrder.amount,
+            currency: razorpayOrder.currency,
+            keyId: razorpayOrder.keyId,
+          }
+        });
+      } catch (razorpayError) {
+        await connection.rollback();
+        console.error('Razorpay order creation failed:', razorpayError);
+        return res.status(503).json({ error: 'Payment gateway unavailable. Please try another payment method.' });
+      }
     } else if (paymentMethod === 'upi' || paymentMethod === 'card') {
-      // ── UPI / Card — no wallet deduction (simulated as paid) ──
+      // ── Legacy UPI / Card — kept for backward compatibility (simulated) ──
       paymentStatus = 'paid';
     } else if (paymentMethod === 'cod') {
       // ── Cash on Delivery — payment collected later ──
@@ -171,6 +236,25 @@ exports.placeOrder = async (req, res) => {
     );
 
     await connection.commit();
+
+    // Create ledger entries for wallet payments (best-effort, non-blocking)
+    if (paymentMethod === 'wallet' && amount > 0) {
+      try {
+        const ledgerConn = await db.getConnection();
+        await ledgerConn.beginTransaction();
+        await paymentService.processWalletOrderPayment({
+          orderId,
+          userId: req.user.id,
+          amount,
+          messId,
+        }, ledgerConn);
+        await ledgerConn.commit();
+        ledgerConn.release();
+      } catch (ledgerError) {
+        console.error('Ledger entries for wallet order failed (non-critical):', ledgerError.message);
+      }
+    }
+
     res.status(201).json({ 
       message: isSubscriptionOrder ? 'Order placed using subscription' : 'Order placed successfully', 
       id: orderId,

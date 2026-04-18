@@ -5,8 +5,6 @@ import MiniLineChart from '../components/common/MiniLineChart';
 import StatusBadge from '../components/common/StatusBadge';
 import { Users, Store, ShoppingBag, IndianRupee, TrendingUp, Star, ExternalLink } from 'lucide-react';
 import { getStats } from '../api/dashboard';
-import { getAll as getOrders } from '../api/orders';
-import { getAll as getMesses } from '../api/messes';
 
 export default function Dashboard() {
   const [stats, setStats] = useState(null);
@@ -17,18 +15,10 @@ export default function Dashboard() {
   useEffect(() => {
     const load = async () => {
       try {
-        const [statsRes, ordersRes, messesRes] = await Promise.all([
-          getStats(),
-          getOrders(),
-          getMesses(),
-        ]);
-        setStats(statsRes.data);
-        setOrders(ordersRes.data.slice(0, 5));
-        setMesses(messesRes.data
-          .filter(m => m.isApproved)
-          .sort((a, b) => parseFloat(b.avgRating || 0) - parseFloat(a.avgRating || 0))
-          .slice(0, 5)
-        );
+        const res = await getStats();
+        setStats(res.data);
+        setOrders(res.data.recentOrders || []);
+        setMesses(res.data.topMesses || []);
       } catch (err) {
         console.error('Dashboard load error:', err);
       } finally {

@@ -347,4 +347,48 @@ CREATE TABLE IF NOT EXISTS OrderStatusTimeline (
     FOREIGN KEY (orderId) REFERENCES Orders(id) ON DELETE CASCADE
 );
 
+-- RBAC: Roles
+CREATE TABLE IF NOT EXISTS Roles (
+    id VARCHAR(36) PRIMARY KEY,
+    name VARCHAR(100) NOT NULL UNIQUE,
+    description TEXT,
+    isSuperAdmin TINYINT(1) DEFAULT 0,
+    isActive TINYINT(1) DEFAULT 1,
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- RBAC: Permissions
+CREATE TABLE IF NOT EXISTS Permissions (
+    id VARCHAR(36) PRIMARY KEY,
+    module VARCHAR(100) NOT NULL,
+    action VARCHAR(100) NOT NULL,
+    slug VARCHAR(200) NOT NULL UNIQUE,
+    description TEXT,
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- RBAC: Role ↔ Permission mapping
+CREATE TABLE IF NOT EXISTS RolePermissions (
+    roleId VARCHAR(36) NOT NULL,
+    permissionId VARCHAR(36) NOT NULL,
+    PRIMARY KEY (roleId, permissionId),
+    FOREIGN KEY (roleId) REFERENCES Roles(id) ON DELETE CASCADE,
+    FOREIGN KEY (permissionId) REFERENCES Permissions(id) ON DELETE CASCADE
+);
+
+-- RBAC: Admin Users (separate from customer/vendor Users)
+CREATE TABLE IF NOT EXISTS AdminUsers (
+    id VARCHAR(36) PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    roleId VARCHAR(36) NOT NULL,
+    isActive TINYINT(1) DEFAULT 1,
+    lastLoginAt DATETIME DEFAULT NULL,
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (roleId) REFERENCES Roles(id) ON DELETE RESTRICT
+);
+
 -- Schema completed

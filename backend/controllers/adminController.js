@@ -1,13 +1,5 @@
 const db = require('../config/db');
 
-exports.isAdmin = (req, res, next) => {
-  if (req.user && req.user.role === 'admin') {
-    next();
-  } else {
-    res.status(403).json({ error: 'Access denied. Admin only.' });
-  }
-};
-
 exports.getStats = async (req, res) => {
   try {
     const [[users]] = await db.query('SELECT COUNT(*) as count FROM Users WHERE isDeleted = 0');
@@ -16,12 +8,33 @@ exports.getStats = async (req, res) => {
     const [[orders]] = await db.query('SELECT COUNT(*) as count FROM Orders');
     const [[revenue]] = await db.query("SELECT SUM(amount) as total FROM WalletTransactions WHERE type = 'credit'");
     
+    // Fetch 5 latest orders
+    const [recentOrders] = await db.query(`
+      SELECT o.*, u.name as customerName, m.name as messName 
+      FROM Orders o
+      JOIN Users u ON o.customerId = u.id
+      JOIN Messes m ON o.messId = m.id
+      ORDER BY o.createdAt DESC
+      LIMIT 5
+    `);
+
+    // Fetch top 5 approved messes by rating
+    const [topMesses] = await db.query(`
+      SELECT id, name, rating as avgRating 
+      FROM Messes 
+      WHERE isApproved = 1 AND isDeleted = 0
+      ORDER BY rating DESC 
+      LIMIT 5
+    `);
+
     res.json({
       totalUsers: users.count,
       totalMesses: messes.count,
       activeSubs: subs.count,
       totalOrders: orders.count,
-      totalRevenue: revenue.total ? parseFloat(revenue.total) : 0
+      totalRevenue: revenue.total ? parseFloat(revenue.total) : 0,
+      recentOrders,
+      topMesses
     });
   } catch (err) {
     console.error(err);

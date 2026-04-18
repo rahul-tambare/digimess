@@ -1,11 +1,15 @@
 const db = require('../config/db');
 const crypto = require('crypto');
+const paymentService = require('../services/paymentService');
+const ledgerService = require('../services/ledgerService');
+const { logAudit } = require('../services/auditService');
+const { roundToPaise } = require('../utils/money');
 
 // POST /api/user/subscriptions
 exports.subscribe = async (req, res) => {
   const connection = await db.getConnection();
   try {
-    const { planId, messId, allowedMesses, startDate: reqStartDate } = req.body;
+    const { planId, messId, allowedMesses, startDate: reqStartDate, paymentMethod } = req.body;
     
     if (!planId) {
       return res.status(400).json({ error: 'planId is required' });
@@ -27,7 +31,7 @@ exports.subscribe = async (req, res) => {
     const [userRows] = await connection.query('SELECT walletBalance FROM Users WHERE id = ? FOR UPDATE', [req.user.id]);
     const balance = parseFloat(userRows[0].walletBalance);
 
-    if (balance < planAmount) {
+    if (balance < planAmount && paymentMethod !== 'razorpay') {
       await connection.rollback();
       return res.status(400).json({ error: 'Insufficient wallet balance', shortfall: planAmount - balance });
     }
@@ -54,6 +58,32 @@ exports.subscribe = async (req, res) => {
       'INSERT INTO WalletTransactions (id, userId, amount, type, description) VALUES (?, ?, ?, ?, ?)',
       [txId, req.user.id, planAmount, 'debit', `Subscription: ${plan.name}`]
     );
+
+    // Best-effort ledger entry for wallet subscription payment
+    try {
+      const consumerAccountId = await ledgerService.getOrCreateAccount('CONSUMER_WALLET', req.user.id, 'USER', connection);
+      const revenueAccountId = await ledgerService.getPlatformAccount('PLATFORM_REVENUE', connection);
+
+      const ledgerTxId = await ledgerService.createTransaction({
+        type: 'ORDER_PAYMENT',
+        amount: planAmount,
+        referenceId: null, // Will be updated after subscription creation
+        referenceType: 'SUBSCRIPTION',
+        idempotencyKey: `sub_wallet_${txId}`,
+        metadata: { planId, planName: plan.name },
+      }, connection);
+
+      await ledgerService.createDoubleEntry({
+        debitAccountId: consumerAccountId,
+        creditAccountId: revenueAccountId,
+        amount: planAmount,
+        transactionId: ledgerTxId,
+        narration: `Subscription purchase: ${plan.name}`,
+        createdBy: req.user.id,
+      }, connection);
+    } catch (ledgerErr) {
+      console.error('Ledger entry for subscription failed (non-critical):', ledgerErr.message);
+    }
 
     // 4. Create Subscription Entry
     const subId = crypto.randomUUID();

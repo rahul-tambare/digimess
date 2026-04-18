@@ -48,6 +48,10 @@ app.use(cors({
   },
   credentials: true
 }));
+// Webhook routes need raw body for signature verification — MUST come before express.json()
+const webhookRoutes = require('./routes/webhookRoutes');
+app.use('/api/webhooks', express.raw({ type: 'application/json' }), webhookRoutes);
+
 app.use(express.json());
 app.use(morgan('dev'));
 
@@ -76,6 +80,7 @@ const providerRoutes = require('./routes/providerRoutes');
 const thaliRoutes = require('./routes/thaliRoutes');
 const favoriteRoutes = require('./routes/favoriteRoutes');
 const couponRoutes = require('./routes/couponRoutes');
+const paymentRoutes = require('./routes/paymentRoutes');
 
 app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/user', userRoutes);
@@ -94,6 +99,7 @@ app.use('/api/provider', providerRoutes);
 app.use('/api/thalis', thaliRoutes);
 app.use('/api/favorites', favoriteRoutes);
 app.use('/api/coupons', couponRoutes);
+app.use('/api/payments', paymentRoutes);
 
 // Health check
 app.get('/', (req, res) => res.json({ status: 'Digi Mess API is running 🍱' }));

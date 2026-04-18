@@ -23,5 +23,9 @@ router.get('/orders/:id', auth, requireRole('vendor'), providerController.getOrd
 // Business Stats
 router.get('/stats', auth, requireRole('vendor'), providerController.getBusinessStats);
 
+// Settlements & Ledger
+router.get('/settlements', auth, requireRole('vendor'), providerController.getMySettlements);
+router.get('/ledger', auth, requireRole('vendor'), providerController.getMyLedger);
+
 
 module.exports = router;

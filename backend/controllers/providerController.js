@@ -1,4 +1,5 @@
 const db = require('../config/db');
+const ledgerService = require('../services/ledgerService');
 
 // =============================================
 // GET /api/provider/dashboard — Dashboard stats
@@ -392,3 +393,59 @@ exports.getBusinessStats = async (req, res) => {
   }
 };
 
+// =============================================
+// GET /api/provider/settlements — My settlement history
+// =============================================
+exports.getMySettlements = async (req, res) => {
+  try {
+    const vendorId = req.user.id;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const offset = (page - 1) * limit;
+
+    const [[{ count }]] = await db.query(
+      'SELECT COUNT(*) as count FROM Settlements WHERE vendorId = ?',
+      [vendorId]
+    );
+
+    const [rows] = await db.query(
+      `SELECT s.*, m.name AS messName
+       FROM Settlements s
+       JOIN Messes m ON s.messId = m.id
+       WHERE s.vendorId = ?
+       ORDER BY s.createdAt DESC
+       LIMIT ? OFFSET ?`,
+      [vendorId, limit, offset]
+    );
+
+    res.json({
+      data: rows,
+      pagination: { total: count, page, limit, totalPages: Math.ceil(count / limit) },
+    });
+  } catch (e) {
+    console.error('My settlements error:', e);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+// =============================================
+// GET /api/provider/ledger — My ledger entries
+// =============================================
+exports.getMyLedger = async (req, res) => {
+  try {
+    const vendorId = req.user.id;
+
+    // Find vendor's ledger account
+    const vendorAccountId = await ledgerService.getOrCreateAccount('VENDOR_WALLET', vendorId, 'USER');
+    const balance = await ledgerService.getBalance(vendorAccountId);
+    const entries = await ledgerService.getEntries(vendorAccountId, {
+      page: req.query.page,
+      limit: req.query.limit,
+    });
+
+    res.json({ balance, ...entries });
+  } catch (e) {
+    console.error('My ledger error:', e);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};

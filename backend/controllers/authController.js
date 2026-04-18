@@ -90,16 +90,21 @@ exports.adminLogin = async (req, res) => {
     try {
         const { email, password } = req.body;
         
-        const [rows] = await db.query('SELECT * FROM Users WHERE email = ? AND role = "admin"', [email]);
-        let adminUser = rows[0];
-
+        // Query AdminUsers table (separate from customer/vendor Users)
+        const [rows] = await db.query(`
+            SELECT a.*, r.id AS roleId, r.name AS roleName, r.isSuperAdmin
+            FROM AdminUsers a
+            JOIN Roles r ON a.roleId = r.id
+            WHERE a.email = ? AND a.isActive = 1
+        `, [email]);
+        
+        const adminUser = rows[0];
         if (!adminUser) {
             return res.status(401).json({ error: 'Invalid credentials' });
         }
 
-        // Compare password if adminUser has a password field
         if (!adminUser.password || typeof adminUser.password !== 'string') {
-            console.error(`Admin user ${email} has no password set in database.`);
+            console.error(`Admin user ${email} has no password set.`);
             return res.status(401).json({ error: 'Invalid credentials' });
         }
 
@@ -108,8 +113,20 @@ exports.adminLogin = async (req, res) => {
             return res.status(401).json({ error: 'Invalid credentials' });
         }
 
+        // Load permissions for this admin's role
+        const [permRows] = await db.query(`
+            SELECT p.slug FROM RolePermissions rp
+            JOIN Permissions p ON rp.permissionId = p.id
+            WHERE rp.roleId = ?
+        `, [adminUser.roleId]);
+
+        const permissions = permRows.map(r => r.slug);
+
+        // Update last login timestamp
+        await db.query('UPDATE AdminUsers SET lastLoginAt = NOW() WHERE id = ?', [adminUser.id]);
+
         const token = jwt.sign(
-            { id: adminUser.id, phone: adminUser.phone, role: adminUser.role },
+            { id: adminUser.id, email: adminUser.email, isAdmin: true },
             process.env.JWT_SECRET || 'supersecretjwtkey_digital_mess',
             { expiresIn: '7d' }
         );
@@ -121,7 +138,12 @@ exports.adminLogin = async (req, res) => {
                 id: adminUser.id,
                 email: adminUser.email,
                 name: adminUser.name,
-                role: adminUser.role
+                role: {
+                    id: adminUser.roleId,
+                    name: adminUser.roleName,
+                },
+                isSuperAdmin: !!adminUser.isSuperAdmin,
+                permissions,
             }
         });
 
@@ -130,3 +152,4 @@ exports.adminLogin = async (req, res) => {
         res.status(500).json({ error: 'Internal server error' });
     }
 };
+
