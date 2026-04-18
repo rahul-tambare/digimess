@@ -52,7 +52,7 @@ exports.getOrders = async (req, res) => {
     const [rows] = await db.query(`
       SELECT o.*, u.name as customerName, u.phone as customerPhone, m.name as messName 
       FROM Orders o
-      JOIN Users u ON o.userId = u.id
+      JOIN Users u ON o.customerId = u.id
       JOIN Messes m ON o.messId = m.id
       ORDER BY o.createdAt DESC
     `);
