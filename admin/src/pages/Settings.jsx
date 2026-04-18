@@ -17,6 +17,8 @@ export default function SettingsPage() {
 
   // FAQ state
   const [faqs, setFaqs] = useState([]);
+  const [faqPage, setFaqPage] = useState(1);
+  const [faqTotal, setFaqTotal] = useState(0);
   const [faqModal, setFaqModal] = useState(false);
   const [editingFaq, setEditingFaq] = useState(null);
   const [faqForm, setFaqForm] = useState({ question: '', answer: '', category: 'general' });
@@ -24,6 +26,8 @@ export default function SettingsPage() {
 
   // Charges state
   const [charges, setCharges] = useState([]);
+  const [chargePage, setChargePage] = useState(1);
+  const [chargeTotal, setChargeTotal] = useState(0);
   const [chargeModal, setChargeModal] = useState(false);
   const [editingCharge, setEditingCharge] = useState(null);
   const [chargeForm, setChargeForm] = useState({ name: '', type: 'fixed', amount: '', appliesTo: 'order' });
@@ -31,6 +35,8 @@ export default function SettingsPage() {
 
   // Coupons state
   const [coupons, setCoupons] = useState([]);
+  const [couponPage, setCouponPage] = useState(1);
+  const [couponTotal, setCouponTotal] = useState(0);
   const [couponModal, setCouponModal] = useState(false);
   const [editingCoupon, setEditingCoupon] = useState(null);
   const [couponForm, setCouponForm] = useState({ code: '', discountType: 'percentage', discountValue: '', minOrderAmount: '', maxDiscount: '', validFrom: '', validTo: '', usageLimit: '' });
@@ -47,17 +53,20 @@ export default function SettingsPage() {
 
   /* ─── Data fetching ─── */
   const fetchFaqs = async () => {
-    try { const res = await faqsApi.getAll(); setFaqs(res.data); }
+    setLoadingFaqs(true);
+    try { const res = await faqsApi.getAll({ page: faqPage, limit: 10 }); setFaqs(res.data.data); setFaqTotal(res.data.pagination.total); }
     catch { toast.error('Failed to load FAQs'); }
     finally { setLoadingFaqs(false); }
   };
   const fetchCharges = async () => {
-    try { const res = await chargesApi.getAll(); setCharges(res.data); }
+    setLoadingCharges(true);
+    try { const res = await chargesApi.getAll({ page: chargePage, limit: 10 }); setCharges(res.data.data); setChargeTotal(res.data.pagination.total); }
     catch { toast.error('Failed to load charges'); }
     finally { setLoadingCharges(false); }
   };
   const fetchCoupons = async () => {
-    try { const res = await couponsApi.getAll(); setCoupons(res.data); }
+    setLoadingCoupons(true);
+    try { const res = await couponsApi.getAll({ page: couponPage, limit: 10 }); setCoupons(res.data.data); setCouponTotal(res.data.pagination.total); }
     catch { toast.error('Failed to load coupons'); }
     finally { setLoadingCoupons(false); }
   };
@@ -67,7 +76,10 @@ export default function SettingsPage() {
     finally { setLoadingConfig(false); }
   };
 
-  useEffect(() => { fetchFaqs(); fetchCharges(); fetchCoupons(); fetchConfig(); }, []);
+  useEffect(() => { fetchFaqs(); }, [faqPage]);
+  useEffect(() => { fetchCharges(); }, [chargePage]);
+  useEffect(() => { fetchCoupons(); }, [couponPage]);
+  useEffect(() => { fetchConfig(); }, []);
 
   /* ─── FAQ handlers ─── */
   const openFaqCreate = () => { setEditingFaq(null); setFaqForm({ question: '', answer: '', category: 'general' }); setFaqModal(true); };
@@ -267,7 +279,16 @@ export default function SettingsPage() {
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1rem' }}>
               <button className="btn btn-primary" onClick={openFaqCreate}><Plus size={16} /> Add FAQ</button>
             </div>
-            <DataTable columns={faqCols} data={faqs} loading={loadingFaqs} searchable={false} />
+            <DataTable
+              columns={faqCols}
+              data={faqs}
+              loading={loadingFaqs}
+              searchable={false}
+              serverSide
+              total={faqTotal}
+              page={faqPage}
+              onPageChange={setFaqPage}
+            />
           </>
         )}
 
@@ -277,7 +298,16 @@ export default function SettingsPage() {
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1rem' }}>
               <button className="btn btn-primary" onClick={openChargeCreate}><Plus size={16} /> Add Charge</button>
             </div>
-            <DataTable columns={chargeCols} data={charges} loading={loadingCharges} searchable={false} />
+            <DataTable
+              columns={chargeCols}
+              data={charges}
+              loading={loadingCharges}
+              searchable={false}
+              serverSide
+              total={chargeTotal}
+              page={chargePage}
+              onPageChange={setChargePage}
+            />
           </>
         )}
 
@@ -287,7 +317,15 @@ export default function SettingsPage() {
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1rem' }}>
               <button className="btn btn-primary" onClick={openCouponCreate}><Plus size={16} /> Add Coupon</button>
             </div>
-            <DataTable columns={couponCols} data={coupons} loading={loadingCoupons} />
+            <DataTable
+              columns={couponCols}
+              data={coupons}
+              loading={loadingCoupons}
+              serverSide
+              total={couponTotal}
+              page={couponPage}
+              onPageChange={setCouponPage}
+            />
           </>
         )}
 

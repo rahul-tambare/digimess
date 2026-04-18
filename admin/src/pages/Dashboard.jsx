@@ -50,10 +50,10 @@ export default function Dashboard() {
   }
 
   const kpis = [
-    { label: 'Total Users', value: stats?.totalUsers?.toLocaleString() || '0', icon: <Users size={22} />, trend: 12.5, color: 'blue' },
-    { label: 'Active Messes', value: stats?.totalMesses?.toLocaleString() || '0', icon: <Store size={22} />, trend: 8.2, color: 'green' },
-    { label: 'Total Orders', value: stats?.totalOrders?.toLocaleString() || '0', icon: <ShoppingBag size={22} />, trend: -3.1, color: 'orange' },
-    { label: 'Revenue', value: `₹${(stats?.totalRevenue || 0).toLocaleString()}`, icon: <IndianRupee size={22} />, trend: 15.7, color: 'purple' },
+    { label: 'Total Users', value: stats?.totalUsers?.toLocaleString() || '0', icon: <Users size={22} />, color: 'blue' },
+    { label: 'Active Messes', value: stats?.totalMesses?.toLocaleString() || '0', icon: <Store size={22} />, color: 'green' },
+    { label: 'Total Orders', value: stats?.totalOrders?.toLocaleString() || '0', icon: <ShoppingBag size={22} />, color: 'orange' },
+    { label: 'Revenue', value: `₹${(stats?.totalRevenue || 0).toLocaleString()}`, icon: <IndianRupee size={22} />, color: 'purple' },
   ];
 
   // Generate basic chart data from orders

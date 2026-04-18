@@ -12,8 +12,22 @@ exports.getFAQs = async (req, res) => {
 
 exports.getAllFAQs = async (req, res) => {
   try {
-    const [rows] = await db.query('SELECT * FROM FAQs ORDER BY displayOrder ASC, createdAt DESC');
-    res.json(rows);
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const offset = (page - 1) * limit;
+
+    const [[{ count }]] = await db.query('SELECT COUNT(*) as count FROM FAQs');
+    const [rows] = await db.query('SELECT * FROM FAQs ORDER BY displayOrder ASC, createdAt DESC LIMIT ? OFFSET ?', [limit, offset]);
+    
+    res.json({
+      data: rows,
+      pagination: {
+        total: count,
+        page,
+        limit,
+        totalPages: Math.ceil(count / limit)
+      }
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error retrieving FAQs' });

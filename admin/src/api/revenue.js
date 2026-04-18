@@ -1,3 +1,3 @@
 import client from './client';
 
-export const getRevenue = () => client.get('/admin/revenue');
+export const getRevenue = (params) => client.get('/admin/revenue', { params });

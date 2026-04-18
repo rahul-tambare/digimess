@@ -56,8 +56,22 @@ exports.validateCoupon = async (req, res) => {
 
 exports.getAllCoupons = async (req, res) => {
   try {
-    const [rows] = await db.query('SELECT * FROM Coupons ORDER BY createdAt DESC');
-    res.json(rows);
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const offset = (page - 1) * limit;
+
+    const [[{ count }]] = await db.query('SELECT COUNT(*) as count FROM Coupons');
+    const [rows] = await db.query('SELECT * FROM Coupons ORDER BY createdAt DESC LIMIT ? OFFSET ?', [limit, offset]);
+    
+    res.json({
+      data: rows,
+      pagination: {
+        total: count,
+        page,
+        limit,
+        totalPages: Math.ceil(count / limit)
+      }
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error retrieving coupons' });

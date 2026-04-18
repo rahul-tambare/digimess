@@ -9,15 +9,19 @@ import * as usersApi from '../api/users';
 export default function UsersPage() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState({ total: 0, totalPages: 0 });
   const [roleFilter, setRoleFilter] = useState('all');
   const [selectedUser, setSelectedUser] = useState(null);
   const [walletModal, setWalletModal] = useState(null);
   const [walletForm, setWalletForm] = useState({ amount: '', type: 'credit', description: '' });
 
   const fetchUsers = async () => {
+    setLoading(true);
     try {
-      const res = await usersApi.getAll();
-      setUsers(res.data);
+      const res = await usersApi.getAll({ page, limit: 10 });
+      setUsers(res.data.data);
+      setPagination(res.data.pagination);
     } catch (err) {
       toast.error('Failed to load users');
     } finally {
@@ -25,7 +29,7 @@ export default function UsersPage() {
     }
   };
 
-  useEffect(() => { fetchUsers(); }, []);
+  useEffect(() => { fetchUsers(); }, [page]);
 
   const filtered = roleFilter === 'all' ? users : users.filter(u => u.role === roleFilter);
 
@@ -92,7 +96,7 @@ export default function UsersPage() {
       <div className="page-header">
         <div>
           <h1>Users</h1>
-          <p className="page-subtitle">{users.length} total users</p>
+          <p className="page-subtitle">{pagination.total} total users</p>
         </div>
       </div>
 
@@ -101,7 +105,11 @@ export default function UsersPage() {
         data={filtered}
         loading={loading}
         emptyMessage="No users found"
-        actions={
+        serverSide
+        total={pagination.total}
+        page={page}
+        onPageChange={setPage}
+        toolbar={
           <select value={roleFilter} onChange={e => setRoleFilter(e.target.value)} className="table-filter-select">
             <option value="all">All Roles</option>
             <option value="customer">Customer</option>

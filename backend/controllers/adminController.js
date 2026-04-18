@@ -13,12 +13,14 @@ exports.getStats = async (req, res) => {
     const [[users]] = await db.query('SELECT COUNT(*) as count FROM Users WHERE isDeleted = 0');
     const [[messes]] = await db.query('SELECT COUNT(*) as count FROM Messes WHERE isDeleted = 0');
     const [[subs]] = await db.query('SELECT COUNT(*) as count FROM Subscriptions WHERE isActive = TRUE AND endDate >= CURDATE()');
+    const [[orders]] = await db.query('SELECT COUNT(*) as count FROM Orders');
     const [[revenue]] = await db.query("SELECT SUM(amount) as total FROM WalletTransactions WHERE type = 'credit'");
     
     res.json({
       totalUsers: users.count,
       totalMesses: messes.count,
       activeSubs: subs.count,
+      totalOrders: orders.count,
       totalRevenue: revenue.total ? parseFloat(revenue.total) : 0
     });
   } catch (err) {
@@ -29,8 +31,25 @@ exports.getStats = async (req, res) => {
 
 exports.getUsers = async (req, res) => {
   try {
-    const [rows] = await db.query('SELECT id, name, phone, email, role, walletBalance, isActive, createdAt FROM Users WHERE isDeleted = 0 ORDER BY createdAt DESC');
-    res.json(rows);
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const offset = (page - 1) * limit;
+
+    const [[{ count }]] = await db.query('SELECT COUNT(*) as count FROM Users WHERE isDeleted = 0');
+    const [rows] = await db.query(
+      'SELECT id, name, phone, email, role, walletBalance, isActive, createdAt FROM Users WHERE isDeleted = 0 ORDER BY createdAt DESC LIMIT ? OFFSET ?',
+      [limit, offset]
+    );
+
+    res.json({
+      data: rows,
+      pagination: {
+        total: count,
+        page,
+        limit,
+        totalPages: Math.ceil(count / limit)
+      }
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error retrieving users' });
@@ -39,8 +58,25 @@ exports.getUsers = async (req, res) => {
 
 exports.getMesses = async (req, res) => {
   try {
-    const [rows] = await db.query('SELECT id, name, address, vendorId, isActive, rating, createdAt FROM Messes WHERE isDeleted = 0 ORDER BY createdAt DESC');
-    res.json(rows);
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const offset = (page - 1) * limit;
+
+    const [[{ count }]] = await db.query('SELECT COUNT(*) as count FROM Messes WHERE isDeleted = 0');
+    const [rows] = await db.query(
+      'SELECT id, name, address, vendorId, isActive, rating, createdAt FROM Messes WHERE isDeleted = 0 ORDER BY createdAt DESC LIMIT ? OFFSET ?',
+      [limit, offset]
+    );
+
+    res.json({
+      data: rows,
+      pagination: {
+        total: count,
+        page,
+        limit,
+        totalPages: Math.ceil(count / limit)
+      }
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error retrieving messes' });
@@ -49,14 +85,29 @@ exports.getMesses = async (req, res) => {
 
 exports.getOrders = async (req, res) => {
   try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const offset = (page - 1) * limit;
+
+    const [[{ count }]] = await db.query('SELECT COUNT(*) as count FROM Orders');
     const [rows] = await db.query(`
       SELECT o.*, u.name as customerName, u.phone as customerPhone, m.name as messName 
       FROM Orders o
       JOIN Users u ON o.customerId = u.id
       JOIN Messes m ON o.messId = m.id
       ORDER BY o.createdAt DESC
-    `);
-    res.json(rows);
+      LIMIT ? OFFSET ?
+    `, [limit, offset]);
+
+    res.json({
+      data: rows,
+      pagination: {
+        total: count,
+        page,
+        limit,
+        totalPages: Math.ceil(count / limit)
+      }
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error retrieving orders' });
@@ -114,14 +165,29 @@ exports.updateAppConfig = async (req, res) => {
 
 exports.getSubscriptions = async (req, res) => {
   try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const offset = (page - 1) * limit;
+
+    const [[{ count }]] = await db.query('SELECT COUNT(*) as count FROM Subscriptions');
     const [rows] = await db.query(`
       SELECT s.*, u.name as customerName, u.phone as customerPhone, sp.name as planName 
       FROM Subscriptions s
       JOIN Users u ON s.customerId = u.id
       LEFT JOIN SubscriptionPlans sp ON s.planId = sp.id
       ORDER BY s.startDate DESC
-    `);
-    res.json(rows);
+      LIMIT ? OFFSET ?
+    `, [limit, offset]);
+
+    res.json({
+      data: rows,
+      pagination: {
+        total: count,
+        page,
+        limit,
+        totalPages: Math.ceil(count / limit)
+      }
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error retrieving subscriptions' });
@@ -184,21 +250,35 @@ exports.getRevenue = async (req, res) => {
       GROUP BY category
     `);
 
-    // Recent transactions
+    // Recent transactions with pagination
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const offset = (page - 1) * limit;
+
+    const [[{ count: transCount }]] = await db.query("SELECT COUNT(*) as count FROM WalletTransactions");
+
     const [transactions] = await db.query(`
       SELECT wt.id, wt.amount, wt.type, wt.description, wt.createdAt as date, u.name as user
       FROM WalletTransactions wt
       JOIN Users u ON wt.userId = u.id
       ORDER BY wt.createdAt DESC
-      LIMIT 20
-    `);
+      LIMIT ? OFFSET ?
+    `, [limit, offset]);
 
     res.json({
       totalRevenue: parseFloat(totalRow.total),
       monthRevenue: parseFloat(monthRow.total),
       monthlyTrend: monthlyTrend.reverse(),
       breakdown,
-      transactions,
+      transactions: {
+        data: transactions,
+        pagination: {
+          total: transCount,
+          page,
+          limit,
+          totalPages: Math.ceil(transCount / limit)
+        }
+      },
     });
   } catch (err) {
     console.error(err);

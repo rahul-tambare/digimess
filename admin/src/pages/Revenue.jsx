@@ -12,20 +12,21 @@ const donutColors = ['#6366f1', '#22c55e', '#f59e0b', '#a855f7', '#ef4444'];
 export default function Revenue() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
 
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const res = await revenueApi.getRevenue();
-        setData(res.data);
-      } catch (err) {
-        toast.error('Failed to load revenue data');
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
-  }, []);
+  const load = async () => {
+    setLoading(true);
+    try {
+      const res = await revenueApi.getRevenue({ page, limit: 10 });
+      setData(res.data);
+    } catch (err) {
+      toast.error('Failed to load revenue data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { load(); }, [page]);
 
   if (loading) {
     return (
@@ -38,7 +39,7 @@ export default function Revenue() {
   const kpis = [
     { label: 'Total Revenue', value: `₹${(data?.totalRevenue || 0).toLocaleString()}`, icon: <IndianRupee size={22} />, trend: 0, color: 'green' },
     { label: 'This Month', value: `₹${(data?.monthRevenue || 0).toLocaleString()}`, icon: <TrendingUp size={22} />, trend: 0, color: 'blue' },
-    { label: 'Transactions', value: String(data?.transactions?.length || 0), icon: <Wallet size={22} />, trend: 0, color: 'purple' },
+    { label: 'Transactions', value: String(data?.transactions?.pagination?.total || 0), icon: <Wallet size={22} />, trend: 0, color: 'purple' },
   ];
 
   const chartData = (data?.monthlyTrend || []).map(m => ({
@@ -135,7 +136,15 @@ export default function Revenue() {
         <div className="card-header">
           <h3>Recent Transactions</h3>
         </div>
-        <DataTable columns={txCols} data={data?.transactions || []} emptyMessage="No transactions yet" />
+        <DataTable
+          columns={txCols}
+          data={data?.transactions?.data || []}
+          emptyMessage="No transactions yet"
+          serverSide
+          total={data?.transactions?.pagination?.total || 0}
+          page={page}
+          onPageChange={setPage}
+        />
       </div>
     </div>
   );

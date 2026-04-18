@@ -10,14 +10,18 @@ import * as messesApi from '../api/messes';
 export default function MessesPage() {
   const [messes, setMesses] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState({ total: 0, totalPages: 0 });
   const [tab, setTab] = useState('all');
   const [selectedMess, setSelectedMess] = useState(null);
   const [approving, setApproving] = useState(null); // { id, isApproved }
 
   const fetchMesses = async () => {
+    setLoading(true);
     try {
-      const res = await messesApi.getAll();
-      setMesses(res.data);
+      const res = await messesApi.getAll({ page, limit: 10 });
+      setMesses(res.data.data);
+      setPagination(res.data.pagination);
     } catch (err) {
       toast.error('Failed to load messes');
     } finally {
@@ -25,7 +29,7 @@ export default function MessesPage() {
     }
   };
 
-  useEffect(() => { fetchMesses(); }, []);
+  useEffect(() => { fetchMesses(); }, [page]);
 
   const handleApprove = async () => {
     try {
@@ -98,7 +102,7 @@ export default function MessesPage() {
       <div className="page-header">
         <div>
           <h1>Messes</h1>
-          <p className="page-subtitle">{messes.length} registered messes</p>
+          <p className="page-subtitle">{pagination.total} registered messes</p>
         </div>
       </div>
 
@@ -110,7 +114,16 @@ export default function MessesPage() {
         ))}
       </div>
 
-      <DataTable columns={columns} data={filtered} loading={loading} emptyMessage="No messes found" />
+      <DataTable
+        columns={columns}
+        data={filtered}
+        loading={loading}
+        emptyMessage="No messes found"
+        serverSide
+        total={pagination.total}
+        page={page}
+        onPageChange={setPage}
+      />
 
       {/* Mess Detail Modal */}
       <Modal open={!!selectedMess} onClose={() => setSelectedMess(null)} title={selectedMess?.name || 'Mess Details'}>

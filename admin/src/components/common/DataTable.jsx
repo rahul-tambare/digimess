@@ -10,6 +10,11 @@ export default function DataTable({
   emptyMessage = 'No data found',
   emptyIcon = '📭',
   toolbar,
+  // Server-side pagination props
+  serverSide = false,
+  total = 0,
+  page: externalPage = 1,
+  onPageChange,
 }) {
   const [search, setSearch] = useState('');
   const [sortKey, setSortKey] = useState(null);
@@ -27,6 +32,7 @@ export default function DataTable({
   };
 
   const filtered = useMemo(() => {
+    if (serverSide) return data;
     if (!search.trim()) return data;
     const q = search.toLowerCase();
     return data.filter(row =>
@@ -35,10 +41,10 @@ export default function DataTable({
         return v != null && String(v).toLowerCase().includes(q);
       })
     );
-  }, [data, search, columns]);
+  }, [data, search, columns, serverSide]);
 
   const sorted = useMemo(() => {
-    if (!sortKey) return filtered;
+    if (serverSide || !sortKey) return filtered;
     return [...filtered].sort((a, b) => {
       const aVal = a[sortKey], bVal = b[sortKey];
       if (aVal == null) return 1;
@@ -48,11 +54,21 @@ export default function DataTable({
         : String(aVal).localeCompare(String(bVal));
       return sortDir === 'asc' ? cmp : -cmp;
     });
-  }, [filtered, sortKey, sortDir]);
+  }, [filtered, sortKey, sortDir, serverSide]);
 
-  const totalPages = Math.max(1, Math.ceil(sorted.length / pageSize));
-  const safePages = Math.min(page, totalPages);
-  const paged = sorted.slice((safePages - 1) * pageSize, safePages * pageSize);
+  const totalRecords = serverSide ? total : sorted.length;
+  const totalPages = Math.max(1, Math.ceil(totalRecords / pageSize));
+  const currentPage = serverSide ? externalPage : page;
+  const safePages = Math.min(currentPage, totalPages);
+  const paged = serverSide ? data : sorted.slice((safePages - 1) * pageSize, safePages * pageSize);
+
+  const handlePageChange = (newPage) => {
+    if (serverSide) {
+      onPageChange && onPageChange(newPage);
+    } else {
+      setPage(newPage);
+    }
+  };
 
   if (loading) {
     return (
@@ -141,13 +157,13 @@ export default function DataTable({
         </tbody>
       </table>
 
-      {sorted.length > pageSize && (
+      {totalRecords > pageSize && (
         <div className="data-table-footer">
           <span>
-            Showing {(safePages - 1) * pageSize + 1}–{Math.min(safePages * pageSize, sorted.length)} of {sorted.length}
+            Showing {(safePages - 1) * pageSize + 1}–{Math.min(safePages * pageSize, totalRecords)} of {totalRecords}
           </span>
           <div className="data-table-pagination">
-            <button disabled={safePages <= 1} onClick={() => setPage(p => p - 1)}>
+            <button disabled={safePages <= 1} onClick={() => handlePageChange(safePages - 1)}>
               <ChevronLeft size={14} />
             </button>
             {Array.from({ length: Math.min(totalPages, 5) }).map((_, i) => {
@@ -156,13 +172,13 @@ export default function DataTable({
                 <button
                   key={pageNum}
                   className={safePages === pageNum ? 'active' : ''}
-                  onClick={() => setPage(pageNum)}
+                  onClick={() => handlePageChange(pageNum)}
                 >
                   {pageNum}
                 </button>
               );
             })}
-            <button disabled={safePages >= totalPages} onClick={() => setPage(p => p + 1)}>
+            <button disabled={safePages >= totalPages} onClick={() => handlePageChange(safePages + 1)}>
               <ChevronRight size={14} />
             </button>
           </div>

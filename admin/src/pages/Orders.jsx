@@ -11,22 +11,25 @@ const statuses = ['all', 'pending', 'accepted', 'confirmed', 'preparing', 'out_f
 export default function OrdersPage() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState({ total: 0, totalPages: 0 });
   const [tab, setTab] = useState('all');
   const [selectedOrder, setSelectedOrder] = useState(null);
 
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const res = await ordersApi.getAll();
-        setOrders(res.data);
-      } catch (err) {
-        toast.error('Failed to load orders');
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
-  }, []);
+  const fetchOrders = async () => {
+    setLoading(true);
+    try {
+      const res = await ordersApi.getAll({ page, limit: 10 });
+      setOrders(res.data.data);
+      setPagination(res.data.pagination);
+    } catch (err) {
+      toast.error('Failed to load orders');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { fetchOrders(); }, [page]);
 
   const filtered = tab === 'all' ? orders : orders.filter(o => o.status === tab);
 
@@ -93,7 +96,7 @@ export default function OrdersPage() {
       <div className="page-header">
         <div>
           <h1>Orders</h1>
-          <p className="page-subtitle">{orders.length} total orders</p>
+          <p className="page-subtitle">{pagination.total} total orders</p>
         </div>
       </div>
 
@@ -106,7 +109,16 @@ export default function OrdersPage() {
         ))}
       </div>
 
-      <DataTable columns={columns} data={filtered} loading={loading} emptyMessage="No orders found" />
+      <DataTable
+        columns={columns}
+        data={filtered}
+        loading={loading}
+        emptyMessage="No orders found"
+        serverSide
+        total={pagination.total}
+        page={page}
+        onPageChange={setPage}
+      />
 
       {/* Order Detail Modal */}
       <Modal open={!!selectedOrder} onClose={() => setSelectedOrder(null)} title={`Order ${selectedOrder?.id?.slice(0, 8) || ''}`}>

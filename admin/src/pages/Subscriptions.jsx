@@ -9,21 +9,24 @@ import * as subsApi from '../api/subscriptions';
 export default function Subscriptions() {
   const [subs, setSubs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState({ total: 0, totalPages: 0 });
   const [tab, setTab] = useState('all');
 
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const res = await subsApi.getAll();
-        setSubs(res.data);
-      } catch (err) {
-        toast.error('Failed to load subscriptions');
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
-  }, []);
+  const fetchSubs = async () => {
+    setLoading(true);
+    try {
+      const res = await subsApi.getAll({ page, limit: 10 });
+      setSubs(res.data.data);
+      setPagination(res.data.pagination);
+    } catch (err) {
+      toast.error('Failed to load subscriptions');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { fetchSubs(); }, [page]);
 
   const activeSubs = subs.filter(s => s.status === 'active');
   const expiredSubs = subs.filter(s => s.status !== 'active');
@@ -121,7 +124,16 @@ export default function Subscriptions() {
         ))}
       </div>
 
-      <DataTable columns={columns} data={filtered} loading={loading} emptyMessage="No subscriptions found" />
+      <DataTable
+        columns={columns}
+        data={filtered}
+        loading={loading}
+        emptyMessage="No subscriptions found"
+        serverSide
+        total={pagination.total}
+        page={page}
+        onPageChange={setPage}
+      />
     </div>
   );
 }
