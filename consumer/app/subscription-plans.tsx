@@ -1,14 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Platform, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Platform, ActivityIndicator, Alert, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft, Check, Calendar } from 'lucide-react-native';
-import { useRouter } from 'expo-router';
-import { useSubscriptionStore, useWalletStore } from '@/stores/dataStore';
+import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useSubscriptionStore, useWalletStore, useDataStore } from '@/stores/dataStore';
 
 export default function SubscriptionPlansScreen() {
   const router = useRouter();
+  const { messId } = useLocalSearchParams<{ messId?: string }>();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [showPicker, setShowPicker] = useState(false);
+  const [selectedMesses, setSelectedMesses] = useState<string[]>([]);
 
   const plans = useSubscriptionStore(s => s.plans);
   const subscriptions = useSubscriptionStore(s => s.subscriptions);
@@ -20,10 +23,14 @@ export default function SubscriptionPlansScreen() {
   const walletBalance = useWalletStore(s => s.balance);
   const fetchBalance = useWalletStore(s => s.fetchBalance);
 
+  const messes = useDataStore(s => s.messes);
+  const fetchMesses = useDataStore(s => s.fetchMesses);
+
   useEffect(() => {
     fetchPlans();
     fetchBalance();
     fetchSubscriptions();
+    fetchMesses({}, 1);
   }, []);
 
   // Auto-select most popular plan on load
@@ -42,8 +49,9 @@ export default function SubscriptionPlansScreen() {
   const handleConfirm = async () => {
     if (!selected) return;
 
-    if (walletBalance < selected.price) {
-      const shortfall = selected.price - walletBalance;
+    const planPrice = parseFloat(selected.price);
+    if (walletBalance < planPrice) {
+      const shortfall = planPrice - walletBalance;
       if (Platform.OS === 'web') {
         const goTopUp = window.confirm(
           `Insufficient Wallet Balance\n\nYou need ₹${shortfall} more to purchase this plan. Top up your wallet to continue.\n\nPress OK to top up.`
@@ -65,7 +73,16 @@ export default function SubscriptionPlansScreen() {
     const doPurchase = async () => {
       setSubmitting(true);
       try {
-        await purchasePlan(selected.id);
+        // Updated to start today instead of tomorrow based on user request
+        const today = new Date();
+        const startDateStr = today.toISOString().split('T')[0];
+        
+        await purchasePlan(
+          selected.id, 
+          messId, 
+          startDateStr, 
+          selectedMesses.length > 0 ? selectedMesses : undefined
+        );
         if (Platform.OS === 'web') {
           window.alert('Success! 🎉\n\nYour subscription is now active.');
           router.replace('/subscriptions' as any);
@@ -198,11 +215,29 @@ export default function SubscriptionPlansScreen() {
             <View>
               <Text style={s.dateLabel}>STARTS FROM</Text>
               <Text style={s.dateValue}>
-                {new Date(Date.now() + 86400000).toLocaleDateString('en-IN', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' })}
+                {new Date(Date.now()).toLocaleDateString('en-IN', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' })}
               </Text>
             </View>
           </View>
         </View>
+
+        {/* Included Messes */}
+        {!messId && (
+          <View style={s.datePicker}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+              <Text style={{ fontSize: 20 }}>🏪</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={s.dateLabel}>INCLUDED MESSES</Text>
+                <Text style={s.dateValue}>
+                  {selectedMesses.length > 0 ? `${selectedMesses.length} Messes Selected` : 'All Messes (Global)'}
+                </Text>
+              </View>
+              <TouchableOpacity onPress={() => setShowPicker(true)}>
+                <Text style={{ color: '#FF6B35', fontWeight: '700', fontSize: 13 }}>Customize</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
 
         {/* Wallet deduction notice */}
         <Text style={s.terms}>
@@ -224,6 +259,50 @@ export default function SubscriptionPlansScreen() {
           {submitting ? <ActivityIndicator color="#FFF" /> : <Text style={s.confirmBtnText}>Confirm & Pay →</Text>}
         </TouchableOpacity>
       </View>
+
+      {/* Mess Picker Modal */}
+      <Modal visible={showPicker} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setShowPicker(false)}>
+        <SafeAreaView style={{ flex: 1, backgroundColor: '#F8FAFC' }}>
+          <View style={s.header}>
+            <TouchableOpacity onPress={() => setShowPicker(false)} style={s.backBtn}>
+              <ArrowLeft size={22} color="#0F172A" />
+            </TouchableOpacity>
+            <Text style={s.headerTitle}>Select up to 4 Messes</Text>
+          </View>
+          <ScrollView contentContainerStyle={{ padding: 20 }}>
+            {messes.map((item: any) => {
+              const checked = selectedMesses.includes(item.id);
+              return (
+                <TouchableOpacity 
+                  key={item.id} 
+                  style={[s.messListItem, checked && s.messListItemSelected]}
+                  onPress={() => {
+                    if (checked) {
+                      setSelectedMesses(prev => prev.filter(id => id !== item.id));
+                    } else if (selectedMesses.length < 4) {
+                      setSelectedMesses(prev => [...prev, item.id]);
+                    } else {
+                      if (Platform.OS === 'web') {
+                        window.alert('You can only select up to 4 messes.');
+                      } else {
+                        Alert.alert('Limit Reached', 'You can only select up to 4 messes.');
+                      }
+                    }
+                  }}
+                >
+                  <Text style={{ flex: 1, fontSize: 16, fontWeight: '600', color: '#0F172A' }}>{item.name}</Text>
+                  {checked && <Check size={20} color="#FF6B35" />}
+                </TouchableOpacity>
+              )
+            })}
+          </ScrollView>
+          <View style={{ padding: 20, backgroundColor: '#FFF', borderTopWidth: 1, borderColor: '#F1F5F9' }}>
+            <TouchableOpacity style={s.confirmBtn} onPress={() => setShowPicker(false)}>
+              <Text style={[s.confirmBtnText, { textAlign: 'center' }]}>Done</Text>
+            </TouchableOpacity>
+          </View>
+        </SafeAreaView>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -290,4 +369,9 @@ const s = StyleSheet.create({
     }),
   },
   confirmBtnText: { color: '#FFF', fontSize: 16, fontWeight: '800' },
+  messListItem: {
+    flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFF', 
+    padding: 16, borderRadius: 14, marginBottom: 12, borderWidth: 1, borderColor: '#F1F5F9'
+  },
+  messListItemSelected: { borderColor: '#FF6B35', backgroundColor: '#FFFBF7' },
 });

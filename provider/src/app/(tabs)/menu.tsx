@@ -32,6 +32,8 @@ export default function MenuScreen() {
   const [thaliItems, setThaliItems] = useState('');
   const [thaliPrice, setThaliPrice] = useState('');
   const [thaliDiscountPrice, setThaliDiscountPrice] = useState('');
+  const [isSubscriptionThali, setIsSubscriptionThali] = useState(false);
+  const [subscriptionExtraCharge, setSubscriptionExtraCharge] = useState('');
 
   // Item form state
   const [itemName, setItemName] = useState('');
@@ -43,6 +45,7 @@ export default function MenuScreen() {
   const resetThaliForm = () => {
     setThaliName(''); setThaliMealTime('Lunch'); setThaliType('Veg');
     setThaliItems(''); setThaliPrice(''); setThaliDiscountPrice('');
+    setIsSubscriptionThali(false); setSubscriptionExtraCharge('');
   };
 
   const resetItemForm = () => {
@@ -83,6 +86,8 @@ export default function MenuScreen() {
         itemsIncluded: thaliItems,
         price: parseFloat(thaliPrice),
         discountedPrice: thaliDiscountPrice ? parseFloat(thaliDiscountPrice) : undefined,
+        isSubscriptionThali,
+        subscriptionExtraCharge: (isSubscriptionThali && subscriptionExtraCharge) ? parseFloat(subscriptionExtraCharge) : 0,
       });
       resetThaliForm();
       setShowAddThali(false);
@@ -284,6 +289,19 @@ export default function MenuScreen() {
             <FormField label="Price (₹)" required placeholder="e.g. 120" value={thaliPrice} onChangeText={setThaliPrice} keyboardType="number-pad" />
             <FormField label="Discounted Price (₹)" placeholder="Optional" value={thaliDiscountPrice} onChangeText={setThaliDiscountPrice} keyboardType="number-pad" />
 
+            <Text style={styles.fieldLabel}>Available on Subscription?</Text>
+            <View style={styles.chipRow}>
+              {([true, false] as const).map(v => (
+                <Pressable key={v ? 'Yes' : 'No'} style={[styles.chip, isSubscriptionThali === v && styles.chipActive]} onPress={() => setIsSubscriptionThali(v)}>
+                  <Text style={[styles.chipText, isSubscriptionThali === v && styles.chipTextActive]}>{v ? 'Yes' : 'No'}</Text>
+                </Pressable>
+              ))}
+            </View>
+
+            {isSubscriptionThali && (
+              <FormField label="Extra Charge on Subscription (₹)" placeholder="Optional e.g. 50" value={subscriptionExtraCharge} onChangeText={setSubscriptionExtraCharge} keyboardType="number-pad" />
+            )}
+
             <Pressable style={styles.saveBtn} onPress={handleAddThali}>
               <Text style={styles.saveBtnText}>Save Thali</Text>
             </Pressable>
@@ -337,14 +355,15 @@ const styles = StyleSheet.create({
   },
   title: { fontSize: FontSizes.xxxl, fontWeight: FontWeights.extrabold, color: Colors.textPrimary, letterSpacing: -0.5, marginBottom: Spacing.lg },
   tabRow: { flexDirection: 'row', gap: Spacing.sm },
-  tab: { flex: 1, paddingVertical: Spacing.md, borderRadius: BorderRadius.md, backgroundColor: Colors.background, alignItems: 'center' },
+  tab: { flex: 1, paddingVertical: Spacing.md, borderRadius: BorderRadius.md, backgroundColor: Colors.background, alignItems: 'center', justifyContent: 'center' },
   tabActive: { backgroundColor: Colors.primaryBg },
-  tabText: { fontSize: FontSizes.md, fontWeight: FontWeights.semibold, color: Colors.textTertiary },
+  tabText: { fontSize: FontSizes.md, fontWeight: FontWeights.semibold, color: Colors.textTertiary, includeFontPadding: false, textAlignVertical: 'center' },
   tabTextActive: { color: Colors.primary, fontWeight: FontWeights.bold },
   searchContainer: { paddingHorizontal: Spacing.xl, paddingVertical: Spacing.md },
   searchInput: {
     height: 44, backgroundColor: Colors.surface, borderWidth: 1, borderColor: Colors.border,
     borderRadius: BorderRadius.full, paddingHorizontal: Spacing.lg, fontSize: FontSizes.md, color: Colors.textPrimary,
+    textAlignVertical: 'center', includeFontPadding: false,
   },
   scrollContent: { padding: Spacing.xl, paddingBottom: 120 },
   menuItemCard: {
@@ -374,7 +393,7 @@ const styles = StyleSheet.create({
     borderRadius: 30, backgroundColor: Colors.primary, justifyContent: 'center',
     alignItems: 'center', ...Shadows.lg,
   },
-  fabText: { fontSize: 28, color: Colors.textInverse, fontWeight: FontWeights.bold, marginTop: -2 },
+  fabText: { fontSize: 28, color: Colors.textInverse, fontWeight: FontWeights.bold, lineHeight: 33, textAlign: 'center', includeFontPadding: false },
   fieldLabel: { fontSize: FontSizes.md, fontWeight: FontWeights.semibold, color: Colors.textPrimary, marginBottom: Spacing.sm, marginTop: Spacing.sm },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm, marginBottom: Spacing.lg },
   chip: { paddingHorizontal: Spacing.lg, paddingVertical: Spacing.sm, borderRadius: BorderRadius.full, backgroundColor: Colors.background, borderWidth: 1, borderColor: Colors.border },

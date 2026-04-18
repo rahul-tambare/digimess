@@ -20,7 +20,7 @@ export default function OrderDetailScreen() {
   // Polling logic with useFocusEffect so it stops when navigating away, and stops when order is terminal
   useFocusEffect(
     useCallback(() => {
-      let interval: NodeJS.Timeout;
+      let interval: ReturnType<typeof setInterval>;
       
       const fetchOrder = async () => {
         if (!id) return;
@@ -99,17 +99,17 @@ export default function OrderDetailScreen() {
             </View>
           )}
           {/* Payment & Delivery Badges */}
-          <View style={{ flexDirection: 'row', gap: 8, marginTop: 12 }}>
+          <View style={styles.badgeRow}>
             {order.paymentMethod && (
-              <View style={{ backgroundColor: '#F0F9FF', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 }}>
-                <Text style={{ fontSize: 11, fontWeight: '700', color: '#0369A1' }}>
+              <View style={styles.paymentBadge}>
+                <Text style={styles.paymentBadgeText}>
                   💳 {order.paymentMethod.toUpperCase()}
                 </Text>
               </View>
             )}
             {order.deliveryType && (
-              <View style={{ backgroundColor: '#FFF7ED', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 }}>
-                <Text style={{ fontSize: 11, fontWeight: '700', color: '#C2410C' }}>
+              <View style={styles.deliveryBadge}>
+                <Text style={styles.deliveryBadgeText}>
                   {order.deliveryType === 'delivery' ? '🚚 Delivery' : '🏃 Pickup'}
                 </Text>
               </View>
@@ -223,12 +223,12 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.lg, ...Shadows.sm, borderWidth: 1, borderColor: Colors.borderLight,
   },
   cardTitle: { fontSize: FontSizes.lg, fontWeight: FontWeights.bold, color: Colors.textPrimary, marginBottom: Spacing.lg },
-  customerRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
+  customerRow: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.md },
   avatar: { width: 44, height: 44, borderRadius: 22, backgroundColor: Colors.primaryBg, justifyContent: 'center', alignItems: 'center' },
   avatarText: { fontSize: FontSizes.md, fontWeight: FontWeights.bold, color: Colors.primary },
   customerName: { fontSize: FontSizes.lg, fontWeight: FontWeights.semibold, color: Colors.textPrimary },
   customerMeta: { fontSize: FontSizes.sm, color: Colors.textTertiary, marginTop: 2 },
-  callBtn: { backgroundColor: Colors.successBg, paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm, borderRadius: BorderRadius.full },
+  callBtn: { backgroundColor: Colors.successBg, paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm, borderRadius: BorderRadius.full, alignItems: 'center', justifyContent: 'center', alignSelf: 'flex-start', marginTop: 2 },
   callBtnText: { fontSize: FontSizes.sm, fontWeight: FontWeights.bold, color: Colors.success },
   addressBox: { marginTop: Spacing.lg, backgroundColor: Colors.background, borderRadius: BorderRadius.md, padding: Spacing.md },
   addressLabel: { fontSize: FontSizes.sm, fontWeight: FontWeights.bold, color: Colors.textSecondary, marginBottom: 4 },
@@ -240,10 +240,10 @@ const styles = StyleSheet.create({
   noteBox: { marginTop: Spacing.md, backgroundColor: Colors.warningBg, borderRadius: BorderRadius.md, padding: Spacing.md },
   noteLabel: { fontSize: FontSizes.sm, fontWeight: FontWeights.bold, color: Colors.warningDark, marginBottom: 4 },
   noteText: { fontSize: FontSizes.md, color: Colors.warningDark, fontStyle: 'italic' },
-  priceRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: Spacing.sm },
+  priceRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', paddingVertical: Spacing.sm },
   priceLabel: { fontSize: FontSizes.md, color: Colors.textSecondary },
   priceValue: { fontSize: FontSizes.md, fontWeight: FontWeights.semibold, color: Colors.textPrimary },
-  totalRow: { borderTopWidth: 1, borderTopColor: Colors.border, marginTop: Spacing.sm, paddingTop: Spacing.md },
+  totalRow: { borderTopWidth: 1, borderTopColor: Colors.border, marginTop: Spacing.sm, paddingTop: Spacing.md, alignItems: 'baseline' },
   totalLabel: { fontSize: FontSizes.lg, fontWeight: FontWeights.bold, color: Colors.textPrimary },
   totalValue: { fontSize: FontSizes.xl, fontWeight: FontWeights.extrabold, color: Colors.primary },
   timelineItem: { flexDirection: 'row', marginBottom: 0 },
@@ -262,4 +262,9 @@ const styles = StyleSheet.create({
   acceptBtnText: { color: Colors.textInverse, fontSize: FontSizes.lg, fontWeight: FontWeights.bold },
   fullBtn: { paddingVertical: Spacing.lg, borderRadius: BorderRadius.md, alignItems: 'center' },
   fullBtnText: { color: Colors.textInverse, fontSize: FontSizes.lg, fontWeight: FontWeights.bold },
+  badgeRow: { flexDirection: 'row', gap: 8, marginTop: 12, flexWrap: 'wrap' },
+  paymentBadge: { backgroundColor: '#F0F9FF', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, justifyContent: 'center', alignItems: 'center' },
+  paymentBadgeText: { fontSize: 11, fontWeight: '700', color: '#0369A1', includeFontPadding: false },
+  deliveryBadge: { backgroundColor: '#FFF7ED', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, justifyContent: 'center', alignItems: 'center' },
+  deliveryBadgeText: { fontSize: 11, fontWeight: '700', color: '#C2410C', includeFontPadding: false },
 });

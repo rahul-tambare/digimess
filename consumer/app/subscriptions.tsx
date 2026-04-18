@@ -142,9 +142,10 @@ export default function SubscriptionsScreen() {
         ) : (
           <>
             {subs.map((sub: any) => {
-              const isActive = sub.isActive && new Date(sub.endDate) >= new Date();
+              const isActive = Boolean(sub.isActive) && new Date(sub.endDate) >= new Date();
               const isPaused = isActive && sub.pauseStartDate != null;
               const isLoading = actionLoading === sub.id;
+              console.log('Subscription rendering:', { id: sub.id, type: sub.type, planName: sub.planName, messName: sub.messName, allowedMesses: sub.allowedMesses });
 
               return (
                 <View key={sub.id} style={[s.card, isActive && s.cardActive]}>
@@ -154,6 +155,26 @@ export default function SubscriptionsScreen() {
                       <Text style={s.planName}>
                         {sub.planName || (sub.type === 'multi_mess' ? 'Digi Mess Pro Pass' : sub.messName || 'Meal Plan')}
                       </Text>
+                      {sub.type === 'multi_mess' && sub.allowedMesses ? (
+                        <Text style={s.messInfo}>
+                          📍 Valid at {(() => {
+                            try {
+                              const messes = typeof sub.allowedMesses === 'string' ? JSON.parse(sub.allowedMesses) : sub.allowedMesses;
+                              return Array.isArray(messes) && messes.length > 0 ? messes.length : 'multiple';
+                            } catch (e) {
+                              return 'multiple';
+                            }
+                          })()} messes
+                        </Text>
+                      ) : sub.messName ? (
+                        <Text style={s.messInfo}>
+                          📍 @ {sub.messName}
+                        </Text>
+                      ) : (
+                        <Text style={s.messInfo}>
+                          📍 Valid at All Messes
+                        </Text>
+                      )}
                       <Text style={s.dates}>
                         {new Date(sub.startDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })} to{' '}
                         {new Date(sub.endDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
@@ -254,6 +275,7 @@ const s = StyleSheet.create({
   cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 14, marginBottom: 20 },
   iconWrap: { width: 52, height: 52, borderRadius: 18, backgroundColor: '#F8FAFC', justifyContent: 'center', alignItems: 'center' },
   planName: { fontSize: 16, fontWeight: '800', color: '#0F172A' },
+  messInfo: { fontSize: 13, color: '#FF6B35', fontWeight: '700', marginTop: 2 },
   dates: { fontSize: 12, color: '#94A3B8', fontWeight: '500', marginTop: 2 },
   statsRow: { flexDirection: 'row', gap: 10, marginBottom: 16 },
   statBox: { flex: 1, backgroundColor: '#F8FAFC', padding: 14, borderRadius: 14 },

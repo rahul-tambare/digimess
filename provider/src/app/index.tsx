@@ -305,12 +305,14 @@ const styles = StyleSheet.create({
     fontWeight: FontWeights.extrabold,
     color: Colors.textInverse,
     letterSpacing: -1,
+    textAlign: 'center',
   },
   splashSubtitle: {
     fontSize: FontSizes.lg,
     color: 'rgba(255,255,255,0.8)',
     fontWeight: FontWeights.medium,
     marginTop: Spacing.xs,
+    textAlign: 'center',
   },
   splashDots: {
     flexDirection: 'row',
@@ -413,6 +415,8 @@ const styles = StyleSheet.create({
     fontWeight: FontWeights.semibold,
     color: Colors.textPrimary,
     letterSpacing: 2,
+    textAlignVertical: 'center',
+    includeFontPadding: false,
   },
   inputError: {
     borderColor: Colors.error,

@@ -45,6 +45,8 @@ export interface AdaptedThali {
   available: boolean;
   isSpecial: boolean;
   rating: number;
+  isSubscriptionThali: boolean;
+  subscriptionExtraCharge: number;
 }
 
 export interface AdaptedItem {
@@ -129,6 +131,8 @@ export function adaptThali(raw: any): AdaptedThali {
     available: raw.isAvailable !== undefined ? Boolean(raw.isAvailable) : true,
     isSpecial: Boolean(raw.isSpecial),
     rating: raw.rating || 4.0,
+    isSubscriptionThali: Boolean(raw.isSubscriptionThali),
+    subscriptionExtraCharge: parseFloat(raw.subscriptionExtraCharge) || 0,
   };
 }
 

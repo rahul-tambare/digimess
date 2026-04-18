@@ -15,6 +15,8 @@ export interface ThaliCardProps {
   isSpecial?: boolean;
   rating?: number;
   quantity?: number;
+  isSubscriptionThali?: boolean;
+  subscriptionExtraCharge?: number;
   onAdd: () => void;
   onIncrement?: () => void;
   onDecrement?: () => void;
@@ -23,7 +25,7 @@ export interface ThaliCardProps {
 
 export function ThaliCard({
   name, mealTime, type, items, price, discountedPrice, image,
-  available, isSpecial, rating, quantity = 0, onAdd, onIncrement, onDecrement,
+  available, isSpecial, rating, quantity = 0, isSubscriptionThali, subscriptionExtraCharge, onAdd, onIncrement, onDecrement,
 }: ThaliCardProps) {
   return (
     <View style={[s.card, !available && { opacity: 0.5 }]}>
@@ -48,6 +50,12 @@ export function ThaliCard({
               </>
             ) : (
               <Text style={s.price}>₹{price}</Text>
+            )}
+            {isSubscriptionThali && (
+              <View style={s.subBadge}>
+                <Text style={s.subText}>🎫 Sub Eligible</Text>
+                {!!subscriptionExtraCharge && <Text style={s.subExtra}>+₹{subscriptionExtraCharge}</Text>}
+              </View>
             )}
           </View>
         </View>
@@ -103,6 +111,9 @@ const s = StyleSheet.create({
   priceRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   price: { fontSize: 17, fontWeight: '800', color: '#0F172A' },
   oldPrice: { fontSize: 13, color: '#CBD5E1', fontWeight: '500', textDecorationLine: 'line-through' },
+  subBadge: { backgroundColor: '#ECFDF5', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, marginLeft: 6, borderWidth: 1, borderColor: '#A7F3D0', borderStyle: 'dashed' },
+  subText: { fontSize: 10, color: '#059669', fontWeight: '800' },
+  subExtra: { fontSize: 10, color: '#047857', fontWeight: '600', marginTop: 1 },
   imageCol: { alignItems: 'center', width: 120 },
   image: { width: 120, height: 100, borderRadius: 14, backgroundColor: '#F1F5F9' },
   addWrap: { marginTop: -16, width: '100%', paddingHorizontal: 8 },

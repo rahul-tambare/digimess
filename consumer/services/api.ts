@@ -4,7 +4,9 @@
 // Mirrors the provider app's api.ts pattern.
 // All endpoints match the unified backend architecture.
 
-import { useAuthStore } from './authStore';
+// import { useAuthStore } from './authStore'; // Removed to eliminate circular dependency
+
+import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 
 // Auto-detect correct API base URL
@@ -12,11 +14,26 @@ const getApiBase = () => {
   if (Platform.OS === 'web') {
     return 'http://localhost:5000/api';
   }
-  // For Android emulator use 10.0.2.2, for real device use your computer's IP
+
+  // For physical devices, use the host IP from expo constants
+  // This allows connecting to the backend on the same local network
+  const debuggerHost = Constants.expoConfig?.hostUri;
+  const hostIP = debuggerHost?.split(':')[0];
+
+  if (hostIP) {
+    return `http://${hostIP}:5000/api`;
+  }
+
+  // Fallback for Android emulator
   return 'http://10.0.2.2:5000/api';
 };
 
 const API_BASE = getApiBase();
+
+let authStoreRef: any = null;
+export const registerAuthStore = (store: any) => {
+  authStoreRef = store;
+};
 
 // ---- Core fetch wrapper ----
 
@@ -24,7 +41,8 @@ async function apiFetch<T = any>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> {
-  const token = useAuthStore.getState().token;
+  // Use the registered store reference to avoid circular dependency issues
+  const token = authStoreRef?.getState()?.token;
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -176,7 +194,7 @@ export const subscriptionApi = {
   getMySubscriptions: () =>
     apiFetch('/user/subscriptions'),
 
-  purchasePlan: (data: { planId: string; messId?: string; startDate?: string }) =>
+  purchasePlan: (data: { planId: string; messId?: string; startDate?: string; allowedMesses?: string[] }) =>
     apiFetch('/user/subscriptions', { method: 'POST', body: JSON.stringify(data) }),
 
   pauseSubscription: (subId: string) =>

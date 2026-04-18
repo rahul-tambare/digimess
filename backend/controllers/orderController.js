@@ -1,4 +1,5 @@
 const db = require('../config/db');
+const crypto = require('crypto');
 
 // POST /api/orders — place an order (supports wallet, upi, card, cod, subscription)
 exports.placeOrder = async (req, res) => {
@@ -30,37 +31,89 @@ exports.placeOrder = async (req, res) => {
     }
 
     let isSubscriptionOrder = false;
+    let usedSubscriptionId = null;
     let paymentStatus = 'pending'; // default
     let transactionDescription = `Order placed via ${paymentMethod === 'cod' ? 'Cash' : paymentMethod?.toUpperCase() || 'Wallet'}`;
 
     if (paymentMethod === 'subscription') {
       // ── Subscription payment ──
+      // Bug fix: Also check subscription is NOT paused today
+      const today = new Date().toISOString().split('T')[0];
       const [subRows] = await connection.query(
         `SELECT id, mealsRemaining FROM Subscriptions 
          WHERE customerId = ? 
            AND isActive = 1 
            AND mealsRemaining > 0 
+           AND startDate <= CURDATE()
+           AND endDate >= CURDATE()
            AND (
              messId = ? 
              OR (messId IS NULL AND JSON_CONTAINS(allowedMesses, JSON_QUOTE(?)))
              OR (messId IS NULL AND allowedMesses IS NULL)
            )
+           AND (pauseStartDate IS NULL 
+                OR CURDATE() < pauseStartDate 
+                OR (pauseEndDate IS NOT NULL AND CURDATE() > pauseEndDate))
          ORDER BY messId DESC FOR UPDATE`,
         [req.user.id, messId, messId]
       );
 
       if (subRows.length > 0) {
+        const matchedSubId = subRows[0].id;
+
+        // Bug fix: Check if today is a skipped date for this subscription
+        const [skipRows] = await connection.query(
+          'SELECT id FROM SubscriptionSkips WHERE subscriptionId = ? AND skipDate = ?',
+          [matchedSubId, today]
+        );
+        if (skipRows.length > 0) {
+          await connection.rollback();
+          return res.status(400).json({ error: 'Today is a skipped date for your subscription. You cannot place a subscription order today.' });
+        }
+
+        // Calculate subscription extra charges securely from items
+        let extraSum = 0;
+        let validSubscriptionItems = true;
+
+        for (const item of parsedItems) {
+           if (!item.thaliId) continue;
+           const [thaliInfo] = await connection.query('SELECT isSubscriptionThali, subscriptionExtraCharge FROM Thalis WHERE id = ?', [item.thaliId]);
+           if (thaliInfo.length > 0) {
+              if (!thaliInfo[0].isSubscriptionThali) {
+                 validSubscriptionItems = false;
+                 break;
+              }
+              extraSum += (parseFloat(thaliInfo[0].subscriptionExtraCharge) || 0) * (item.quantity || item.qty || 1);
+           }
+        }
+        
+        if (!validSubscriptionItems) {
+           await connection.rollback();
+           return res.status(400).json({ error: 'Cart contains items not eligible for subscription' });
+        }
+
+        if (extraSum > 0) {
+            const [userRows] = await connection.query('SELECT walletBalance FROM Users WHERE id = ? FOR UPDATE', [req.user.id]);
+            const balance = parseFloat(userRows[0].walletBalance);
+            if (balance < extraSum) {
+                await connection.rollback();
+                return res.status(400).json({ error: 'Insufficient wallet balance for subscription extra charges', shortfall: extraSum - balance });
+            }
+            await connection.query('UPDATE Users SET walletBalance = walletBalance - ? WHERE id = ?', [extraSum, req.user.id]);
+        }
+
         isSubscriptionOrder = true;
-        amount = 0;
+        usedSubscriptionId = matchedSubId;
+        amount = extraSum; // Pay the extra charge (0 if no extra charge)
         paymentStatus = 'paid';
         transactionDescription = 'Order placed via Subscription';
         await connection.query(
           'UPDATE Subscriptions SET mealsRemaining = mealsRemaining - 1 WHERE id = ?',
-          [subRows[0].id]
+          [matchedSubId]
         );
       } else {
         await connection.rollback();
-        return res.status(400).json({ error: 'No active subscription found for this mess' });
+        return res.status(400).json({ error: 'No active subscription found for this mess (or subscription is paused/expired)' });
       }
     } else if (paymentMethod === 'wallet') {
       // ── Wallet payment — check balance and deduct ──
@@ -87,18 +140,18 @@ exports.placeOrder = async (req, res) => {
 
     // Record Transaction regardless of payment method
     if (!isSubscriptionOrder || amount > 0) {
-       const txId = require('crypto').randomUUID();
+       const txId = crypto.randomUUID();
        await connection.query(
          'INSERT INTO WalletTransactions (id, userId, amount, type, description) VALUES (?, ?, ?, ?, ?)',
          [txId, req.user.id, amount, 'debit', transactionDescription]
        );
     }
 
-    // Create Order with all fields
-    const orderId = require('crypto').randomUUID();
+    // Create Order with all fields (Bug fix: include subscriptionId)
+    const orderId = crypto.randomUUID();
     await connection.query(
-      `INSERT INTO Orders (id, customerId, messId, totalAmount, orderType, items, deliveryType, address, paymentMethod, specialNote)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO Orders (id, customerId, messId, totalAmount, orderType, items, deliveryType, deliveryAddress, paymentMethod, specialNote, subscriptionId)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         orderId, req.user.id, messId, amount,
         isSubscriptionOrder ? 'subscription' : (orderType || 'on_demand'),
@@ -106,7 +159,8 @@ exports.placeOrder = async (req, res) => {
         deliveryType || null,
         address || null,
         paymentMethod || 'wallet',
-        specialNote || null
+        specialNote || null,
+        usedSubscriptionId
       ]
     );
 
@@ -201,7 +255,7 @@ exports.reorder = async (req, res) => {
   try {
     // Find the original order
     const [original] = await db.query(
-      'SELECT messId, items, deliveryType, address, totalAmount, paymentMethod FROM Orders WHERE id = ? AND customerId = ? AND isDeleted = 0',
+      'SELECT messId, items, deliveryType, deliveryAddress, totalAmount, paymentMethod FROM Orders WHERE id = ? AND customerId = ? AND isDeleted = 0',
       [req.params.id, req.user.id]
     );
     if (original.length === 0) return res.status(404).json({ error: 'Original order not found' });
@@ -223,7 +277,7 @@ exports.reorder = async (req, res) => {
       totalAmount: oldOrder.totalAmount,
       items: typeof oldOrder.items === 'string' ? JSON.parse(oldOrder.items) : oldOrder.items,
       deliveryType: oldOrder.deliveryType,
-      address: oldOrder.address,
+      address: oldOrder.deliveryAddress,
       paymentMethod: oldOrder.paymentMethod || 'wallet',
     };
 
@@ -261,6 +315,8 @@ exports.getKitchenForecast = async (req, res) => {
     const providerId = req.user.id;
     const today = new Date().toISOString().split('T')[0];
 
+    // Active subscriptions: not paused, not expired, meals remaining
+    // Bug fix: proper NULL pauseEndDate handling (indefinite pause)
     const [subscriptions] = await db.query(
       `SELECT COUNT(s.id) as totalActiveSubs 
        FROM Subscriptions s
@@ -270,8 +326,22 @@ exports.getKitchenForecast = async (req, res) => {
          AND s.mealsRemaining > 0 
          AND s.startDate <= ? 
          AND s.endDate >= ? 
-         AND (s.pauseStartDate IS NULL OR s.pauseStartDate > ? OR s.pauseEndDate < ?)`,
+         AND (s.pauseStartDate IS NULL 
+              OR ? < s.pauseStartDate 
+              OR (s.pauseEndDate IS NOT NULL AND ? > s.pauseEndDate))`,
       [providerId, today, today, today, today]
+    );
+
+    // Bug fix: Subtract subscriptions that have skipped today
+    const [skippedToday] = await db.query(
+      `SELECT COUNT(sk.id) as totalSkipped
+       FROM SubscriptionSkips sk
+       JOIN Subscriptions s ON sk.subscriptionId = s.id
+       JOIN Messes m ON s.messId = m.id
+       WHERE m.vendorId = ? 
+         AND sk.skipDate = ?
+         AND s.isActive = 1`,
+      [providerId, today]
     );
 
     const [orders] = await db.query(
@@ -294,12 +364,15 @@ exports.getKitchenForecast = async (req, res) => {
       [providerId, today]
     );
 
+    const effectiveSubsToday = Math.max(0, subscriptions[0].totalActiveSubs - skippedToday[0].totalSkipped);
+
     res.json({
       message: 'Kitchen Forecast for ' + today,
       data: {
-        activeSubscriptionsToday: subscriptions[0].totalActiveSubs,
+        activeSubscriptionsToday: effectiveSubsToday,
+        skippedSubscriptionsToday: skippedToday[0].totalSkipped,
         pendingOnDemandOrders: orders[0].totalPendingOrders,
-        totalMealsToPrepare: subscriptions[0].totalActiveSubs + orders[0].totalPendingOrders,
+        totalMealsToPrepare: effectiveSubsToday + orders[0].totalPendingOrders,
         todayEarnings: earnings[0].todayEarnings || 0
       }
     });

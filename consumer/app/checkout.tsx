@@ -3,7 +3,7 @@ import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, StyleSheet
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft, Home, Wallet, CalendarCheck, CreditCard } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
-import { useCartStore, useUserStore, useOrderStore, useWalletStore } from '@/stores/dataStore';
+import { useCartStore, useUserStore, useOrderStore, useWalletStore, useDataStore } from '@/stores/dataStore';
 import { subscriptionApi, configApi } from '@/services/api';
 
 export default function CheckoutScreen() {
@@ -12,6 +12,7 @@ export default function CheckoutScreen() {
   const user = useUserStore(state => state.user);
   const address = user?.savedAddresses?.[0] || { type: 'home', pincode: '', line1: '', area: '', city: '' };
   const walletBalance = useWalletStore(state => state.balance);
+  const thalisStore = useDataStore((state: any) => state.thalis); // To get extra charges 
   const [selectedPayment, setSelectedPayment] = useState('wallet');
   const [isProcessing, setIsProcessing] = useState(false);
   const [activeSubscription, setActiveSubscription] = useState<any>(null);
@@ -24,14 +25,39 @@ export default function CheckoutScreen() {
     // Fetch real subscriptions
     subscriptionApi.getMySubscriptions().then((subs: any) => {
       const list = Array.isArray(subs) ? subs : (subs.subscriptions || []);
-      // Find an active subscription for this mess
-      const match = list.find((s: any) =>
-        s.isActive && s.mealsRemaining > 0 && s.messId === messId
-      );
+      // Find an active subscription for this mess (or global subscription)
+      const match = list.find((s: any) => {
+        const endDate = new Date(s.endDate);
+        endDate.setHours(0, 0, 0, 0);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        let isMessAllowed = false;
+        if (String(s.messId) === String(messId)) {
+          isMessAllowed = true;
+        } else if (!s.messId) {
+          const allowed = s.allowedMesses;
+          if (!allowed || allowed.length === 0) {
+            isMessAllowed = true; // purely global
+          } else if (Array.isArray(allowed) && allowed.includes(String(messId))) {
+            isMessAllowed = true;
+          } else if (typeof allowed === 'string') {
+            try {
+              const parsed = JSON.parse(allowed);
+              if (Array.isArray(parsed) && parsed.includes(String(messId))) isMessAllowed = true;
+            } catch (e) {}
+          }
+        }
+
+        return s.isActive && 
+          s.mealsRemaining > 0 && 
+          endDate >= today &&
+          isMessAllowed;
+      });
       if (match) {
         setActiveSubscription({
           id: match.id,
-          messId: match.messId,
+          messId: match.messId || null,
           messName: match.messName || 'Subscribed Mess',
           mealsRemaining: match.mealsRemaining,
           isActive: true,
@@ -51,17 +77,44 @@ export default function CheckoutScreen() {
   const subtotal = getTotal();
   const grandTotal = subtotal + deliveryFee + platformFee;
 
-  // Check if subscription applies to this mess
-  const hasActiveSub = activeSubscription?.isActive &&
-    activeSubscription?.mealsRemaining > 0 &&
-    activeSubscription?.messId === messId;
+  // Check if all items are subscription eligible
+  const allSubEligible = items.every(item => {
+    if (item.isSubscriptionThali !== undefined) return item.isSubscriptionThali;
+    const t = thalisStore.find((th: any) => th.id === item.thaliId);
+    return t && t.isSubscriptionThali;
+  });
+
+  const totalExtraSubscriptionCharge = items.reduce((sum, item) => {
+    let extra = item.subscriptionExtraCharge;
+    if (extra === undefined) {
+      const t = thalisStore.find((th: any) => th.id === item.thaliId);
+      extra = t?.subscriptionExtraCharge || 0;
+    }
+    return sum + ((extra || 0) * item.qty);
+  }, 0);
+
+  // Check if subscription applies to this mess (validation done when setting activeSubscription)
+  const hasActiveSub = !!(activeSubscription?.isActive && activeSubscription?.mealsRemaining > 0);
 
   const handlePayment = async () => {
     setIsProcessing(true);
 
     if (selectedPayment === 'subscription') {
       try {
-        const orderId = await useOrderStore.getState().placeOrder({ paymentMethod: 'subscription', address: address ? `${address.line1}, ${address.area}` : '', totalAmountOverride: 0 });
+        if (totalExtraSubscriptionCharge > 0 && walletBalance < totalExtraSubscriptionCharge) {
+          setIsProcessing(false);
+          Alert.alert(
+            'Insufficient Balance',
+            `You need ₹${totalExtraSubscriptionCharge - walletBalance} more to cover the extra charges.`,
+            [
+              { text: 'Cancel', style: 'cancel' },
+              { text: 'Top Up', onPress: () => router.push('/wallet-topup') },
+            ]
+          );
+          return;
+        }
+
+        const orderId = await useOrderStore.getState().placeOrder({ paymentMethod: 'subscription', address: address ? `${address.line1}, ${address.area}` : '', totalAmountOverride: totalExtraSubscriptionCharge });
         clearCart();
         router.replace({ pathname: '/order-success', params: { orderId } });
       } catch (e: any) {
@@ -103,8 +156,11 @@ export default function CheckoutScreen() {
       id: 'subscription',
       name: `Use Subscription (${activeSubscription.mealsRemaining} meals left)`,
       emoji: '🎫',
-      desc: `Free meal from ${activeSubscription.messName}`,
-      highlight: true,
+      desc: allSubEligible 
+         ? `Free meal from ${activeSubscription.messName}${totalExtraSubscriptionCharge > 0 ? ` (+₹${totalExtraSubscriptionCharge} extra)` : ''}`
+         : 'Cart contains items not eligible for subscription',
+      highlight: allSubEligible,
+      disabled: !allSubEligible,
     }] : []),
     {
       id: 'wallet',
@@ -118,7 +174,7 @@ export default function CheckoutScreen() {
     { id: 'cod', name: 'Cash on Delivery', emoji: '💵', desc: 'Pay at doorstep', highlight: false },
   ];
 
-  const effectiveTotal = selectedPayment === 'subscription' ? 0 : grandTotal;
+  const effectiveTotal = selectedPayment === 'subscription' ? totalExtraSubscriptionCharge : grandTotal;
 
   return (
     <SafeAreaView style={s.container} edges={['top']}>
@@ -164,12 +220,23 @@ export default function CheckoutScreen() {
           <View style={s.billRow}><Text style={s.billLabel}>Platform Fee</Text><Text style={s.billValue}>₹{platformFee}</Text></View>
           <View style={s.billDivider} />
           <View style={s.billRow}>
-            <Text style={s.totalLabel}>To Pay</Text>
-            <Text style={[s.totalValue, selectedPayment === 'subscription' && { textDecorationLine: 'line-through', color: '#94A3B8' }]}>₹{grandTotal}</Text>
+            <Text style={s.totalLabel}>
+              {selectedPayment === 'subscription' && totalExtraSubscriptionCharge > 0 ? 'Extra Charges' : 'To Pay'}
+            </Text>
+            {selectedPayment === 'subscription' && totalExtraSubscriptionCharge > 0 ? (
+              <Text style={s.totalValue}>₹{totalExtraSubscriptionCharge}</Text>
+            ) : (
+              <Text style={[s.totalValue, selectedPayment === 'subscription' && { textDecorationLine: 'line-through', color: '#94A3B8' }]}>₹{grandTotal}</Text>
+            )}
           </View>
-          {selectedPayment === 'subscription' && (
+          {selectedPayment === 'subscription' && totalExtraSubscriptionCharge === 0 && (
             <View style={s.freeMealBadge}>
               <Text style={s.freeMealText}>🎫 FREE — Using Subscription Meal</Text>
+            </View>
+          )}
+          {selectedPayment === 'subscription' && totalExtraSubscriptionCharge > 0 && (
+            <View style={s.freeMealBadge}>
+              <Text style={s.freeMealText}>🎫 Subscription Meal Applied</Text>
             </View>
           )}
         </View>
@@ -191,8 +258,14 @@ export default function CheckoutScreen() {
         <Text style={s.sectionTitle}>Select Payment Method</Text>
         <View style={s.card}>
           {paymentMethods.map((m, idx) => (
-            <TouchableOpacity key={m.id} onPress={() => setSelectedPayment(m.id)}
-              style={[s.payRow, idx !== paymentMethods.length - 1 && s.payRowBorder, m.highlight && s.payRowHighlight]}>
+            <TouchableOpacity key={m.id} onPress={() => (m as any).disabled ? null : setSelectedPayment(m.id)}
+              activeOpacity={(m as any).disabled ? 1 : 0.2}
+              style={[
+                s.payRow, 
+                idx !== paymentMethods.length - 1 && s.payRowBorder, 
+                m.highlight && s.payRowHighlight,
+                (m as any).disabled && { opacity: 0.5 }
+              ]}>
               <Text style={{ fontSize: 22 }}>{m.emoji}</Text>
               <View style={{ flex: 1, marginLeft: 14 }}>
                 <Text style={[s.payName, m.highlight && { color: '#059669' }]}>{m.name}</Text>
@@ -213,7 +286,9 @@ export default function CheckoutScreen() {
             <ActivityIndicator color="#FFF" />
           ) : (
             <Text style={s.payBtnText}>
-              {selectedPayment === 'subscription' ? 'Place Order (Free)' : `Pay ₹${effectiveTotal}`}
+              {selectedPayment === 'subscription' 
+                ? (totalExtraSubscriptionCharge > 0 ? `Pay Extra ₹${totalExtraSubscriptionCharge}` : 'Place Order (Free)')
+                : `Pay ₹${effectiveTotal}`}
             </Text>
           )}
         </TouchableOpacity>

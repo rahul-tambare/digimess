@@ -37,7 +37,8 @@ export function timeAgo(dateString: string): string {
   return `${diffDays}d ago`;
 }
 
-export function getInitials(name: string): string {
+export function getInitials(name: string | null | undefined): string {
+  if (!name) return '??';
   return name
     .split(' ')
     .map(w => w[0])

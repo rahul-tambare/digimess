@@ -105,12 +105,14 @@ CREATE TABLE IF NOT EXISTS Orders (
     deliveryAddress TEXT DEFAULT NULL,
     paymentMethod VARCHAR(50) DEFAULT NULL,
     specialNote TEXT DEFAULT NULL,
+    subscriptionId VARCHAR(36) DEFAULT NULL,
     isDeleted TINYINT(1) DEFAULT 0,
     deletedAt DATETIME DEFAULT NULL,
     createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (customerId) REFERENCES Users(id),
-    FOREIGN KEY (messId) REFERENCES Messes(id)
+    FOREIGN KEY (messId) REFERENCES Messes(id),
+    FOREIGN KEY (subscriptionId) REFERENCES Subscriptions(id) ON DELETE SET NULL
 );
 
 -- Wallet Transactions
@@ -290,6 +292,7 @@ CREATE TABLE IF NOT EXISTS Thalis (
     maxQtyPerDay INT DEFAULT NULL,
     image VARCHAR(500) DEFAULT NULL,
     isSubscriptionThali BOOLEAN DEFAULT FALSE,
+    subscriptionExtraCharge DECIMAL(10,2) DEFAULT 0.00,
     isAvailable BOOLEAN DEFAULT TRUE,
     isSpecial BOOLEAN DEFAULT FALSE,
     createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

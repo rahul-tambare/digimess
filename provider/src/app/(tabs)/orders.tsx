@@ -208,6 +208,8 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.background,
     borderWidth: 1,
     borderColor: Colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   filterTabActive: {
     backgroundColor: Colors.primaryBg,
@@ -217,6 +219,8 @@ const styles = StyleSheet.create({
     fontSize: FontSizes.sm,
     fontWeight: FontWeights.semibold,
     color: Colors.textSecondary,
+    includeFontPadding: false,
+    textAlignVertical: 'center',
   },
   filterTextActive: {
     color: Colors.primary,

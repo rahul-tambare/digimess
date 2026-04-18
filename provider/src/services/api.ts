@@ -3,6 +3,7 @@
 // =============================================
 
 import { useAuthStore } from '../stores/authStore';
+import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 
 // Auto-detect correct API base URL
@@ -10,7 +11,16 @@ const getApiBase = () => {
   if (Platform.OS === 'web') {
     return 'http://localhost:5000/api';
   }
-  // For Android emulator use 10.0.2.2, for real device use your computer's IP
+
+  // For physical devices, use the host IP from expo constants
+  const debuggerHost = Constants.expoConfig?.hostUri;
+  const hostIP = debuggerHost?.split(':')[0];
+
+  if (hostIP) {
+    return `http://${hostIP}:5000/api`;
+  }
+
+  // Fallback for Android emulator
   return 'http://10.0.2.2:5000/api';
 };
 
@@ -135,6 +145,7 @@ export const thaliApi = {
   addThali: (data: {
     messId: string; name: string; mealTime?: string; type?: string;
     itemsIncluded?: string; price: number; discountedPrice?: number;
+    isSubscriptionThali?: boolean; subscriptionExtraCharge?: number;
   }) =>
     apiFetch('/thalis', { method: 'POST', body: JSON.stringify(data) }),
 

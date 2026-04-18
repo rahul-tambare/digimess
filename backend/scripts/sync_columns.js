@@ -15,7 +15,10 @@ async function syncColumns() {
         "ALTER TABLE Orders ADD COLUMN isDeleted TINYINT(1) DEFAULT 0",
         "ALTER TABLE Orders ADD COLUMN deletedAt DATETIME DEFAULT NULL",
         "ALTER TABLE BankDetails ADD COLUMN upiId VARCHAR(100) DEFAULT NULL",
-        "ALTER TABLE Messes ADD CONSTRAINT unique_vendor_mess UNIQUE (vendorId)"
+        "ALTER TABLE Messes ADD CONSTRAINT unique_vendor_mess UNIQUE (vendorId)",
+        "ALTER TABLE Subscriptions ADD COLUMN pauseStartDate DATE DEFAULT NULL",
+        "ALTER TABLE Subscriptions ADD COLUMN pauseEndDate DATE DEFAULT NULL",
+        "ALTER TABLE Orders ADD COLUMN deliveryAddress TEXT DEFAULT NULL"
     ];
 
     console.log('Starting column synchronization...');

@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { View, Text, Image, ScrollView, TouchableOpacity, Share, StyleSheet, Platform, ActivityIndicator } from 'react-native';
+import { View, Text, Image, ScrollView, TouchableOpacity, Share, StyleSheet, Platform, ActivityIndicator, Alert } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ArrowLeft, Share2, Heart, Star, MapPin, Clock, Info } from 'lucide-react-native';
@@ -21,13 +21,40 @@ export default function MessDetailScreen() {
   const fetchMessDetail = useDataStore(state => state.fetchMessDetail);
   const fetchThalis = useDataStore(state => state.fetchThalis);
   const allThalis = useMemo(() => thalis.filter(t => t.messId === id), [thalis, id]);
-  const [activeTab, setActiveTab] = useState<'Thalis' | 'Items' | 'Reviews' | 'Info'>('Thalis');
+  const [activeTab, setActiveTab] = useState<'All' | 'Thalis' | 'Items' | 'Reviews' | 'Info'>('All');
   const [activeMealTime, setActiveMealTime] = useState('All');
   const [loadingDetail, setLoadingDetail] = useState(false);
   const cartItems = useCartStore(state => state.items);
   const addToCart = useCartStore(state => state.addToCart);
   const incrementQuantity = useCartStore(state => state.incrementQuantity);
   const decrementQuantity = useCartStore(state => state.decrementQuantity);
+  const clearCart = useCartStore(state => state.clearCart);
+
+  const handleAddToCart = (messIdParam: string, messNameParam: string, item: any) => {
+    try {
+      addToCart(messIdParam, messNameParam, item);
+    } catch (e: any) {
+      if (e.message === 'MULTIPLE_MESS_ERROR') {
+        Alert.alert(
+          'Different Mess',
+          'Your cart contains items from a different mess. Clear your cart and add this item?',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { 
+              text: 'Clear & Add', 
+              style: 'destructive',
+              onPress: () => {
+                clearCart();
+                addToCart(messIdParam, messNameParam, item);
+              }
+            }
+          ]
+        );
+      } else {
+        throw e;
+      }
+    }
+  };
 
   // Fetch mess detail + thalis from API
   useEffect(() => {
@@ -44,10 +71,10 @@ export default function MessDetailScreen() {
     : allThalis.filter(t => t.mealTime.toLowerCase() === activeMealTime.toLowerCase());
 
   const handleShare = async () => {
-    try { await Share.share({ message: `Check out ${mess.name} on MessWala!` }); } catch (e) {}
+    try { await Share.share({ message: `Check out ${mess.name} on MessWala!` }); } catch (e) { }
   };
 
-  const tabs = ['Thalis', 'Items', 'Reviews', 'Info'] as const;
+  const tabs = ['All', 'Thalis', 'Items', 'Reviews', 'Info'] as const;
   const mealTimes = ['All', 'Breakfast', 'Lunch', 'Dinner'];
 
   return (
@@ -99,7 +126,7 @@ export default function MessDetailScreen() {
 
           {/* Subscription Banner */}
           {mess.hasSubscription && (
-            <TouchableOpacity style={s.subBanner} onPress={() => router.push('/subscription-plans')} activeOpacity={0.8}>
+            <TouchableOpacity style={s.subBanner} onPress={() => router.push({ pathname: '/subscription-plans', params: { messId: mess.id } })} activeOpacity={0.8}>
               <View style={{ flex: 1 }}>
                 <Text style={s.subBannerTitle}>🎫 Subscribe & Save 15%</Text>
                 <Text style={s.subBannerSub}>Get daily meals from this mess at a flat rate</Text>
@@ -122,35 +149,45 @@ export default function MessDetailScreen() {
 
         {/* Content */}
         <View style={s.content}>
-          {activeTab === 'Thalis' && (
-            <>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 20 }}>
-                {mealTimes.map((m) => (
-                  <TouchableOpacity key={m} onPress={() => setActiveMealTime(m)}
-                    style={[s.mealChip, activeMealTime === m && s.mealChipActive]}>
-                    <Text style={[s.mealChipText, activeMealTime === m && s.mealChipTextActive]}>{m}</Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-              {filteredThalis.map(thali => {
+          {(activeTab === 'All' || activeTab === 'Thalis') && (
+            <View style={{ marginBottom: activeTab === 'All' ? 24 : 0 }}>
+              {activeTab === 'All' && allThalis.length > 0 && <Text style={{ fontSize: 16, fontWeight: '800', marginBottom: 12, color: '#0F172A' }}>Thalis & Combos</Text>}
+              {activeTab === 'Thalis' && (
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 20 }}>
+                  {mealTimes.map((m) => (
+                    <TouchableOpacity key={m} onPress={() => setActiveMealTime(m)}
+                      style={[s.mealChip, activeMealTime === m && s.mealChipActive]}>
+                      <Text style={[s.mealChipText, activeMealTime === m && s.mealChipTextActive]}>{m}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              )}
+              {(activeTab === 'All' ? allThalis : filteredThalis).map(thali => {
                 const qty = cartItems.find(i => i.thaliId === thali.id)?.qty || 0;
                 return (
                   <ThaliCard key={thali.id} {...thali} type={thali.type as 'veg' | 'non-veg'} quantity={qty}
-                    onAdd={() => addToCart(mess.id, mess.name, { thaliId: thali.id, name: thali.name, price: thali.discountedPrice || thali.price, qty: 1 })}
+                    onAdd={() => handleAddToCart(mess.id, mess.name, { thaliId: thali.id, name: thali.name, price: thali.discountedPrice || thali.price, qty: 1, isSubscriptionThali: thali.isSubscriptionThali, subscriptionExtraCharge: thali.subscriptionExtraCharge })}
                     onIncrement={() => incrementQuantity(thali.id)}
                     onDecrement={() => decrementQuantity(thali.id)}
                   />
                 );
               })}
-            </>
+              {activeTab === 'All' && allThalis.length === 0 && items.length === 0 && (
+                <View style={s.emptyTab}>
+                  <Text style={{ fontSize: 40 }}>🍽️</Text>
+                  <Text style={s.emptyText}>No items available</Text>
+                </View>
+              )}
+            </View>
           )}
-          {activeTab === 'Items' && (
-            <>
+          {(activeTab === 'All' || activeTab === 'Items') && (
+            <View>
+              {activeTab === 'All' && items.length > 0 && <Text style={{ fontSize: 16, fontWeight: '800', marginBottom: 12, color: '#0F172A' }}>Individual Items</Text>}
               {items.length > 0 ? items.map(item => {
                 const qty = cartItems.find(i => i.thaliId === item.id)?.qty || 0;
                 return (
-                  <ThaliCard 
-                    key={item.id} 
+                  <ThaliCard
+                    key={item.id}
                     id={item.id}
                     name={item.name}
                     mealTime="All Day"
@@ -160,18 +197,20 @@ export default function MessDetailScreen() {
                     image={item.image}
                     available={item.available}
                     quantity={qty}
-                    onAdd={() => addToCart(mess.id, mess.name, { thaliId: item.id, name: item.name, price: item.price, qty: 1 })}
+                    onAdd={() => handleAddToCart(mess.id, mess.name, { thaliId: item.id, name: item.name, price: item.price, qty: 1 })}
                     onIncrement={() => incrementQuantity(item.id)}
                     onDecrement={() => decrementQuantity(item.id)}
                   />
                 );
               }) : (
-                <View style={s.emptyTab}>
-                  <Text style={{ fontSize: 40 }}>📋</Text>
-                  <Text style={s.emptyText}>No individual items available</Text>
-                </View>
+                activeTab === 'Items' ? (
+                  <View style={s.emptyTab}>
+                    <Text style={{ fontSize: 40 }}>📋</Text>
+                    <Text style={s.emptyText}>No individual items available</Text>
+                  </View>
+                ) : null
               )}
-            </>
+            </View>
           )}
           {activeTab === 'Reviews' && (
             <View>

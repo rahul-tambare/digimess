@@ -10,7 +10,7 @@ import { useAuthStore } from '../services/authStore';
 import { adaptMess, adaptThali, adaptItem, AdaptedItem } from './messAdapter';
 
 // Re-export auth store so existing imports still work
-export { useAuthStore as useUserStore } from '../services/authStore';
+export { useAuthStore, useAuthStore as useUserStore } from '../services/authStore';
 
 // ─────────────────────────────────────────────
 // Data Store — Messes & Thalis (API-backed)
@@ -46,6 +46,8 @@ interface Thali {
   available: boolean;
   isSpecial: boolean;
   rating: number;
+  isSubscriptionThali?: boolean;
+  subscriptionExtraCharge?: number;
 }
 
 export interface Review {
@@ -94,7 +96,7 @@ export const useDataStore = create<DataState>((set, get) => ({
   hasMore: true,
 
   fetchMesses: async (params = {}, page = 1) => {
-    if (page === 1) set({ loading: true, error: null, hasMore: true });
+    set({ loading: true, error: null, hasMore: page === 1 ? true : useDataStore.getState().hasMore });
     try {
       const location = useAuthStore.getState().user?.location;
       const combinedParams = location ? { ...params, lat: location.lat, lng: location.lng, page, limit: 10 } : { ...params, page, limit: 10 };
@@ -103,11 +105,14 @@ export const useDataStore = create<DataState>((set, get) => ({
       const raw = Array.isArray(res) ? res : (res.messes || res.data || []);
       const newMesses = raw.map(adaptMess);
       
-      set((state) => ({ 
-        messes: page === 1 ? newMesses : [...state.messes, ...newMesses], 
-        loading: false,
-        hasMore: newMesses.length === 10
-      }));
+      set((state) => {
+        const uniqueNew = newMesses.filter((n: any) => !state.messes.find((m: any) => m.id === n.id));
+        return { 
+          messes: page === 1 ? newMesses : [...state.messes, ...uniqueNew], 
+          loading: false,
+          hasMore: newMesses.length === 10
+        };
+      });
     } catch (err: any) {
       console.error('fetchMesses error:', err);
       set({ error: err.message, loading: false });
@@ -143,6 +148,21 @@ export const useDataStore = create<DataState>((set, get) => ({
       const location = useAuthStore.getState().user?.location;
       const res = await messApi.getMessDetail(messId, location?.lat, location?.lng);
       const mess = adaptMess(res);
+      
+      // Bug fix #7: Populate hasSubscription by checking subscription store
+      const subscriptions = useSubscriptionStore.getState().subscriptions;
+      const hasActiveSub = subscriptions.some((s: any) => {
+        const endDate = new Date(s.endDate);
+        endDate.setHours(0, 0, 0, 0);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        return s.isActive && 
+          endDate >= today && 
+          s.mealsRemaining > 0 &&
+          (String(s.messId) === String(messId) || !s.messId);
+      });
+      mess.hasSubscription = hasActiveSub;
+      
       set((state: any) => {
         const exists = state.messes.find((m: any) => m.id === messId);
         const messes = exists
@@ -216,6 +236,8 @@ interface CartItem {
   name: string;
   qty: number;
   price: number;
+  isSubscriptionThali?: boolean;
+  subscriptionExtraCharge?: number;
   customisation?: any;
 }
 
@@ -320,15 +342,19 @@ export const useOrderStore = create<OrderState>((set) => ({
   hasMoreOrders: true,
 
   fetchOrders: async (filter = 'All', page = 1) => {
-    if (page === 1) set({ loading: true, hasMoreOrders: true });
+    set({ loading: true, hasMoreOrders: page === 1 ? true : useOrderStore.getState().hasMoreOrders });
     try {
       const res = await orderApi.getMyOrders({ filter, page, limit: 10 });
       const newOrders = Array.isArray(res) ? res : (res.orders || res.data || []);
-      set((state) => ({
-        orders: page === 1 ? newOrders : [...state.orders, ...newOrders],
-        loading: false,
-        hasMoreOrders: newOrders.length === 10
-      }));
+      set((state) => {
+        // Deduplicate appended orders to prevent React key errors
+        const uniqueNew = newOrders.filter((n: any) => !state.orders.find((o: any) => o.id === n.id));
+        return {
+          orders: page === 1 ? newOrders : [...state.orders, ...uniqueNew],
+          loading: false,
+          hasMoreOrders: newOrders.length === 10
+        };
+      });
     } catch (err: any) {
       console.error('fetchOrders error:', err);
       set({ loading: false });
@@ -409,8 +435,14 @@ export const useWalletStore = create<WalletState>((set) => ({
     set({ loading: true });
     try {
       const res = await walletApi.getTransactions(page);
-      const transactions = Array.isArray(res) ? res : (res.transactions || res.data || []);
-      set({ transactions, loading: false });
+      const newTransactions = Array.isArray(res) ? res : (res.transactions || res.data || []);
+      set((state) => {
+        const uniqueNew = newTransactions.filter((n: any) => !state.transactions.find((t: any) => t.id === n.id));
+        return {
+          transactions: page === 1 ? newTransactions : [...state.transactions, ...uniqueNew],
+          loading: false
+        };
+      });
     } catch (err: any) {
       console.error('fetchTransactions error:', err);
       set({ loading: false });
@@ -430,7 +462,7 @@ interface SubscriptionState {
 
   fetchPlans: () => Promise<void>;
   fetchSubscriptions: () => Promise<void>;
-  purchasePlan: (planId: string, messId?: string, startDate?: string) => Promise<void>;
+  purchasePlan: (planId: string, messId?: string, startDate?: string, allowedMesses?: string[]) => Promise<void>;
   pauseSubscription: (subId: string) => Promise<void>;
   resumeSubscription: (subId: string) => Promise<void>;
   skipDate: (subId: string, date: string) => Promise<void>;
@@ -478,8 +510,8 @@ export const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
     }
   },
 
-  purchasePlan: async (planId, messId, startDate) => {
-    await subscriptionApi.purchasePlan({ planId, messId, startDate });
+  purchasePlan: async (planId, messId, startDate, allowedMesses) => {
+    await subscriptionApi.purchasePlan({ planId, messId, startDate, allowedMesses });
     // Refresh subscriptions + wallet after purchase
     get().fetchSubscriptions();
     useWalletStore.getState().fetchBalance();

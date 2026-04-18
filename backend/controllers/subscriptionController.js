@@ -1,4 +1,5 @@
 const db = require('../config/db');
+const crypto = require('crypto');
 
 // POST /api/user/subscriptions
 exports.subscribe = async (req, res) => {
@@ -31,21 +32,37 @@ exports.subscribe = async (req, res) => {
       return res.status(400).json({ error: 'Insufficient wallet balance', shortfall: planAmount - balance });
     }
 
+    // Bug fix #10: Prevent duplicate active subscriptions
+    const [existingSubs] = await connection.query(
+      `SELECT id FROM Subscriptions 
+       WHERE customerId = ? AND isActive = 1 AND endDate >= CURDATE()
+       AND (messId = ? OR (messId IS NULL AND ? IS NULL))
+       AND planId = ?`,
+      [req.user.id, messId || null, messId || null, planId]
+    );
+    if (existingSubs.length > 0) {
+      await connection.rollback();
+      return res.status(400).json({ error: 'You already have an active subscription for this plan. Wait for it to expire or cancel it first.' });
+    }
+
     // 2. Deduct Wallet
     await connection.query('UPDATE Users SET walletBalance = walletBalance - ? WHERE id = ?', [planAmount, req.user.id]);
 
     // 3. Log Wallet Transaction
-    const txId = require('crypto').randomUUID();
+    const txId = crypto.randomUUID();
     await connection.query(
       'INSERT INTO WalletTransactions (id, userId, amount, type, description) VALUES (?, ?, ?, ?, ?)',
       [txId, req.user.id, planAmount, 'debit', `Subscription: ${plan.name}`]
     );
 
     // 4. Create Subscription Entry
-    const subId = require('crypto').randomUUID();
+    const subId = crypto.randomUUID();
     const startDate = reqStartDate ? new Date(reqStartDate) : new Date();
     const endDate = new Date(startDate);
-    endDate.setDate(endDate.getDate() + mealsCount); // based on meals count
+    // Bug fix #11: Add ~40% buffer to account for weekends/skips
+    // e.g. 30 meals → 42 calendar days instead of 30
+    const calendarDays = Math.ceil(mealsCount * 1.4);
+    endDate.setDate(endDate.getDate() + calendarDays);
 
     await connection.query(
       `INSERT INTO Subscriptions (id, customerId, messId, planId, type, startDate, endDate, mealsRemaining, totalMeals, allowedMesses) 
@@ -198,12 +215,18 @@ exports.cancelSubscription = async (req, res) => {
     const sub = subRows[0];
     
     // Calculate prorated refund based on remaining meals
+    // Bug fix #12: Subtract skipped dates (skips didn't reduce mealsRemaining)
     let refundAmount = 0;
     if (sub.planId && sub.mealsRemaining > 0 && sub.totalMeals > 0) {
       const [planRows] = await connection.query('SELECT price FROM SubscriptionPlans WHERE id = ?', [sub.planId]);
+      const [skipRows] = await connection.query('SELECT COUNT(*) as skipCount FROM SubscriptionSkips WHERE subscriptionId = ?', [subId]);
+      const skipCount = skipRows[0].skipCount || 0;
+      
       if (planRows.length > 0) {
         const planPrice = parseFloat(planRows[0].price);
-        refundAmount = Math.round((planPrice * sub.mealsRemaining / sub.totalMeals) * 100) / 100;
+        // Effective remaining = mealsRemaining minus skipped days (skips weren't deducted)
+        const effectiveRemaining = Math.max(0, sub.mealsRemaining - skipCount);
+        refundAmount = Math.round((planPrice * effectiveRemaining / sub.totalMeals) * 100) / 100;
       }
     }
     
@@ -214,7 +237,7 @@ exports.cancelSubscription = async (req, res) => {
     if (refundAmount > 0) {
       await connection.query('UPDATE Users SET walletBalance = walletBalance + ? WHERE id = ?', [refundAmount, req.user.id]);
       
-      const txId = require('crypto').randomUUID();
+      const txId = crypto.randomUUID();
       await connection.query(
         'INSERT INTO WalletTransactions (id, userId, amount, type, description) VALUES (?, ?, ?, ?, ?)',
         [txId, req.user.id, refundAmount, 'credit', 'Subscription cancellation refund']

@@ -12,8 +12,13 @@ exports.getAllMesses = async (req, res) => {
     
     const queryParams = [];
 
-    // Base WHERE
-    let whereClause = `WHERE m.isOpen = 1 AND m.isApproved = 1 AND m.isActive = 1 AND m.businessStatus = 1 AND m.isDeleted = 0`;
+    // Base WHERE (only include messes with at least one active thali or menu item)
+    let whereClause = `WHERE m.isOpen = 1 AND m.isApproved = 1 AND m.isActive = 1 AND m.businessStatus = 1 AND m.isDeleted = 0 
+      AND (
+        EXISTS (SELECT 1 FROM Thalis t WHERE t.messId = m.id AND t.isAvailable = 1 AND t.isSubscriptionThali = 0) OR 
+        EXISTS (SELECT 1 FROM Menus mu WHERE mu.messId = m.id AND mu.isAvailable = 1) OR
+        EXISTS (SELECT 1 FROM Thalis t2 WHERE t2.messId = m.id AND t2.isAvailable = 1)
+      )`;
 
     if (search) {
       whereClause += ` AND (m.name LIKE ? OR m.description LIKE ? OR m.cuisines LIKE ? OR m.category LIKE ? OR ma.city LIKE ?)`;

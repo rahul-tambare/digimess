@@ -18,7 +18,7 @@ function TabIcon({ icon, label, focused, badge }: { icon: string; label: string;
           </View>
         )}
       </View>
-      <Text style={[styles.tabLabel, focused && styles.tabLabelActive]}>{label}</Text>
+      <Text style={[styles.tabLabel, focused && styles.tabLabelActive]} numberOfLines={1} adjustsFontSizeToFit>{label}</Text>
       {focused && <View style={styles.activeIndicator} />}
     </View>
   );
@@ -75,6 +75,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingTop: 4,
+    minWidth: 60,
   },
   iconContainer: {
     position: 'relative',

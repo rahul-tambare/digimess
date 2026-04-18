@@ -6,7 +6,8 @@
 import { create } from 'zustand';
 import { Platform } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
-import { userApi } from './api';
+import { userApi, registerAuthStore } from './api';
+
 
 interface User {
   id: string;
@@ -86,7 +87,7 @@ const loadAuth = async (): Promise<{ token: string | null; user: any }> => {
   return { token: null, user: null };
 };
 
-export const useAuthStore = create<AuthState>((set) => ({
+export const useAuthStore = create<AuthState>((set, get) => ({
   isAuthenticated: false,
   isNewUser: false,
   user: null,
@@ -125,7 +126,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   updateUser: async (data) => {
-    const state = useAuthStore.getState();
+    const state = get();
     const updatedUser = state.user ? { ...state.user, ...data } : null;
     if (updatedUser && state.token) saveAuth(state.token, updatedUser);
     set({ user: updatedUser });
@@ -134,7 +135,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   fetchProfile: async () => {
     try {
       const data = await userApi.getProfile();
-      const state = useAuthStore.getState();
+      const state = get();
       if (state.user && data) {
         const merged = { ...state.user, ...data };
         set({ user: merged });
@@ -172,3 +173,6 @@ export const useAuthStore = create<AuthState>((set) => ({
     }
   },
 }));
+
+// Register the store with the API service to break circular dependency
+registerAuthStore(useAuthStore);

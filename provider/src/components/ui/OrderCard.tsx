@@ -8,7 +8,7 @@ import { Colors, Spacing, FontSizes, FontWeights, BorderRadius, Shadows } from '
 import type { Order, OrderStatus } from '../../types';
 import StatusBadge from './StatusBadge';
 import MealTimeBadge from './MealTimeBadge';
-import { formatTime, getDeliveryTypeLabel, getOrderShortId } from '../../lib/utils';
+import { formatTime, getDeliveryTypeLabel, getOrderShortId, getInitials } from '../../lib/utils';
 
 interface OrderCardProps {
   order: Order;
@@ -56,8 +56,8 @@ export default function OrderCard({ order, onAccept, onReject, onUpdateStatus, o
     <Pressable style={styles.card} onPress={onPress}>
       {/* Header */}
       <View style={styles.header}>
-        <View>
-          <Text style={styles.orderId}>{getOrderShortId(order.id)}</Text>
+        <View style={{ flex: 1, marginRight: 8 }}>
+          <Text style={styles.orderId} numberOfLines={1}>{getOrderShortId(order.id)}</Text>
           <Text style={styles.time}>{formatTime(order.placedAt)}</Text>
         </View>
         <StatusBadge status={order.status} />
@@ -68,7 +68,7 @@ export default function OrderCard({ order, onAccept, onReject, onUpdateStatus, o
         <View style={styles.customerRow}>
           <View style={styles.avatar}>
             <Text style={styles.avatarText}>
-              {order.customerName.split(' ').map(w => w[0]).join('').slice(0, 2)}
+              {getInitials(order.customerName || 'Customer')}
             </Text>
           </View>
           <View style={{ flex: 1 }}>
@@ -195,7 +195,8 @@ const styles = StyleSheet.create({
     fontSize: FontSizes.md,
     color: Colors.textSecondary,
     fontWeight: FontWeights.medium,
-    marginBottom: 4,
+    marginBottom: 2,
+    includeFontPadding: false,
   },
   noteContainer: {
     backgroundColor: Colors.warningBg,
@@ -211,7 +212,8 @@ const styles = StyleSheet.create({
   amountRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'baseline',
+    marginTop: Spacing.sm,
   },
   amountLabel: {
     fontSize: FontSizes.md,

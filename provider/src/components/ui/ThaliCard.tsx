@@ -24,7 +24,7 @@ export default function ThaliCard({ thali, onEdit, onDelete, onToggleAvailabilit
           <View style={[styles.vegDot, { backgroundColor: thali.type === 'Non-Veg' ? Colors.nonVeg : Colors.veg }]} />
           <Text style={styles.name} numberOfLines={1}>{thali.name}</Text>
         </View>
-        {thali.isSpecial && (
+        {Boolean(thali.isSpecial) && (
           <View style={styles.specialBadge}>
             <Text style={styles.specialText}>⭐ Special</Text>
           </View>
@@ -35,6 +35,19 @@ export default function ThaliCard({ thali, onEdit, onDelete, onToggleAvailabilit
         <MealTimeBadge mealTime={thali.mealTime} />
         <Text style={styles.itemCount}>{thali.numberOfItems || '—'} items</Text>
       </View>
+
+      {Boolean((thali as any).isSubscriptionThali) && (
+        <View style={styles.subscriptionRow}>
+          <View style={styles.subscriptionBadge}>
+            <Text style={styles.subscriptionBadgeText}>🎫 Subscription Enabled</Text>
+          </View>
+          {(thali as any).subscriptionExtraCharge > 0 && (
+            <Text style={styles.subscriptionExtraText}>
+              +₹{(thali as any).subscriptionExtraCharge} Extra
+            </Text>
+          )}
+        </View>
+      )}
 
       <Text style={styles.items} numberOfLines={2}>{thali.itemsIncluded}</Text>
 
@@ -49,7 +62,7 @@ export default function ThaliCard({ thali, onEdit, onDelete, onToggleAvailabilit
             <Text style={styles.price}>₹{thali.price}</Text>
           )}
         </View>
-        {thali.maxQtyPerDay && (
+        {Boolean(thali.maxQtyPerDay) && (
           <Text style={styles.qty}>Max: {thali.maxQtyPerDay}/day</Text>
         )}
       </View>
@@ -213,5 +226,38 @@ const styles = StyleSheet.create({
   },
   actionText: {
     fontSize: 16,
+    textAlign: 'center',
+  },
+  subscriptionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginBottom: 8,
+  },
+  subscriptionBadge: {
+    backgroundColor: '#ECFDF5',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#A7F3D0',
+    borderStyle: 'dashed',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  subscriptionBadgeText: {
+    fontSize: 10,
+    color: '#059669',
+    fontWeight: 'bold',
+    includeFontPadding: false,
+    textAlignVertical: 'center',
+  },
+  subscriptionExtraText: {
+    fontSize: 11,
+    color: '#0F172A',
+    fontWeight: '600',
+    includeFontPadding: false,
+    textAlignVertical: 'center',
   },
 });

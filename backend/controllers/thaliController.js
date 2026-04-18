@@ -9,7 +9,7 @@ exports.addThali = async (req, res) => {
     const {
       messId, name, mealTime, type, itemsIncluded, numberOfItems,
       price, discountedPrice, description, maxQtyPerDay, image,
-      isSubscriptionThali
+      isSubscriptionThali, subscriptionExtraCharge
     } = req.body;
 
     // Verify ownership
@@ -21,13 +21,15 @@ exports.addThali = async (req, res) => {
     const id = uuidv4();
     await db.query(
       `INSERT INTO Thalis (id, messId, name, mealTime, type, itemsIncluded, numberOfItems,
-       price, discountedPrice, description, maxQtyPerDay, image, isSubscriptionThali)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       price, discountedPrice, description, maxQtyPerDay, image, isSubscriptionThali, subscriptionExtraCharge)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         id, messId, name, mealTime || 'Lunch', type || 'Veg',
         itemsIncluded, numberOfItems || 0,
         price, discountedPrice || null, description || null,
-        maxQtyPerDay || null, image || null, isSubscriptionThali || false
+        maxQtyPerDay || null, image || null,
+        isSubscriptionThali ? 1 : 0,
+        (isSubscriptionThali && subscriptionExtraCharge) ? parseFloat(subscriptionExtraCharge) : 0
       ]
     );
 
@@ -47,7 +49,7 @@ exports.updateThali = async (req, res) => {
     const {
       name, mealTime, type, itemsIncluded, numberOfItems,
       price, discountedPrice, description, maxQtyPerDay, image,
-      isSubscriptionThali
+      isSubscriptionThali, subscriptionExtraCharge
     } = req.body;
 
     // Verify ownership
@@ -64,12 +66,15 @@ exports.updateThali = async (req, res) => {
         numberOfItems = COALESCE(?, numberOfItems), price = COALESCE(?, price),
         discountedPrice = COALESCE(?, discountedPrice), description = COALESCE(?, description),
         maxQtyPerDay = COALESCE(?, maxQtyPerDay), image = COALESCE(?, image),
-        isSubscriptionThali = COALESCE(?, isSubscriptionThali)
+        isSubscriptionThali = COALESCE(?, isSubscriptionThali),
+        subscriptionExtraCharge = COALESCE(?, subscriptionExtraCharge)
        WHERE id = ?`,
       [
         name, mealTime, type, itemsIncluded, numberOfItems,
         price, discountedPrice, description,
-        maxQtyPerDay, image, isSubscriptionThali,
+        maxQtyPerDay, image,
+        isSubscriptionThali !== undefined ? (isSubscriptionThali ? 1 : 0) : null,
+        subscriptionExtraCharge !== undefined ? (isSubscriptionThali === false ? 0 : (subscriptionExtraCharge ? parseFloat(subscriptionExtraCharge) : 0)) : null,
         thaliId
       ]
     );
